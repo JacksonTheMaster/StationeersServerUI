@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,6 +22,38 @@ var cmd *exec.Cmd
 var mu sync.Mutex
 var outputChannel chan string
 
+// Config holds the server configuration
+type Config struct {
+	Server struct {
+		ExePath  string `xml:"exePath"`
+		Settings string `xml:"settings"`
+	} `xml:"server"`
+	SaveFileName string `xml:"saveFileName"`
+}
+
+// LoadConfig loads the configuration from an XML file
+func LoadConfig() (*Config, error) {
+	configPath := "./UIMod/config.xml"
+	xmlFile, err := os.Open(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("error opening config file: %v", err)
+	}
+	defer xmlFile.Close()
+
+	byteValue, err := io.ReadAll(xmlFile)
+	if err != nil {
+		return nil, fmt.Errorf("error reading config file: %v", err)
+	}
+
+	var config Config
+	err = xml.Unmarshal(byteValue, &config)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling config file: %v", err)
+	}
+
+	return &config, nil
+}
+
 func main() {
 	outputChannel = make(chan string, 100)
 
@@ -30,6 +63,8 @@ func main() {
 	http.HandleFunc("/output", getOutput)
 	http.HandleFunc("/backups", listBackups)
 	http.HandleFunc("/restore", restoreBackup)
+	http.HandleFunc("/config", handleConfig)   // Serve configuration form
+	http.HandleFunc("/saveconfig", saveConfig) // Save configuration form
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -46,7 +81,13 @@ func startServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd = exec.Command("powershell.exe", "-Command", "./rocketstation_DedicatedServer.exe -LOAD MarsProd Mars -settings StartLocalHost true ServerVisible true GamePort 27016 UpdatePort 27015 AutoSave true SaveInterval 300 LocalIpAddress 10.10.50.99 ServerPassword JMG AdminPassword JMG ServerMaxPlayers 4 ServerName SpaceInc")
+	config, err := LoadConfig()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error loading config: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	cmd = exec.Command("powershell.exe", "-Command", fmt.Sprintf(`%s -LOAD %s %s`, config.Server.ExePath, config.SaveFileName, config.Server.Settings))
 	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
 
 	stdout, err := cmd.StdoutPipe()
@@ -71,6 +112,71 @@ func startServer(w http.ResponseWriter, r *http.Request) {
 	go readPipe(stderr)
 
 	fmt.Fprintf(w, "Server started.")
+}
+
+// HandleConfig serves the configuration as a form for editing
+func handleConfig(w http.ResponseWriter, r *http.Request) {
+	config, err := LoadConfig()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error loading config: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Render a simple HTML form to edit configuration
+	fmt.Fprintf(w, `<html>
+		<body>
+			<h1>Edit Configuration</h1>
+			<form action="/saveconfig" method="post">
+				<label for="exePath">Server Executable Path:</label><br>
+				<input type="text" id="exePath" name="exePath" value="%s"><br>
+				<label for="settings">Server Settings:</label><br>
+				<input type="text" id="settings" name="settings" value="%s"><br>
+				<label for="saveFileName">Save File Name:</label><br>
+				<input type="text" id="saveFileName" name="saveFileName" value="%s"><br><br>
+				<input type="submit" value="Save">
+			</form>
+		</body>
+	</html>`, config.Server.ExePath, config.Server.Settings, config.SaveFileName)
+}
+
+// SaveConfig saves the updated configuration to the XML file
+func saveConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		exePath := r.FormValue("exePath")
+		settings := r.FormValue("settings")
+		saveFileName := r.FormValue("saveFileName")
+
+		config := Config{
+			Server: struct {
+				ExePath  string `xml:"exePath"`
+				Settings string `xml:"settings"`
+			}{
+				ExePath:  exePath,
+				Settings: settings,
+			},
+			SaveFileName: saveFileName,
+		}
+
+		configPath := "./UIMod/config.xml"
+		file, err := os.Create(configPath)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error creating config file: %v", err), http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+
+		encoder := xml.NewEncoder(file)
+		encoder.Indent("", "  ")
+		err = encoder.Encode(config)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding config file: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 }
 
 func readPipe(pipe io.ReadCloser) {
