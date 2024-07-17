@@ -261,7 +261,7 @@ func restoreBackup(w http.ResponseWriter, r *http.Request) {
 		backupFile := filepath.Join(backupDir, file.backupName)
 		destFile := filepath.Join(saveDir, file.destName)
 
-		err := os.Rename(backupFile, destFile)
+		err := copyFile(backupFile, destFile)
 		if err != nil {
 			// Revert any successful operations if an error occurs
 			revertRestore(restoredFiles, saveDir, backupDir)
@@ -274,12 +274,44 @@ func restoreBackup(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Backup %d restored successfully.", index)
 }
 
-// Helper function to revert any successfully restored files
+// copyFile copies a file from src to dst. If dst already exists, it will be overwritten.
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destinationFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destinationFile.Close()
+
+	_, err = io.Copy(destinationFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	err = destinationFile.Sync()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// revertRestore reverts the file restore operation if an error occurs
 func revertRestore(restoredFiles map[string]string, saveDir, backupDir string) {
 	for destFile, backupFile := range restoredFiles {
-		err := os.Rename(destFile, backupFile)
+		err := os.Remove(destFile)
 		if err != nil {
-			fmt.Printf("Error reverting file %s: %v\n", destFile, err)
+			fmt.Printf("Error removing file %s: %v\n", destFile, err)
+		} else {
+			err = copyFile(backupFile, destFile)
+			if err != nil {
+				fmt.Printf("Error restoring file %s: %v\n", destFile, err)
+			}
 		}
 	}
 }
