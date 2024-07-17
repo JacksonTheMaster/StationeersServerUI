@@ -20,6 +20,12 @@
             overflow-y: scroll;
             background-color: #f9f9f9;
         }
+        #backups {
+            margin-top: 20px;
+        }
+        .backup-item {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -28,6 +34,10 @@
     <button onclick="stopServer()">Stop Server</button>
     <p id="status"></p>
     <div id="console"></div>
+    <div id="backups">
+        <h2>Backups</h2>
+        <ul id="backupList"></ul>
+    </div>
     <script>
         function startServer() {
             fetch('/start')
@@ -52,7 +62,41 @@
             };
         }
 
+        function fetchBackups() {
+            fetch('/backups')
+                .then(response => response.text())
+                .then(data => {
+                    const backupList = document.getElementById('backupList');
+                    backupList.innerHTML = ''; // Clear existing items
+                    if (data.trim() === "No valid backup files found.") {
+                        backupList.innerHTML = data;
+                    } else {
+                        const backups = data.split('\n');
+                        backups.forEach(backup => {
+                            if (backup.trim()) {
+                                const listItem = document.createElement('li');
+                                listItem.classList.add('backup-item');
+                                listItem.innerHTML = backup + ' <button onclick="restoreBackup(' + extractIndex(backup) + ')">Restore</button>';
+                                backupList.appendChild(listItem);
+                            }
+                        });
+                    }
+                });
+        }
+
+        function extractIndex(backupText) {
+            const match = backupText.match(/Index: (\d+)/);
+            return match ? match[1] : null;
+        }
+
+        function restoreBackup(index) {
+            fetch(`/restore?index=${index}`)
+                .then(response => response.text())
+                .then(data => document.getElementById('status').innerText = data);
+        }
+
         fetchOutput();
+        fetchBackups();
     </script>
 </body>
 </html>

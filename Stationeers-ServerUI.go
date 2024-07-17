@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,6 +26,8 @@ func main() {
 	http.HandleFunc("/start", startServer)
 	http.HandleFunc("/stop", stopServer)
 	http.HandleFunc("/output", getOutput)
+	http.HandleFunc("/backups", listBackups)
+	http.HandleFunc("/restore", restoreBackup)
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -111,7 +116,6 @@ func getPIDByName(name string) (int, error) {
 		return 0, err
 	}
 
-	// Ensure output is trimmed and not empty
 	lines := strings.Split(strings.TrimSpace(string(output)), ",")
 	if len(lines) > 0 {
 		pid, err := strconv.Atoi(lines[0])
@@ -122,6 +126,95 @@ func getPIDByName(name string) (int, error) {
 	}
 
 	return 0, fmt.Errorf("process %s not found", name)
+}
+
+func listBackups(w http.ResponseWriter, r *http.Request) {
+	basePath := "./saves/MarsProd/backup"
+	files, err := os.ReadDir(basePath)
+	if err != nil {
+		http.Error(w, "Unable to read backups directory", http.StatusInternalServerError)
+		return
+	}
+
+	var backups []string
+	backupIndices := make(map[int]bool)
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		fileName := file.Name()
+		backupIndex := parseBackupIndex(fileName)
+		if backupIndex != -1 {
+			if !backupIndices[backupIndex] {
+				backupIndices[backupIndex] = true
+			}
+		}
+	}
+
+	for index := range backupIndices {
+		backups = append(backups, fmt.Sprintf("Index: %d", index))
+	}
+
+	if len(backups) == 0 {
+		fmt.Fprint(w, "No valid backup files found.")
+		return
+	}
+
+	response := strings.Join(backups, "\n")
+	w.Header().Set("Content-Type", "text/plain")
+	fmt.Fprint(w, response)
+}
+func parseBackupIndex(fileName string) int {
+	// Example file names: world_meta(50).xml
+	re := regexp.MustCompile(`\((\d+)\)`)
+	matches := re.FindStringSubmatch(fileName)
+	if len(matches) > 1 {
+		index, err := strconv.Atoi(matches[1])
+		if err == nil {
+			return index
+		}
+	}
+	return -1
+}
+
+func restoreBackup(w http.ResponseWriter, r *http.Request) {
+	indexStr := r.URL.Query().Get("index")
+	if indexStr == "" {
+		http.Error(w, "Index parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	index, err := strconv.Atoi(indexStr)
+	if err != nil {
+		http.Error(w, "Invalid index parameter", http.StatusBadRequest)
+		return
+	}
+
+	backupDir := "./saves/MarsProd/backup"
+	saveDir := "./saves/MarsProd"
+	files := []struct {
+		backupName string
+		destName   string
+	}{
+		{fmt.Sprintf("world_meta(%d).xml", index), "world_meta.xml"},
+		{fmt.Sprintf("world(%d).xml", index), "world.xml"},
+		{fmt.Sprintf("world(%d).bin", index), "world.bin"},
+	}
+
+	for _, file := range files {
+		backupFile := filepath.Join(backupDir, file.backupName)
+		destFile := filepath.Join(saveDir, file.destName)
+
+		err := os.Rename(backupFile, destFile)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error restoring file %s: %v", file.backupName, err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	fmt.Fprintf(w, "Backup %d restored successfully.", index)
 }
 
 func getOutput(w http.ResponseWriter, r *http.Request) {
