@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Server Control</title>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Game Server Control</h1>
+    <button onclick="startServer()">Start Server</button>
+    <button onclick="stopServer()">Stop Server</button>
+    <p id="status"></p>
+    <script>
+        function startServer() {
+            fetch('/start')
+                .then(response => response.text())
+                .then(data => document.getElementById('status').innerText = data);
+        }
+
+        function stopServer() {
+            fetch('/stop')
+                .then(response => response.text())
+                .then(data => document.getElementById('status').innerText = data);
+        }
+    </script>
+</body>
+</html>
