@@ -237,7 +237,8 @@ func getPIDByName(name string) (int, error) {
 }
 
 func listBackups(w http.ResponseWriter, r *http.Request) {
-	basePath := "./saves/MarsProd/backup"
+	config, err := LoadConfig()
+	basePath := "./saves/" + config.SaveFileName + "/backup"
 	files, err := os.ReadDir(basePath)
 	if err != nil {
 		http.Error(w, "Unable to read backups directory", http.StatusInternalServerError)
@@ -348,8 +349,9 @@ func restoreBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backupDir := "./saves/MarsProd/backup"
-	saveDir := "./saves/MarsProd"
+	config, err := LoadConfig()
+	backupDir := "./saves/" + config.SaveFileName + "/backup"
+	saveDir := "./saves/" + config.SaveFileName
 	files := []struct {
 		backupName string
 		destName   string
