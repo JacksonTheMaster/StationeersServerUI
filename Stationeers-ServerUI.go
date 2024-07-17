@@ -56,7 +56,7 @@ func LoadConfig() (*Config, error) {
 
 func main() {
 	outputChannel = make(chan string, 100)
-
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./UIMod"))))
 	http.HandleFunc("/", serveUI)
 	http.HandleFunc("/start", startServer)
 	http.HandleFunc("/stop", stopServer)

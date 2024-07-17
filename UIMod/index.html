@@ -4,99 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Server Control</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            font-size: 16px;
-        }
-        #console {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 300px;
-            overflow-y: scroll;
-            background-color: #f9f9f9;
-        }
-        #backups {
-            margin-top: 20px;
-        }
-        .backup-item {
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>Game Server Control</h1>
-    <button onclick="startServer()">Start Server</button>
-    <button onclick="stopServer()">Stop Server</button>
-    <p id="status"></p>
-    <div id="console"></div>
-    <div id="backups">
-        <h2>Backups</h2>
-        <ul id="backupList"></ul>
-    </div>
-    <script>
-        function startServer() {
-            fetch('/start')
-                .then(response => response.text())
-                .then(data => document.getElementById('status').innerText = data);
-        }
-
-        function stopServer() {
-            fetch('/stop')
-                .then(response => response.text())
-                .then(data => document.getElementById('status').innerText = data);
-        }
-
-        function fetchOutput() {
-            const eventSource = new EventSource('/output');
-            eventSource.onmessage = function(event) {
-                const consoleElement = document.getElementById('console');
-                const message = document.createElement('div');
-                message.textContent = event.data;
-                consoleElement.appendChild(message);
-                consoleElement.scrollTop = consoleElement.scrollHeight;
-            };
-        }
-
-        function fetchBackups() {
-            fetch('/backups')
-                .then(response => response.text())
-                .then(data => {
-                    const backupList = document.getElementById('backupList');
-                    backupList.innerHTML = ''; // Clear existing items
-                    if (data.trim() === "No valid backup files found.") {
-                        backupList.innerHTML = data;
-                    } else {
-                        const backups = data.split('\n');
-                        backups.forEach(backup => {
-                            if (backup.trim()) {
-                                const listItem = document.createElement('li');
-                                listItem.classList.add('backup-item');
-                                listItem.innerHTML = backup + ' <button onclick="restoreBackup(' + extractIndex(backup) + ')">Restore</button>';
-                                backupList.appendChild(listItem);
-                            }
-                        });
-                    }
-                });
-        }
-
-        function extractIndex(backupText) {
-            const match = backupText.match(/Index: (\d+)/);
-            return match ? match[1] : null;
-        }
-
-        function restoreBackup(index) {
-            fetch(`/restore?index=${index}`)
-                .then(response => response.text())
-                .then(data => document.getElementById('status').innerText = data);
-        }
-
-        fetchOutput();
-        fetchBackups();
-    </script>
+    <header>
+        <img src="/static/stationeers.png" alt="Stationeers Banner" id="banner">
+    </header>
+    <main>
+        <h1>Game Server Control</h1>
+        <div id="controls">
+            <button onclick="startServer()">Start Server</button>
+            <button onclick="stopServer()">Stop Server</button>
+        </div>
+        <p id="status"></p>
+        <div id="console"></div>
+        <div id="backups">
+            <h2>Backups</h2>
+            <ul id="backupList"></ul>
+        </div>
+    </main>
+    <script src="/static/script.js"></script>
 </body>
 </html>
