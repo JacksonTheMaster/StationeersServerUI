@@ -123,20 +123,36 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render a simple HTML form to edit configuration
-	fmt.Fprintf(w, `<html>
-		<body>
-			<h1>Edit Configuration</h1>
-			<form action="/saveconfig" method="post">
-				<label for="exePath">Server Executable Path:</label><br>
-				<input type="text" id="exePath" name="exePath" value="%s"><br>
-				<label for="settings">Server Settings:</label><br>
-				<input type="text" id="settings" name="settings" value="%s"><br>
-				<label for="saveFileName">Save File Name:</label><br>
-				<input type="text" id="saveFileName" name="saveFileName" value="%s"><br><br>
-				<input type="submit" value="Save">
-			</form>
-		</body>
-	</html>`, config.Server.ExePath, config.Server.Settings, config.SaveFileName)
+	fmt.Fprintf(w, `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Edit Configuration</title>
+        <link rel="stylesheet" href="/static/style.css">
+    </head>
+    <body>
+        <header>
+            <img src="/static/stationeers.png" alt="Stationeers Banner" id="banner">
+        </header>
+        <main>
+            <h1>Edit Configuration</h1>
+            <form action="/saveconfig" method="post">
+                <label for="exePath">Server Executable Path:</label><br>
+                <input type="text" id="exePath" name="exePath" value="%s"><br>
+                <label for="settings">Server Settings:</label><br>
+                <input type="text" id="settings" name="settings" value="%s"><br>
+                <label for="saveFileName">Save File Name:</label><br>
+				<p>If you want to create a new save, use a space between the folder name and the preset. Example: JMGSpace Mars</p>
+				<p>Once created, set this value to "JMGSpace" (example) without the preset and click "Save" and restart the server.</p>
+				<p>Now, the backup system should work as expected too.</p>
+                <input type="text" id="saveFileName" name="saveFileName" value="%s"><br><br>
+                <input type="submit" value="Save">
+                <button onclick="window.location.href = '/'">Cancel</button>
+            </form>
+        </main>
+    </body>
+    </html>`, config.Server.ExePath, config.Server.Settings, config.SaveFileName)
 }
 
 // SaveConfig saves the updated configuration to the XML file

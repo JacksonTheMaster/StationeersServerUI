@@ -11,17 +11,22 @@
         <img src="/static/stationeers.png" alt="Stationeers Banner" id="banner">
     </header>
     <main>
-        <h1>Game Server Control</h1>
+        <h1>Stationeers Dedicated Server Control v1.0</h1>
         <div id="controls">
             <button onclick="startServer()">Start Server</button>
             <button onclick="stopServer()">Stop Server</button>
+            <button onclick="window.location.href = '/config'">Edit Configuration</button>
+            <button onclick="window.location.href = '/static/apiinfo.html'">REST-API Information</button>
         </div>
         <p id="status"></p>
         <div id="console"></div>
         <div id="backups">
-            <h2>Backups</h2>
+            <h2>Saves</h2>
+            Saves should be restored before starting the server, otherwise the server won't just load them automatically but will overwrite them at the next autosave.
             <ul id="backupList"></ul>
         </div>
+    </br> </br>
+        Copyright &copy; 2024 JMG J. Langisch. Licensed under <a href="https://github.com/jmgit/stationeers-server-ui/blob/main/LICENSE">MIT License</a>. Feel free to contribute to this project on <a href="https://github.com/jmgit/stationeers-server-ui">GitHub</a>.
     </main>
     <script src="/static/script.js"></script>
 </body>
