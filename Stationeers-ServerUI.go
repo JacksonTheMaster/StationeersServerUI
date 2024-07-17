@@ -9,10 +9,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 )
 
 var cmd *exec.Cmd
@@ -136,7 +138,7 @@ func listBackups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var backups []string
+	backupDetails := make(map[int]time.Time)
 	backupIndices := make(map[int]bool)
 
 	for _, file := range files {
@@ -149,23 +151,71 @@ func listBackups(w http.ResponseWriter, r *http.Request) {
 		if backupIndex != -1 {
 			if !backupIndices[backupIndex] {
 				backupIndices[backupIndex] = true
+				fullPath := filepath.Join(basePath, fileName)
+				info, err := os.Stat(fullPath)
+				if err != nil {
+					http.Error(w, "Error getting file info", http.StatusInternalServerError)
+					return
+				}
+				backupDetails[backupIndex] = info.ModTime()
 			}
 		}
 	}
 
-	for index := range backupIndices {
-		backups = append(backups, fmt.Sprintf("Index: %d", index))
+	var sortedBackups []struct {
+		index   int
+		modTime time.Time
 	}
 
-	if len(backups) == 0 {
+	for index, modTime := range backupDetails {
+		sortedBackups = append(sortedBackups, struct {
+			index   int
+			modTime time.Time
+		}{index, modTime})
+	}
+
+	sort.Slice(sortedBackups, func(i, j int) bool {
+		return sortedBackups[i].index < sortedBackups[j].index
+	})
+
+	var output []string
+	for _, backup := range sortedBackups {
+		creationTime := backup.modTime.Format(time.RFC3339)
+		output = append(output, fmt.Sprintf("Index: %d, Created: %s", backup.index, creationTime))
+	}
+
+	if len(output) == 0 {
 		fmt.Fprint(w, "No valid backup files found.")
 		return
 	}
 
-	response := strings.Join(backups, "\n")
+	response := strings.Join(output, "\n")
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprint(w, response)
 }
+
+// Helper function to sort backup details by index
+func sortedKeys(backupDetails map[int]time.Time) []struct {
+	index   int
+	modTime time.Time
+} {
+	var sorted []struct {
+		index   int
+		modTime time.Time
+	}
+	for index, modTime := range backupDetails {
+		sorted = append(sorted, struct {
+			index   int
+			modTime time.Time
+		}{index, modTime})
+	}
+
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].index < sorted[j].index
+	})
+	return sorted
+}
+
 func parseBackupIndex(fileName string) int {
 	// Example file names: world_meta(50).xml
 	re := regexp.MustCompile(`\((\d+)\)`)
@@ -203,18 +253,35 @@ func restoreBackup(w http.ResponseWriter, r *http.Request) {
 		{fmt.Sprintf("world(%d).bin", index), "world.bin"},
 	}
 
+	// Create a map to store successful restore operations
+	restoredFiles := make(map[string]string)
+
+	// First, try to restore all files
 	for _, file := range files {
 		backupFile := filepath.Join(backupDir, file.backupName)
 		destFile := filepath.Join(saveDir, file.destName)
 
 		err := os.Rename(backupFile, destFile)
 		if err != nil {
+			// Revert any successful operations if an error occurs
+			revertRestore(restoredFiles, saveDir, backupDir)
 			http.Error(w, fmt.Sprintf("Error restoring file %s: %v", file.backupName, err), http.StatusInternalServerError)
 			return
 		}
+		restoredFiles[destFile] = backupFile
 	}
 
 	fmt.Fprintf(w, "Backup %d restored successfully.", index)
+}
+
+// Helper function to revert any successfully restored files
+func revertRestore(restoredFiles map[string]string, saveDir, backupDir string) {
+	for destFile, backupFile := range restoredFiles {
+		err := os.Rename(destFile, backupFile)
+		if err != nil {
+			fmt.Printf("Error reverting file %s: %v\n", destFile, err)
+		}
+	}
 }
 
 func getOutput(w http.ResponseWriter, r *http.Request) {
