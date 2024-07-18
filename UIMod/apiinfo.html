@@ -12,7 +12,7 @@
     </header>
     <main>
         <h1>REST API Information</h1>
-        <p>REST-API Available!</p>
+        <p>This server is based on Go, so it's basically a REST-API with some html files on top. All UI Actions are API calles, so you can fully use the API to control the server.</p>
         <button onclick="window.location.href = '/'">Back</button>
         <ul>
             <li><a href="/start">/start GET</a></li>
@@ -21,13 +21,10 @@
             <li><a href="/backups">/backups GET</a></li>
             <li><a href="/restore">/restore GET with index parameter: /restore?index=123</a></li>
             <li><a href="/saveconfig">/saveconfig POST Form Data, see below</a></li>
+            <li><a href="/config">/config GET</a></li></li>
         </ul>
         <h2>Form Data Explanation</h2>
         <p><strong>SaveFileName:</strong> The name of the save file to load. This is the name of the file without the extension. Example: Mars</p>
-        <p><strong>Server:</strong> The server settings.</br> Example: StartLocalHost true ServerVisible true GamePort 27016 UpdatePort 27015 AutoSave true SaveInterval 300 LocalIpAddress 10.10.50.99 ServerPassword JMG AdminPassword JMG ServerMaxPlayers 4 ServerName SpaceInc</p>
-        <h2>Example REST-API Call</h2>
-        <p>Example REST-API call to start the server with my recommended settings and the save folder name Mars:</p>
-        <pre>exePath=.%2Frocketstation_DedicatedServer.exe&settings=StartLocalHost+true+</br>ServerVisible+true+GamePort+27016+</br>UpdatePort+27015+AutoSave+true+SaveInterval+300+</br>LocalIpAddress+10.10.50.99+ServerPassword+JMG+AdminPassword+</br>JMG+ServerMaxPlayers+4+ServerName+SpaceInc&saveFileName=Mars</pre>
-    </main>
+        <p><strong>Settings:</strong> The server settings. If you need the API, reverse engeneer the form yourself. Actually, take this as a test: If you are not able to do that, you probably should just use the UI instaed of the API ^^</br> </p>
 </body>
 </html>

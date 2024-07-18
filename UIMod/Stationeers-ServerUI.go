@@ -310,6 +310,11 @@ func getPIDByName(name string) (int, error) {
 
 func listBackups(w http.ResponseWriter, r *http.Request) {
 	config, err := LoadConfig()
+	if err != nil {
+		http.Error(w, "Error loading config", http.StatusInternalServerError)
+		return
+	}
+
 	basePath := "../saves/" + config.SaveFileName + "/backup"
 	files, err := os.ReadDir(basePath)
 	if err != nil {
@@ -354,17 +359,17 @@ func listBackups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Slice(sortedBackups, func(i, j int) bool {
-		return sortedBackups[i].index < sortedBackups[j].index
+		return sortedBackups[i].index > sortedBackups[j].index // Sort by descending index
 	})
 
 	var output []string
 	for _, backup := range sortedBackups {
-		creationTime := backup.modTime.Format(time.RFC3339)
-		output = append(output, fmt.Sprintf("Index: %d, Created: %s", backup.index, creationTime))
+		creationTime := backup.modTime.Format("02.01.2006 15:04:05")
+		output = append(output, fmt.Sprintf("BackupIndex: %d, Created: %s", backup.index, creationTime))
 	}
 
 	if len(output) == 0 {
-		fmt.Fprint(w, "No valid backup files found.")
+		fmt.Fprint(w, "No valid backup files found. Is the directory specified?")
 		return
 	}
 

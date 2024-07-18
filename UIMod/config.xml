@@ -1,6 +1,6 @@
 <config>
     <server>
-        <exePath>./rocketstation_DedicatedServer.exe</exePath>
+        <exePath>../rocketstation_DedicatedServer.exe</exePath>
         <settings>StartLocalHost true ServerVisible true GamePort 27016 UpdatePort 27015 AutoSave true SaveInterval 300 LocalIpAddress 10.10.50.99 ServerPassword JMG AdminPassword JMG ServerMaxPlayers 4 ServerName SpaceInc</settings>
     </server>
     <saveFileName>MarsProd</saveFileName>
