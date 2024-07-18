@@ -219,7 +219,12 @@ func saveConfig(w http.ResponseWriter, r *http.Request) {
 				ExePath  string `xml:"exePath"`
 				Settings string `xml:"settings"`
 			}{
-				ExePath:  r.FormValue("exePath"), // This will not be used
+				ExePath: "../rocketstation_DedicatedServer.exe",
+				// hardcoded ../rocketstation_DedicatedServer.exe for now, otherwise this is a security risk because an attacker could run a malicious exe and or command on the server
+				// explaination: if the exepath is set to powershell.exe again, and matching parameters are set, the server would be able to run arbitrary code on the server.
+				// this is very much an RCE vulnerability, and thus should be avoided at all costs.
+				// with the hardcoded exepath, the server will not be able to run arbitrary code, but it will still be able to run the server with the given parameters.
+				//more info: https://github.com/JacksonTheMaster/StationeersServerUI/issues/
 				Settings: settingsStr,
 			},
 			SaveFileName: r.FormValue("saveFileName"),
