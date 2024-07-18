@@ -87,7 +87,9 @@ func startServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd = exec.Command("powershell.exe", "-Command", fmt.Sprintf(`%s -LOAD %s %s`, config.Server.ExePath, config.SaveFileName, config.Server.Settings))
+	cmd = exec.Command("powershell.exe", "-Command", fmt.Sprintf(`%s -LOAD %s -settings %s`, config.Server.ExePath, config.SaveFileName, config.Server.Settings))
+	fmt.Println(fmt.Sprintf(`Load command: %s -LOAD %s -settings %s`, config.Server.ExePath, config.SaveFileName, config.Server.Settings))
+
 	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
 
 	stdout, err := cmd.StdoutPipe()
@@ -114,7 +116,6 @@ func startServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Server started.")
 }
 
-// HandleConfig serves the configuration as a form for editing
 func handleConfig(w http.ResponseWriter, r *http.Request) {
 	config, err := LoadConfig()
 	if err != nil {
@@ -122,55 +123,106 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Render a simple HTML form to edit configuration
-	fmt.Fprintf(w, `<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Edit Configuration</title>
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
-    <body>
-        <header>
-            <img src="/static/stationeers.png" alt="Stationeers Banner" id="banner">
-        </header>
-        <main>
-            <h1>Edit Configuration</h1>
-            <form action="/saveconfig" method="post">
-                <label for="exePath">Server Executable Path:</label><br>
-                <input type="text" id="exePath" name="exePath" value="%s"><br>
-                <label for="settings">Server Settings:</label><br>
-                <input type="text" id="settings" name="settings" value="%s"><br>
-                <label for="saveFileName">Save File Name:</label><br>
-				<p>If you want to create a new save, use a space between the folder name and the preset. Example: JMGSpace Mars</p>
-				<p>Once created, set this value to "JMGSpace" (example) without the preset and click "Save" and restart the server.</p>
-				<p>Now, the backup system should work as expected too.</p>
-                <input type="text" id="saveFileName" name="saveFileName" value="%s"><br><br>
-                <input type="submit" value="Save">
-                <button onclick="window.location.href = '/'">Cancel</button>
-            </form>
-        </main>
-    </body>
-    </html>`, config.Server.ExePath, config.Server.Settings, config.SaveFileName)
+	htmlFile, err := os.ReadFile("./UIMod/config.html")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error reading config.html: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	htmlContent := string(htmlFile)
+
+	// Split the settings string into a map for easier access
+	settingsMap := make(map[string]string)
+	settings := strings.Split(config.Server.Settings, " ")
+	for i := 0; i < len(settings)-1; i += 2 {
+		settingsMap[settings[i]] = settings[i+1]
+	}
+
+	// Replace placeholders with actual values
+	replacements := map[string]string{
+		"{{ExePath}}":          config.Server.ExePath,
+		"{{StartLocalHost}}":   settingsMap["StartLocalHost"],
+		"{{ServerVisible}}":    settingsMap["ServerVisible"],
+		"{{GamePort}}":         settingsMap["GamePort"],
+		"{{UpdatePort}}":       settingsMap["UpdatePort"],
+		"{{AutoSave}}":         settingsMap["AutoSave"],
+		"{{SaveInterval}}":     settingsMap["SaveInterval"],
+		"{{LocalIpAddress}}":   settingsMap["LocalIpAddress"],
+		"{{ServerPassword}}":   settingsMap["ServerPassword"],
+		"{{AdminPassword}}":    settingsMap["AdminPassword"],
+		"{{ServerMaxPlayers}}": settingsMap["ServerMaxPlayers"],
+		"{{ServerName}}":       settingsMap["ServerName"],
+		"{{AdditionalParams}}": getAdditionalParams(settings),
+		"{{SaveFileName}}":     config.SaveFileName,
+	}
+
+	for placeholder, value := range replacements {
+		htmlContent = strings.ReplaceAll(htmlContent, placeholder, value)
+	}
+
+	fmt.Fprint(w, htmlContent)
+}
+
+func getAdditionalParams(settings []string) string {
+	// List of known parameters
+	knownParams := map[string]bool{
+		"StartLocalHost":   true,
+		"ServerVisible":    true,
+		"GamePort":         true,
+		"UpdatePort":       true,
+		"AutoSave":         true,
+		"SaveInterval":     true,
+		"LocalIpAddress":   true,
+		"ServerPassword":   true,
+		"AdminPassword":    true,
+		"ServerMaxPlayers": true,
+		"ServerName":       true,
+	}
+
+	var additionalParams []string
+	for i := 0; i < len(settings)-1; i += 2 {
+		if !knownParams[settings[i]] {
+			additionalParams = append(additionalParams, settings[i]+" "+settings[i+1])
+		}
+	}
+
+	return strings.Join(additionalParams, " ")
 }
 
 // SaveConfig saves the updated configuration to the XML file
 func saveConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
-		exePath := r.FormValue("exePath")
-		settings := r.FormValue("settings")
-		saveFileName := r.FormValue("saveFileName")
+		settings := []string{
+			"StartLocalHost", r.FormValue("StartLocalHost"),
+			"ServerVisible", r.FormValue("ServerVisible"),
+			"GamePort", r.FormValue("GamePort"),
+			"UpdatePort", r.FormValue("UpdatePort"),
+			"AutoSave", r.FormValue("AutoSave"),
+			"SaveInterval", r.FormValue("SaveInterval"),
+			"LocalIpAddress", r.FormValue("LocalIpAddress"),
+			"ServerPassword", r.FormValue("ServerPassword"),
+			"AdminPassword", r.FormValue("AdminPassword"),
+			"ServerMaxPlayers", r.FormValue("ServerMaxPlayers"),
+			"ServerName", r.FormValue("ServerName"),
+		}
+
+		// Append additional parameters if any
+		additionalParams := r.FormValue("AdditionalParams")
+		if additionalParams != "" {
+			settings = append(settings, strings.Split(additionalParams, " ")...)
+		}
+
+		settingsStr := strings.Join(settings, " ")
 
 		config := Config{
 			Server: struct {
 				ExePath  string `xml:"exePath"`
 				Settings string `xml:"settings"`
 			}{
-				ExePath:  exePath,
-				Settings: settings,
+				ExePath:  r.FormValue("exePath"), // This will not be used
+				Settings: settingsStr,
 			},
-			SaveFileName: saveFileName,
+			SaveFileName: r.FormValue("saveFileName"),
 		}
 
 		configPath := "./UIMod/config.xml"
@@ -183,16 +235,15 @@ func saveConfig(w http.ResponseWriter, r *http.Request) {
 
 		encoder := xml.NewEncoder(file)
 		encoder.Indent("", "  ")
-		err = encoder.Encode(config)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error encoding config file: %v", err), http.StatusInternalServerError)
+		if err := encoder.Encode(config); err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding config: %v", err), http.StatusInternalServerError)
 			return
 		}
 
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
+	} else {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	}
-	http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 }
 
 func readPipe(pipe io.ReadCloser) {
