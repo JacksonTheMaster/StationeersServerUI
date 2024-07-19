@@ -24,6 +24,7 @@ DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AU
 ## Requirements
 - Windows OS
 - Downloaded and installed the Stationeers Dedicated Server.
+- Administrative Privileges (Hostesly i havnt tested it without running as admin, but from my experience it..should'nt?
 
 ## Quick Installation Instrcutions for Administrators & Server Operators
 
