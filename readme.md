@@ -9,6 +9,8 @@ I created this project to make it easier for me to manage my Stationeers server 
 I found that the Stationeers server was not very user-friendly, and I wanted to create a tool that would make it easier to manage the server.
 Also I wanted my friends to be able to start, stop and manage the Server without having to ask me to restore the lastest backup because some base exploded. So here we are.
 
+DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AUTHENTICATION MECHANISM; THIS SHOULD NOT UNDER ANY CIRCUMSTANCES BE PORT FORWARDED STRAIGHT OUT!
+
 ## Features
 | UI Overview | Configuration | Backup Management |
 |:-----------:|:-------------:|:-----------------:|
