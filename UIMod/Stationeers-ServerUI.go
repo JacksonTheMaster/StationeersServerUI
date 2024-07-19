@@ -88,7 +88,7 @@ func startServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmd = exec.Command("powershell.exe", "-Command", fmt.Sprintf(`%s -LOAD %s -settings %s`, config.Server.ExePath, config.SaveFileName, config.Server.Settings))
-	fmt.Println(fmt.Sprintf(`Load command: %s -LOAD %s -settings %s`, config.Server.ExePath, config.SaveFileName, config.Server.Settings))
+	fmt.Printf(`Load command: %s -LOAD %s -settings %s`, config.Server.ExePath, config.SaveFileName, config.Server.Settings)
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
 
