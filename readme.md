@@ -1,4 +1,4 @@
-# Stationeers Dedicated Server Control
+# Stationeers Dedicated Server Control v1.1
 
 ![Go](https://img.shields.io/badge/Go-1.22.1-blue)
 ![License](https://img.shields.io/github/license/jmgit/stationeers-server-ui)
