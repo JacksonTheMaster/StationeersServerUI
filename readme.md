@@ -4,14 +4,12 @@
 ![License](https://img.shields.io/github/license/jmgit/stationeers-server-ui)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 
-DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AUTHENTICATION MECHANISM; THIS SHOULD NOT UNDER ANY CIRCUMSTANCES BE PORT FORWARDED STRAIGHT OUT!
-
 Stationeers Dedicated Server Control is a web-based tool for managing a Stationeers dedicated server. It offers an intuitive UI and a robust REST API for server operations, configuration management, and backup handling.
 I created this project to make it easier for me to manage my Stationeers server more efficiently, especially to restore backups.
 I found that the Stationeers server was not very user-friendly, and I wanted to create a tool that would make it easier to manage the server.
 Also I wanted my friends to be able to start, stop and manage the Server without having to ask me to restore the lastest backup because some base exploded. So here we are.
 
-
+DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AUTHENTICATION MECHANISM; THIS SHOULD NOT UNDER ANY CIRCUMSTANCES BE PORT FORWARDED STRAIGHT OUT!
 
 ## Features
 | UI Overview | Configuration | Backup Management |
