@@ -1,7 +1,7 @@
 # Stationeers Dedicated Server Control v1.1
 
 ![Go](https://img.shields.io/badge/Go-1.22.1-blue)
-![License](https://img.shields.io/github/license/jmgit/stationeers-server-ui)
+![License](https://img.shields.io/github/license/jacksonthemaster/StationeersServerUI)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 
 Stationeers Dedicated Server Control is a web-based tool for managing a Stationeers dedicated server. It offers an intuitive UI and a robust REST API for server operations, configuration management, and backup handling.
@@ -36,7 +36,7 @@ DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AU
 
 ## Detailed Installation Instrcutions for "Normal" Windows Users
 
-1. Go to the link: https://github.com/jmgit/stationeers-server-ui/releases.
+1. Go to the link: https://github.com/jacksonthemaster/StationeersServerUI/releases.
 2. Find the latest release and click to download the ZIP file.
 3. Once downloaded, locate the ZIP file, right-click on it, and select "Extract All...".
 4. Choose a folder where you want to save the extracted files and click "Extract".
