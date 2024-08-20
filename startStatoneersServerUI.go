@@ -14,11 +14,13 @@ import (
 )
 
 var (
-	discordToken     = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw" // Replace with your bot's token
-	controlChannelID = "1275055797616771123"                                                      // Replace with your Discord control channel ID
-	logChannelID     = "1275067875647819830"                                                      // Replace with your Discord control channel ID
-	discordSession   *discordgo.Session                                                           // Persistent Discord session
-	lastLogMessage   string                                                                       // Last log message sent to Discord
+	discordToken      = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw" // Replace with your bot's token
+	controlChannelID  = "1275055797616771123"                                                      // Replace with your Discord control channel ID
+	logChannelID      = "1275067875647819830"                                                      // Replace with your Discord control channel ID
+	discordSession    *discordgo.Session                                                           // Persistent Discord session
+	logMessageBuffer  string                                                                       // Last log message sent to Discord
+	maxBufferSize     = 1000
+	bufferFlushTicker *time.Ticker
 )
 
 func main() {
@@ -65,6 +67,14 @@ func startDiscordBot() {
 	}
 
 	fmt.Println("Bot is now running.")
+	// Start the buffer flush ticker to send the remaining buffer every 5 seconds
+	bufferFlushTicker = time.NewTicker(5 * time.Second)
+	go func() {
+		for range bufferFlushTicker.C {
+			flushLogBufferToDiscord()
+		}
+	}()
+
 	select {} // Keep the program running
 }
 
@@ -74,27 +84,63 @@ func startLogStream() {
 	client.Headers["Connection"] = "keep-alive"
 	client.Headers["Cache-Control"] = "no-cache"
 
-	client.SubscribeRaw(func(msg *sse.Event) {
-		logMessage := string(msg.Data)
+	// Adding debugging to track connection attempts
+	fmt.Println("Attempting to connect to SSE stream...")
 
-		// Only send the message if it's different from the last one
-		if logMessage != lastLogMessage {
-			sendLogToDiscord(logMessage)
-			lastLogMessage = logMessage
+	// Subscribe to the SSE endpoint with a callback to handle messages
+	err := client.SubscribeRaw(func(msg *sse.Event) {
+		// Debugging output for raw event
+		fmt.Printf("Raw event received: Event: %s, ID: %s, Data: %s\n", msg.Event, msg.ID, msg.Data)
+
+		if len(msg.Data) > 0 {
+			logMessage := string(msg.Data)
+			fmt.Println("Received log message:", logMessage)
+
+			// Add the log message to the buffer
+			addToLogBuffer(logMessage)
+		} else {
+			fmt.Println("Received empty message or heartbeat")
 		}
 	})
+
+	// Check if the subscription encountered an error
+	if err != nil {
+		fmt.Printf("Error subscribing to SSE stream: %v\n", err)
+	} else {
+		fmt.Println("Successfully connected to SSE stream.")
+	}
+}
+
+func addToLogBuffer(logMessage string) {
+	logMessageBuffer += logMessage + "\n" // Add the log message to the buffer with a newline
+
+	// If the buffer exceeds the max size, send it to Discord
+	if len(logMessageBuffer) >= maxBufferSize {
+		flushLogBufferToDiscord()
+	}
+}
+
+func flushLogBufferToDiscord() {
+	if len(logMessageBuffer) == 0 {
+		return // No messages to send
+	}
+
+	if discordSession == nil {
+		fmt.Println("Discord session is not initialized")
+		return
+	}
+
+	_, err := discordSession.ChannelMessageSend(logChannelID, logMessageBuffer)
+	if err != nil {
+		fmt.Println("Error sending log to Discord:", err)
+	} else {
+		fmt.Println("Flushed log buffer to Discord.")
+		logMessageBuffer = "" // Clear the buffer after sending
+	}
 }
 
 func sendLogToDiscord(logMessage string) {
-	//if discordSession == nil {
-	//	fmt.Println("Discord session is not initialized")
-	//	return
-	//}
-	//
-	//_, err := discordSession.ChannelMessageSend(logChannelID, logMessage)
-	//if err != nil {
-	//	fmt.Println("Error sending log to Discord:", err)
-	//}
+	addToLogBuffer(logMessage) // Use the buffer for batching
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
