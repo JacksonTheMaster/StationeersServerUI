@@ -1,0 +1,261 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/r3labs/sse"
+)
+
+var (
+	discordToken     = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw" // Replace with your bot's token
+	controlChannelID = "1275055797616771123"                                                      // Replace with your Discord control channel ID
+	logChannelID     = "1275067875647819830"                                                      // Replace with your Discord control channel ID
+	discordSession   *discordgo.Session                                                           // Persistent Discord session
+	lastLogMessage   string                                                                       // Last log message sent to Discord
+)
+
+func main() {
+	go startDiscordBot()
+	go startLogStream()
+
+	processName := "Stationeers-ServerUI.exe"
+	workingDir := "./UIMod/"
+	exePath := "./" + processName
+
+	for {
+		if !isProcessRunning(processName) {
+			fmt.Printf("Process %s not running. Starting it...\n", processName)
+
+			// Start the process
+			if err := startProcess(exePath, workingDir); err != nil {
+				fmt.Printf("Failed to start process: %v\n", err)
+			} else {
+				fmt.Println("UI and API started successfully at http://localhost:8080.")
+			}
+		} else {
+			fmt.Printf("Process %s is running.\n", processName)
+		}
+
+		// Wait before checking again
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func startDiscordBot() {
+	var err error
+	discordSession, err = discordgo.New("Bot " + discordToken)
+	if err != nil {
+		fmt.Println("Error creating Discord session:", err)
+		return
+	}
+
+	discordSession.AddHandler(messageCreate)
+
+	err = discordSession.Open()
+	if err != nil {
+		fmt.Println("Error opening connection:", err)
+		return
+	}
+
+	fmt.Println("Bot is now running.")
+	select {} // Keep the program running
+}
+
+func startLogStream() {
+	client := sse.NewClient("http://localhost:8080/output")
+	client.Headers["Content-Type"] = "text/event-stream"
+	client.Headers["Connection"] = "keep-alive"
+	client.Headers["Cache-Control"] = "no-cache"
+
+	client.SubscribeRaw(func(msg *sse.Event) {
+		logMessage := string(msg.Data)
+
+		// Only send the message if it's different from the last one
+		if logMessage != lastLogMessage {
+			sendLogToDiscord(logMessage)
+			lastLogMessage = logMessage
+		}
+	})
+}
+
+func sendLogToDiscord(logMessage string) {
+	//if discordSession == nil {
+	//	fmt.Println("Discord session is not initialized")
+	//	return
+	//}
+	//
+	//_, err := discordSession.ChannelMessageSend(logChannelID, logMessage)
+	//if err != nil {
+	//	fmt.Println("Error sending log to Discord:", err)
+	//}
+}
+
+func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID || m.ChannelID != controlChannelID {
+		return
+	}
+
+	content := strings.TrimSpace(m.Content)
+
+	switch {
+	case strings.HasPrefix(content, "!start"):
+		sendCommandToAPI("/start")
+		s.ChannelMessageSend(m.ChannelID, "Server is starting...")
+
+	case strings.HasPrefix(content, "!stop"):
+		sendCommandToAPI("/stop")
+		s.ChannelMessageSend(m.ChannelID, "Server is stopping...")
+
+	case strings.HasPrefix(content, "!restore"):
+		handleRestoreCommand(s, m, content)
+
+	case strings.HasPrefix(content, "!list"):
+		handleListCommand(s, m.ChannelID, content)
+
+	default:
+		// Optionally handle unrecognized commands or ignore them
+	}
+}
+
+func handleListCommand(s *discordgo.Session, channelID string, content string) {
+	fmt.Println("!list command received, fetching backup list...")
+
+	// Extract the "top" number or "all" option from the command
+	parts := strings.Split(content, ":")
+	top := 5 // Default to 5
+	var err error
+	if len(parts) == 2 {
+		if parts[1] == "all" {
+			top = -1 // No limit
+		} else {
+			top, err = strconv.Atoi(parts[1])
+			if err != nil || top < 1 {
+				s.ChannelMessageSend(channelID, "Invalid number provided. Use `!list:<number>` or `!list:all`.")
+				return
+			}
+		}
+	}
+
+	// Step 1: Fetch the backup list from the server
+	resp, err := http.Get("http://localhost:8080/backups")
+	if err != nil {
+		fmt.Println("Failed to fetch backup list:", err)
+		s.ChannelMessageSend(channelID, "Failed to fetch backup list.")
+		return
+	}
+	defer resp.Body.Close()
+
+	// Step 2: Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Failed to read backup list response:", err)
+		s.ChannelMessageSend(channelID, "Failed to read backup list.")
+		return
+	}
+
+	// Step 3: Output the raw backup list data for debugging
+	fmt.Println("Raw backup list data:", string(body))
+
+	// Step 4: Parse the backup list data into a formatted string
+	backupList := parseBackupList(string(body))
+	fmt.Println("Formatted backup list:\n", backupList)
+
+	// Step 5: Split the backup list into individual lines
+	lines := strings.Split(backupList, "\n")
+
+	// Step 6: Send each line as a separate message, respecting the "top" limit
+	count := 0
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue // Skip empty lines
+		}
+		if top > 0 && count >= top {
+			break // Stop if we've reached the "top" limit
+		}
+		fmt.Println("Sending line to Discord:", line)
+		message, err := s.ChannelMessageSend(channelID, line)
+		if err != nil {
+			fmt.Println("Error sending line to Discord:", err)
+		} else {
+			fmt.Println("Successfully sent line to Discord. Message ID:", message.ID)
+		}
+		count++
+
+		// Optional: Add a small delay to avoid hitting rate limits
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
+func parseBackupList(rawData string) string {
+	lines := strings.Split(rawData, "\n")
+	var formattedLines []string
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		parts := strings.Split(line, ", ")
+		if len(parts) == 2 {
+			formattedLines = append(formattedLines, fmt.Sprintf("**%s** - %s", parts[0], parts[1]))
+		}
+	}
+	return strings.Join(formattedLines, "\n")
+}
+
+func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, content string) {
+	parts := strings.Split(content, ":")
+	if len(parts) != 2 {
+		s.ChannelMessageSend(m.ChannelID, "Invalid restore command. Use `!restore:<index>`.")
+		return
+	}
+
+	indexStr := parts[1]
+	index, err := strconv.Atoi(indexStr)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Invalid index provided for restore.")
+		return
+	}
+
+	url := fmt.Sprintf("http://localhost:8080/restore?index=%d", index)
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Failed to restore backup at index %d.", index))
+		return
+	}
+
+	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Backup %d restored successfully.", index))
+}
+
+func sendCommandToAPI(endpoint string) {
+	url := "http://localhost:8080" + endpoint
+	if _, err := http.Get(url); err != nil {
+		fmt.Printf("Failed to send %s command: %v\n", endpoint, err)
+	}
+}
+
+func isProcessRunning(processName string) bool {
+	cmd := exec.Command("tasklist", "/fi", fmt.Sprintf(`imagename eq %s`, processName))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("Error checking process: %v\n", err)
+		return false
+	}
+	return strings.Contains(string(out), processName)
+}
+
+func startProcess(exePath, workingDir string) error {
+	cmd := exec.Command(exePath)
+	cmd.Dir = workingDir
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("error starting Server UI: %v", err)
+	}
+	fmt.Println("Ensure Windows Firewall allows incoming connections on game port and update port (27015 and 27016 by default).")
+	return nil
+}
