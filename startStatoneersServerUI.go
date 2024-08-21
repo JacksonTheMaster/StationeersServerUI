@@ -228,8 +228,32 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case strings.HasPrefix(content, "!update"):
 		handleUpdateCommand(s, m.ChannelID)
 
+	case strings.HasPrefix(content, "!help"):
+		handleHelpCommand(s, m.ChannelID)
+
 	default:
 		// Optionally handle unrecognized commands or ignore them
+	}
+}
+
+func handleHelpCommand(s *discordgo.Session, channelID string) {
+	helpMessage := `
+**Available Commands:**
+- ` + "`!start`" + `: Starts the server.
+- ` + "`!stop`" + `: Stops the server.
+- ` + "`!restore:<index>`" + `: Restores a backup at the specified index. Usage: ` + "`!restore:1`" + `.
+- ` + "`!list:<number/all>`" + `: Lists the most recent backups. Use ` + "`!list:all`" + ` to list all backups or ` + "`!list:<number>`" + ` to specify how many to list.
+- ` + "`!update`" + `: Updates the server files if there is a game update available.
+- ` + "`!help`" + `: Displays this help message.
+
+Please stop the server before using restore or update commands.
+	`
+
+	_, err := s.ChannelMessageSend(channelID, helpMessage)
+	if err != nil {
+		fmt.Println("Error sending help message:", err)
+	} else {
+		fmt.Println("Help message sent to control channel.")
 	}
 }
 
