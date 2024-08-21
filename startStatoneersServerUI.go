@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -42,7 +43,7 @@ func main() {
 				fmt.Println("UI and API started successfully at http://localhost:8080.")
 			}
 		} else {
-			fmt.Printf("Process %s is running.\n", processName)
+			//fmt.Printf("Process %s is running.\n", processName)
 		}
 
 		// Wait before checking again
@@ -90,16 +91,16 @@ func startLogStream() {
 	// Subscribe to the SSE endpoint with a callback to handle messages
 	err := client.SubscribeRaw(func(msg *sse.Event) {
 		// Debugging output for raw event
-		fmt.Printf("Raw event received: Event: %s, ID: %s, Data: %s\n", msg.Event, msg.ID, msg.Data)
+		//fmt.Printf("Raw event received: Event: %s, ID: %s, Data: %s\n", msg.Event, msg.ID, msg.Data)
 
 		if len(msg.Data) > 0 {
 			logMessage := string(msg.Data)
-			fmt.Println("Received log message:", logMessage)
+			//fmt.Println("Received log message:", logMessage)
 
 			// Add the log message to the buffer
 			addToLogBuffer(logMessage)
 		} else {
-			fmt.Println("Received empty message or heartbeat")
+			//fmt.Println("Received empty message or heartbeat")
 		}
 	})
 
@@ -113,10 +114,73 @@ func startLogStream() {
 
 func addToLogBuffer(logMessage string) {
 	logMessageBuffer += logMessage + "\n" // Add the log message to the buffer with a newline
-
+	checkForKeywords(logMessage)
 	// If the buffer exceeds the max size, send it to Discord
 	if len(logMessageBuffer) >= maxBufferSize {
 		flushLogBufferToDiscord()
+	}
+}
+
+func checkForKeywords(logMessage string) {
+	// List of keywords to detect and their corresponding messages
+	keywordActions := map[string]string{
+		"Ready": "Attention! Server is ready to connect!",
+		//"No clients connected.": "No clients connected. Server is going into idle mode!",
+		"World Saved": "World Saved",
+		// Add more keywords and their corresponding messages here
+	}
+
+	// Iterate through the keywordActions map
+	for keyword, actionMessage := range keywordActions {
+		if strings.Contains(logMessage, keyword) {
+			sendMessageToControlChannel(actionMessage)
+		}
+	}
+	// Detect more complex patterns using regex
+	complexPatterns := []struct {
+		pattern *regexp.Regexp
+		handler func(matches []string)
+	}{
+		{
+			// Example: "Client Jacksonthemaster (76561198334231312) is ready!"
+			pattern: regexp.MustCompile(`Client\s+(\w+)\s+\((\d+)\)\s+is\s+ready!`),
+			handler: func(matches []string) {
+				username := matches[1]
+				steamID := matches[2]
+				message := fmt.Sprintf("Client %s (Steam ID: %s) is ready!", username, steamID)
+				sendMessageToControlChannel(message)
+			},
+		},
+		{
+			// Example: "Client disconnected: 135108291984612402 | Jacksonthemaster"
+			pattern: regexp.MustCompile(`Client\s+disconnected:\s+\d+\s+\|\s+(\w+)`),
+			handler: func(matches []string) {
+				username := matches[1]
+				message := fmt.Sprintf("Client %s disconnected.", username)
+				sendMessageToControlChannel(message)
+			},
+		},
+		// Add more complex patterns and handlers here
+	}
+
+	for _, cp := range complexPatterns {
+		if matches := cp.pattern.FindStringSubmatch(logMessage); matches != nil {
+			cp.handler(matches)
+		}
+	}
+}
+
+func sendMessageToControlChannel(message string) {
+	if discordSession == nil {
+		fmt.Println("Discord session is not initialized")
+		return
+	}
+
+	_, err := discordSession.ChannelMessageSend(controlChannelID, message)
+	if err != nil {
+		fmt.Println("Error sending message to control channel:", err)
+	} else {
+		fmt.Println("Sent message to control channel:", message)
 	}
 }
 
@@ -137,10 +201,6 @@ func flushLogBufferToDiscord() {
 		fmt.Println("Flushed log buffer to Discord.")
 		logMessageBuffer = "" // Clear the buffer after sending
 	}
-}
-
-func sendLogToDiscord(logMessage string) {
-	addToLogBuffer(logMessage) // Use the buffer for batching
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -164,6 +224,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	case strings.HasPrefix(content, "!list"):
 		handleListCommand(s, m.ChannelID, content)
+
+	case strings.HasPrefix(content, "!update"):
+		handleUpdateCommand(s, m.ChannelID)
 
 	default:
 		// Optionally handle unrecognized commands or ignore them
@@ -207,11 +270,11 @@ func handleListCommand(s *discordgo.Session, channelID string, content string) {
 	}
 
 	// Step 3: Output the raw backup list data for debugging
-	fmt.Println("Raw backup list data:", string(body))
+	//fmt.Println("Raw backup list data:", string(body))
 
 	// Step 4: Parse the backup list data into a formatted string
 	backupList := parseBackupList(string(body))
-	fmt.Println("Formatted backup list:\n", backupList)
+	//fmt.Println("Formatted backup list:\n", backupList)
 
 	// Step 5: Split the backup list into individual lines
 	lines := strings.Split(backupList, "\n")
@@ -236,6 +299,36 @@ func handleListCommand(s *discordgo.Session, channelID string, content string) {
 
 		// Optional: Add a small delay to avoid hitting rate limits
 		time.Sleep(500 * time.Millisecond)
+	}
+}
+
+func handleUpdateCommand(s *discordgo.Session, channelID string) {
+	// Notify that the update process is starting
+	s.ChannelMessageSend(channelID, "Starting the server update process...")
+
+	// PowerShell command to run SteamCMD
+	powerShellScript := `
+		cd C:\SteamCMD
+		.\steamcmd +force_install_dir C:/SteamCMD/Stationeers/ +login anonymous +app_update 600760 -beta public validate +quit
+	`
+
+	// Execute the PowerShell command
+	cmd := exec.Command("powershell", "-Command", powerShellScript)
+	err := cmd.Start()
+	if err != nil {
+		fmt.Printf("Error starting update command: %v\n", err)
+		s.ChannelMessageSend(channelID, "Failed to start the update process.")
+		return
+	}
+
+	// Wait for the process to complete
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Printf("Error during update process: %v\n", err)
+		s.ChannelMessageSend(channelID, "The update process encountered an error.")
+	} else {
+		// Notify that the update process has finished
+		s.ChannelMessageSend(channelID, "Game Update process completed successfully. Server is up to date.")
 	}
 }
 
