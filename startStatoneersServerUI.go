@@ -85,30 +85,27 @@ func startLogStream() {
 	client.Headers["Connection"] = "keep-alive"
 	client.Headers["Cache-Control"] = "no-cache"
 
-	// Adding debugging to track connection attempts
-	fmt.Println("Attempting to connect to SSE stream...")
+	for {
+		// Attempt to connect to the SSE stream
+		fmt.Println("Attempting to connect to SSE stream...")
 
-	// Subscribe to the SSE endpoint with a callback to handle messages
-	err := client.SubscribeRaw(func(msg *sse.Event) {
-		// Debugging output for raw event
-		//fmt.Printf("Raw event received: Event: %s, ID: %s, Data: %s\n", msg.Event, msg.ID, msg.Data)
+		err := client.SubscribeRaw(func(msg *sse.Event) {
+			if len(msg.Data) > 0 {
+				logMessage := string(msg.Data)
+				addToLogBuffer(logMessage)
+			}
+		})
 
-		if len(msg.Data) > 0 {
-			logMessage := string(msg.Data)
-			//fmt.Println("Received log message:", logMessage)
-
-			// Add the log message to the buffer
-			addToLogBuffer(logMessage)
-		} else {
-			//fmt.Println("Received empty message or heartbeat")
+		if err != nil {
+			fmt.Printf("Error subscribing to SSE stream: %v\n", err)
+			fmt.Println("Reconnecting in 5 seconds...")
+			time.Sleep(5 * time.Second)
+			continue // Retry connection
 		}
-	})
 
-	// Check if the subscription encountered an error
-	if err != nil {
-		fmt.Printf("Error subscribing to SSE stream: %v\n", err)
-	} else {
-		fmt.Println("Successfully connected to SSE stream.")
+		// If the connection is successful, block until an error occurs
+		// The error handling and reconnection logic should be inside the SubscribeRaw callback
+		break
 	}
 }
 
@@ -356,21 +353,6 @@ func handleUpdateCommand(s *discordgo.Session, channelID string) {
 	}
 }
 
-func parseBackupList(rawData string) string {
-	lines := strings.Split(rawData, "\n")
-	var formattedLines []string
-	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		parts := strings.Split(line, ", ")
-		if len(parts) == 2 {
-			formattedLines = append(formattedLines, fmt.Sprintf("**%s** - %s", parts[0], parts[1]))
-		}
-	}
-	return strings.Join(formattedLines, "\n")
-}
-
 func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, content string) {
 	parts := strings.Split(content, ":")
 	if len(parts) != 2 {
@@ -393,6 +375,21 @@ func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, cont
 	}
 
 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Backup %d restored successfully.", index))
+}
+
+func parseBackupList(rawData string) string {
+	lines := strings.Split(rawData, "\n")
+	var formattedLines []string
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		parts := strings.Split(line, ", ")
+		if len(parts) == 2 {
+			formattedLines = append(formattedLines, fmt.Sprintf("**%s** - %s", parts[0], parts[1]))
+		}
+	}
+	return strings.Join(formattedLines, "\n")
 }
 
 func sendCommandToAPI(endpoint string) {
