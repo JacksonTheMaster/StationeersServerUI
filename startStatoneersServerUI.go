@@ -17,7 +17,9 @@ import (
 var (
 	discordToken      = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw" // Replace with your bot's token
 	controlChannelID  = "1275055797616771123"                                                      // Replace with your Discord control channel ID
+	statusChannelID   = "1276701394543313038"                                                      // Replace with your Discord control channel ID
 	logChannelID      = "1275067875647819830"                                                      // Replace with your Discord control channel ID
+	saveChannelID     = "1276705219518140416"                                                      // Replace with your Discord control channel ID
 	discordSession    *discordgo.Session                                                           // Persistent Discord session
 	logMessageBuffer  string                                                                       // Last log message sent to Discord
 	maxBufferSize     = 1000
@@ -70,6 +72,7 @@ func startDiscordBot() {
 	fmt.Println("Bot is now running.")
 	// Start the buffer flush ticker to send the remaining buffer every 5 seconds
 	bufferFlushTicker = time.NewTicker(5 * time.Second)
+	sendMessageToStatusChannel("Bot reconnected to Discord. Good Morning, Stationeers!")
 	go func() {
 		for range bufferFlushTicker.C {
 			flushLogBufferToDiscord()
@@ -122,17 +125,16 @@ func checkForKeywords(logMessage string) {
 	// List of keywords to detect and their corresponding messages
 	keywordActions := map[string]string{
 		"Ready": "Attention! Server is ready to connect!",
-		//"No clients connected.": "No clients connected. Server is going into idle mode!",
-		"World Saved": "World Saved",
-		// Add more keywords and their corresponding messages here
+		// "No clients connected.": "No clients connected. Server is going into idle mode!",
 	}
 
 	// Iterate through the keywordActions map
 	for keyword, actionMessage := range keywordActions {
 		if strings.Contains(logMessage, keyword) {
-			sendMessageToControlChannel(actionMessage)
+			sendMessageToStatusChannel(actionMessage)
 		}
 	}
+
 	// Detect more complex patterns using regex
 	complexPatterns := []struct {
 		pattern *regexp.Regexp
@@ -145,7 +147,7 @@ func checkForKeywords(logMessage string) {
 				username := matches[1]
 				steamID := matches[2]
 				message := fmt.Sprintf("Client %s (Steam ID: %s) is ready!", username, steamID)
-				sendMessageToControlChannel(message)
+				sendMessageToStatusChannel(message)
 			},
 		},
 		{
@@ -154,7 +156,17 @@ func checkForKeywords(logMessage string) {
 			handler: func(matches []string) {
 				username := matches[1]
 				message := fmt.Sprintf("Client %s disconnected.", username)
-				sendMessageToControlChannel(message)
+				sendMessageToStatusChannel(message)
+			},
+		},
+		{
+			// Enhanced "World Saved" pattern: "World Saved: C:/SteamCMD/Stationeers/saves/EuropaProd, BackupIndex: 1057"
+			pattern: regexp.MustCompile(`World Saved:\s.*,\sBackupIndex:\s(\d+)`),
+			handler: func(matches []string) {
+				backupIndex := matches[1]
+				currentTime := time.Now().UTC().Format(time.RFC3339)
+				message := fmt.Sprintf("World Saved: BackupIndex: %s UTCTime: %s", backupIndex, currentTime)
+				sendMessageToSavesChannel(message)
 			},
 		},
 		// Add more complex patterns and handlers here
@@ -178,6 +190,34 @@ func sendMessageToControlChannel(message string) {
 		fmt.Println("Error sending message to control channel:", err)
 	} else {
 		fmt.Println("Sent message to control channel:", message)
+	}
+}
+
+func sendMessageToStatusChannel(message string) {
+	if discordSession == nil {
+		fmt.Println("Discord session is not initialized")
+		return
+	}
+
+	_, err := discordSession.ChannelMessageSend(statusChannelID, message)
+	if err != nil {
+		fmt.Println("Error sending message to status channel:", err)
+	} else {
+		fmt.Println("Sent message to status channel:", message)
+	}
+}
+
+func sendMessageToSavesChannel(message string) {
+	if discordSession == nil {
+		fmt.Println("Discord session is not initialized")
+		return
+	}
+
+	_, err := discordSession.ChannelMessageSend(saveChannelID, message)
+	if err != nil {
+		fmt.Println("Error sending message to saves channel:", err)
+	} else {
+		fmt.Println("Sent message to saves channel:", message)
 	}
 }
 
@@ -211,10 +251,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case strings.HasPrefix(content, "!start"):
 		sendCommandToAPI("/start")
 		s.ChannelMessageSend(m.ChannelID, "Server is starting...")
+		sendMessageToStatusChannel("Start command received from @Server Controller, Server is trying to start...")
 
 	case strings.HasPrefix(content, "!stop"):
 		sendCommandToAPI("/stop")
 		s.ChannelMessageSend(m.ChannelID, "Server is stopping...")
+		sendMessageToStatusChannel("Stop command received from @Server Controller, Server is stopping...")
 
 	case strings.HasPrefix(content, "!restore"):
 		handleRestoreCommand(s, m, content)
@@ -228,6 +270,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case strings.HasPrefix(content, "!help"):
 		handleHelpCommand(s, m.ChannelID)
 
+	case strings.HasPrefix(content, "!ban"):
+		//handleBanCommand(s, m.ChannelID, content) // TODO: Implement ban command
+		sendMessageToControlChannel("Ban command not implemented yet. Consider harassing the player instead and make them leave the server this way.")
+
 	default:
 		// Optionally handle unrecognized commands or ignore them
 	}
@@ -240,7 +286,8 @@ func handleHelpCommand(s *discordgo.Session, channelID string) {
 - ` + "`!stop`" + `: Stops the server.
 - ` + "`!restore:<index>`" + `: Restores a backup at the specified index. Usage: ` + "`!restore:1`" + `.
 - ` + "`!list:<number/all>`" + `: Lists the most recent backups. Use ` + "`!list:all`" + ` to list all backups or ` + "`!list:<number>`" + ` to specify how many to list.
-- ` + "`!update`" + `: Updates the server files if there is a game update available.
+- ` + "`!ban:<SteamID>`" + `: Bans a player by their SteamID. Usage: ` + "`!ban:76561198334231312`" + `.
+- ` + "`!update`" + `: Updates the server files if there is a game update available. (Currently Stable Branch only)
 - ` + "`!help`" + `: Displays this help message.
 
 Please stop the server before using restore or update commands.
