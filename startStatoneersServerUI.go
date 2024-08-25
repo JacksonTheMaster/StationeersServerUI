@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -15,13 +16,14 @@ import (
 )
 
 var (
-	discordToken      = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw" // Replace with your bot's token
-	controlChannelID  = "1275055797616771123"                                                      // Replace with your Discord control channel ID
-	statusChannelID   = "1276701394543313038"                                                      // Replace with your Discord control channel ID
-	logChannelID      = "1275067875647819830"                                                      // Replace with your Discord control channel ID
-	saveChannelID     = "1276705219518140416"                                                      // Replace with your Discord control channel ID
-	discordSession    *discordgo.Session                                                           // Persistent Discord session
-	logMessageBuffer  string                                                                       // Last log message sent to Discord
+	discordToken      = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw"
+	controlChannelID  = "1275055797616771123"
+	statusChannelID   = "1276701394543313038"
+	logChannelID      = "1275067875647819830"
+	saveChannelID     = "1276705219518140416"
+	FILEPATH          = "C:/SteamCMD/Stationeers"
+	discordSession    *discordgo.Session
+	logMessageBuffer  string
 	maxBufferSize     = 1000
 	bufferFlushTicker *time.Ticker
 )
@@ -142,7 +144,7 @@ func checkForKeywords(logMessage string) {
 	}{
 		{
 			// Example: "Client Jacksonthemaster (76561198334231312) is ready!"
-			pattern: regexp.MustCompile(`Client\s+(\w+)\s+\((\d+)\)\s+is\s+ready!`),
+			pattern: regexp.MustCompile(`Client\s+(.+)\s+\((\d+)\)\s+is\s+ready!`),
 			handler: func(matches []string) {
 				username := matches[1]
 				steamID := matches[2]
@@ -152,7 +154,7 @@ func checkForKeywords(logMessage string) {
 		},
 		{
 			// Example: "Client disconnected: 135108291984612402 | Jacksonthemaster"
-			pattern: regexp.MustCompile(`Client\s+disconnected:\s+\d+\s+\|\s+(\w+)`),
+			pattern: regexp.MustCompile(`Client\s+disconnected:\s+\d+\s+\|\s+(.+)\s+connectTime:\s+\d+,\d+s,\s+ClientId:\s+(\d+)`),
 			handler: func(matches []string) {
 				username := matches[1]
 				message := fmt.Sprintf("Client %s disconnected.", username)
@@ -235,7 +237,7 @@ func flushLogBufferToDiscord() {
 	if err != nil {
 		fmt.Println("Error sending log to Discord:", err)
 	} else {
-		fmt.Println("Flushed log buffer to Discord.")
+		//fmt.Println("Flushed log buffer to Discord.")
 		logMessageBuffer = "" // Clear the buffer after sending
 	}
 }
@@ -271,9 +273,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		handleHelpCommand(s, m.ChannelID)
 
 	case strings.HasPrefix(content, "!ban"):
-		//handleBanCommand(s, m.ChannelID, content) // TODO: Implement ban command
-		sendMessageToControlChannel("Ban command not implemented yet. Consider harassing the player instead and make them leave the server this way.")
+		handleBanCommand(s, m.ChannelID, content)
 
+	case strings.HasPrefix(content, "!unban"):
+		handleUnbanCommand(s, m.ChannelID, content)
 	default:
 		// Optionally handle unrecognized commands or ignore them
 	}
@@ -287,6 +290,7 @@ func handleHelpCommand(s *discordgo.Session, channelID string) {
 - ` + "`!restore:<index>`" + `: Restores a backup at the specified index. Usage: ` + "`!restore:1`" + `.
 - ` + "`!list:<number/all>`" + `: Lists the most recent backups. Use ` + "`!list:all`" + ` to list all backups or ` + "`!list:<number>`" + ` to specify how many to list.
 - ` + "`!ban:<SteamID>`" + `: Bans a player by their SteamID. Usage: ` + "`!ban:76561198334231312`" + `.
+- ` + "`!unban:<SteamID>`" + `: Unbans a player by their SteamID. Usage: ` + "`!unban:76561198334231312`" + `.
 - ` + "`!update`" + `: Updates the server files if there is a game update available. (Currently Stable Branch only)
 - ` + "`!help`" + `: Displays this help message.
 
@@ -422,6 +426,101 @@ func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, cont
 	}
 
 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Backup %d restored successfully.", index))
+}
+func handleBanCommand(s *discordgo.Session, channelID string, content string) {
+	// Extract the SteamID from the command
+	parts := strings.Split(content, ":")
+	if len(parts) != 2 {
+		s.ChannelMessageSend(channelID, "Invalid ban command. Use `!ban:<SteamID>`.")
+		return
+	}
+	steamID := strings.TrimSpace(parts[1])
+
+	// Read the current blacklist
+	blacklist, err := readBlacklist(FILEPATH)
+	if err != nil {
+		s.ChannelMessageSend(channelID, "Error reading blacklist file.")
+		return
+	}
+
+	// Check if the SteamID is already in the blacklist
+	if strings.Contains(blacklist, steamID) {
+		s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s is already banned.", steamID))
+		return
+	}
+
+	// Add the SteamID to the blacklist
+	blacklist = appendToBlacklist(blacklist, steamID)
+
+	// Write the updated blacklist back to the file
+	err = os.WriteFile(FILEPATH, []byte(blacklist), 0644)
+	if err != nil {
+		s.ChannelMessageSend(channelID, "Error writing to blacklist file.")
+		return
+	}
+
+	s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s has been banned.", steamID))
+}
+
+func handleUnbanCommand(s *discordgo.Session, channelID string, content string) {
+	// Extract the SteamID from the command
+	parts := strings.Split(content, ":")
+	if len(parts) != 2 {
+		s.ChannelMessageSend(channelID, "Invalid unban command. Use `!unban:<SteamID>`.")
+		return
+	}
+	steamID := strings.TrimSpace(parts[1])
+
+	// Read the current blacklist
+	blacklist, err := readBlacklist(FILEPATH)
+	if err != nil {
+		s.ChannelMessageSend(channelID, "Error reading blacklist file.")
+		return
+	}
+
+	// Check if the SteamID is in the blacklist
+	if !strings.Contains(blacklist, steamID) {
+		s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s is not banned.", steamID))
+		return
+	}
+
+	// Remove the SteamID from the blacklist
+	updatedBlacklist := removeFromBlacklist(blacklist, steamID)
+
+	// Write the updated blacklist back to the file
+	err = os.WriteFile(FILEPATH, []byte(updatedBlacklist), 0644)
+	if err != nil {
+		s.ChannelMessageSend(channelID, "Error writing to blacklist file.")
+		return
+	}
+
+	s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s has been unbanned.", steamID))
+}
+
+func readBlacklist(filePath string) (string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func appendToBlacklist(blacklist, steamID string) string {
+	if len(blacklist) > 0 && !strings.HasSuffix(blacklist, ",") {
+		blacklist += ","
+	}
+	return blacklist + steamID
+}
+
+func removeFromBlacklist(blacklist, steamID string) string {
+	entries := strings.Split(blacklist, ",")
+	var updatedEntries []string
+	for _, entry := range entries {
+		if strings.TrimSpace(entry) != steamID {
+			updatedEntries = append(updatedEntries, entry)
+		}
+	}
+	return strings.Join(updatedEntries, ",")
 }
 
 func parseBackupList(rawData string) string {
