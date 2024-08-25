@@ -21,11 +21,13 @@ var (
 	statusChannelID   = "1276701394543313038"
 	logChannelID      = "1275067875647819830"
 	saveChannelID     = "1276705219518140416"
-	FILEPATH          = "C:/SteamCMD/Stationeers"
+	FILEPATH          = "C:/SteamCMD/Stationeers/Blacklist.txt"
 	discordSession    *discordgo.Session
 	logMessageBuffer  string
 	maxBufferSize     = 1000
 	bufferFlushTicker *time.Ticker
+	serverCmd         *exec.Cmd
+	serverStdin       io.WriteCloser
 )
 
 func main() {
@@ -269,6 +271,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case strings.HasPrefix(content, "!update"):
 		handleUpdateCommand(s, m.ChannelID)
 
+	case strings.HasPrefix(content, "!serverrun"):
+		handleServerRunCommand(s, m.ChannelID, content)
+
 	case strings.HasPrefix(content, "!help"):
 		handleHelpCommand(s, m.ChannelID)
 
@@ -427,6 +432,7 @@ func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, cont
 
 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Backup %d restored successfully.", index))
 }
+
 func handleBanCommand(s *discordgo.Session, channelID string, content string) {
 	// Extract the SteamID from the command
 	parts := strings.Split(content, ":")
@@ -555,13 +561,56 @@ func isProcessRunning(processName string) bool {
 	return strings.Contains(string(out), processName)
 }
 
+func handleServerRunCommand(s *discordgo.Session, channelID string, content string) {
+	// Extract the command string from the message
+	parts := strings.Split(content, ":")
+	if len(parts) != 2 {
+		s.ChannelMessageSend(channelID, "Invalid server run command. Use `!serverrun:<command>`.")
+		return
+	}
+	command := strings.TrimSpace(parts[1])
+
+	// Send the extracted command to the server
+	err := sendCommandToServer(command)
+	if err != nil {
+		s.ChannelMessageSend(channelID, fmt.Sprintf("Failed to send command to server: %v", err))
+		return
+	}
+
+	s.ChannelMessageSend(channelID, fmt.Sprintf("Command sent to server: %s", command))
+}
+
+func sendCommandToServer(command string) error {
+	if serverStdin == nil {
+		sendMessageToControlChannel("server stdin is not initialized")
+		return fmt.Errorf("server stdin is not initialized")
+	}
+
+	_, err := serverStdin.Write([]byte(command + "\n"))
+	if err != nil {
+		sendMessageToControlChannel(fmt.Sprintf("failed to send command to server: %v", err))
+		return fmt.Errorf("failed to send command to server: %v", err)
+	}
+
+	return nil
+}
+
 func startProcess(exePath, workingDir string) error {
 	cmd := exec.Command(exePath)
 	cmd.Dir = workingDir
 
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("error creating stdin pipe: %v", err)
+	}
+
+	serverStdin = stdin
+	serverCmd = cmd
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("error starting Server UI: %v", err)
 	}
+
 	fmt.Println("Ensure Windows Firewall allows incoming connections on game port and update port (27015 and 27016 by default).")
 	return nil
 }
