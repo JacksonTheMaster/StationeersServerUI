@@ -32,6 +32,12 @@ var (
 	//logChannelID      = "1275067875647819830"
 	//saveChannelID     = "1276705219518140416"
 	//blackListFilePath = "C:/SteamCMD/Stationeers/Blacklist.txt"
+	discordToken      string
+	controlChannelID  string
+	statusChannelID   string
+	logChannelID      string
+	saveChannelID     string
+	blackListFilePath string
 	discordSession    *discordgo.Session
 	logMessageBuffer  string
 	maxBufferSize     = 1000
