@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,13 +16,22 @@ import (
 	"github.com/r3labs/sse"
 )
 
+type Config struct {
+	DiscordToken      string `json:"discordToken"`
+	ControlChannelID  string `json:"controlChannelID"`
+	StatusChannelID   string `json:"statusChannelID"`
+	LogChannelID      string `json:"logChannelID"`
+	SaveChannelID     string `json:"saveChannelID"`
+	BlackListFilePath string `json:"blackListFilePath"`
+}
+
 var (
-	discordToken      = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw"
-	controlChannelID  = "1275055797616771123"
-	statusChannelID   = "1276701394543313038"
-	logChannelID      = "1275067875647819830"
-	saveChannelID     = "1276705219518140416"
-	blackListFilePath = "C:/SteamCMD/Stationeers/Blacklist.txt"
+	//discordToken      = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw"
+	//controlChannelID  = "1275055797616771123"
+	//statusChannelID   = "1276701394543313038"
+	//logChannelID      = "1275067875647819830"
+	//saveChannelID     = "1276705219518140416"
+	//blackListFilePath = "C:/SteamCMD/Stationeers/Blacklist.txt"
 	discordSession    *discordgo.Session
 	logMessageBuffer  string
 	maxBufferSize     = 1000
@@ -29,12 +39,31 @@ var (
 )
 
 func main() {
-	go startDiscordBot()
-	go startLogStream()
-
 	processName := "Stationeers-ServerUI.exe"
 	workingDir := "./UIMod/"
 	exePath := "./" + processName
+
+	configFilePath := workingDir + "config.json"
+	config, err := loadConfig(configFilePath)
+	if err != nil {
+		fmt.Println("Error loading configuration:", err)
+		//create a file called ERROR IN CONFIG next to the config file
+		os.WriteFile(workingDir+"ERROR-IN-CONFIG", []byte(err.Error()), 0644)
+		os.Exit(1) // Exit the program if there is an error loading the configuration
+	}
+	//remove the error file if it exists
+	if _, err := os.Stat(workingDir + "ERROR-IN-CONFIG"); err == nil {
+		os.Remove(workingDir + "ERROR-IN-CONFIG")
+	}
+	discordToken = config.DiscordToken
+	controlChannelID = config.ControlChannelID
+	statusChannelID = config.StatusChannelID
+	logChannelID = config.LogChannelID
+	saveChannelID = config.SaveChannelID
+	blackListFilePath = config.BlackListFilePath
+
+	go startDiscordBot()
+	go startLogStream()
 
 	for {
 		if !isProcessRunning(processName) {
@@ -53,6 +82,22 @@ func main() {
 		// Wait before checking again
 		time.Sleep(5 * time.Second)
 	}
+}
+
+func loadConfig(filename string) (*Config, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var config Config
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&config)
+	if err != nil {
+		return nil, err
+	}
+	return &config, nil
 }
 
 func startDiscordBot() {
