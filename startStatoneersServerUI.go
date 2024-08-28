@@ -37,7 +37,7 @@ var (
 	controlChannelID          string
 	statusChannelID           string
 	logChannelID              string
-	ConnectionListChannelID   string
+	connectionListChannelID   string
 	saveChannelID             string
 	blackListFilePath         string
 	discordSession            *discordgo.Session
@@ -69,6 +69,7 @@ func main() {
 	controlChannelID = config.ControlChannelID
 	statusChannelID = config.StatusChannelID
 	logChannelID = config.LogChannelID
+	connectionListChannelID = config.ConnectionListChannelID
 	saveChannelID = config.SaveChannelID
 	blackListFilePath = config.BlackListFilePath
 
@@ -207,7 +208,7 @@ func checkForKeywords(logMessage string) {
 				sendMessageToStatusChannel(message)
 
 				connectedPlayers[steamID] = username
-				updateConnectedPlayersMessage(discordSession, ConnectionListChannelID)
+				updateConnectedPlayersMessage(connectionListChannelID)
 			},
 		},
 		{
@@ -220,7 +221,8 @@ func checkForKeywords(logMessage string) {
 				sendMessageToStatusChannel(message)
 
 				delete(connectedPlayers, steamID)
-				updateConnectedPlayersMessage(discordSession, ConnectionListChannelID)
+				updateConnectedPlayersMessage(connectionListChannelID)
+				updateBotStatus(discordSession) // Update bot status
 			},
 		},
 		{
@@ -231,6 +233,7 @@ func checkForKeywords(logMessage string) {
 				currentTime := time.Now().UTC().Format(time.RFC3339)
 				message := fmt.Sprintf("World Saved: BackupIndex: %s UTCTime: %s", backupIndex, currentTime)
 				sendMessageToSavesChannel(message)
+				updateBotStatus(discordSession) // Update bot status
 			},
 		},
 		// Add more complex patterns and handlers here
@@ -271,20 +274,40 @@ func sendMessageToStatusChannel(message string) {
 	}
 }
 
-// this function is intended to be used in the future instead of the individual channel senders above
-//func sendMessageToChannel(channelID, message string) {
-//	if discordSession == nil {
-//		fmt.Println("Discord session is not initialized")
-//		return
-//	}
-//
-//	_, err := discordSession.ChannelMessageSend(channelID, message)
-//	if err != nil {
-//		fmt.Printf("Error sending message to channel %s: %v", channelID, err)
-//	} else {
-//		fmt.Printf("Sent message to channel %s: %s", channelID, message)
-//	}
-//}
+func sendAndEditMessageInConnectedPlayersChannel(channelID, message string) {
+	if discordSession == nil {
+		fmt.Println("Discord session is not initialized")
+		return
+	}
+
+	if connectedPlayersMessageID == "" {
+		// Send a new message if there's no existing message to edit
+		msg, err := discordSession.ChannelMessageSend(channelID, message)
+		if err != nil {
+			fmt.Printf("Error sending message to channel %s: %v\n", channelID, err)
+		} else {
+			connectedPlayersMessageID = msg.ID
+			fmt.Printf("Sent message to channel %s: %s\n", channelID, message)
+		}
+	} else {
+		// Edit the existing message
+		_, err := discordSession.ChannelMessageEdit(channelID, connectedPlayersMessageID, message)
+		if err != nil {
+			fmt.Printf("Error editing message in channel %s: %v\n", channelID, err)
+		} else {
+			fmt.Printf("Updated message in channel %s: %s\n", channelID, message)
+		}
+	}
+}
+
+func updateBotStatus(s *discordgo.Session) {
+	playerCount := len(connectedPlayers)
+	statusMessage := fmt.Sprintf("%d Employees connected", playerCount)
+	err := s.UpdateGameStatus(0, statusMessage)
+	if err != nil {
+		fmt.Println("Error updating bot status:", err)
+	}
+}
 
 func sendMessageToSavesChannel(message string) {
 	if discordSession == nil {
@@ -667,25 +690,9 @@ func formatConnectedPlayers() string {
 	return sb.String()
 }
 
-func updateConnectedPlayersMessage(s *discordgo.Session, channelID string) {
+func updateConnectedPlayersMessage(channelID string) {
 	content := formatConnectedPlayers()
-
-	if connectedPlayersMessageID == "" {
-		// Send a new message if it doesn't exist
-		msg, err := s.ChannelMessageSend(channelID, content)
-		if err != nil {
-			fmt.Println("Error sending connected players message:", err)
-			return
-		}
-		connectedPlayersMessageID = msg.ID
-	} else {
-		// Edit the existing message
-		_, err := s.ChannelMessageEdit(channelID, connectedPlayersMessageID, content)
-		if err != nil {
-			fmt.Println("Error updating connected players message:", err)
-			return
-		}
-	}
+	sendAndEditMessageInConnectedPlayersChannel(channelID, content)
 }
 
 func startProcess(exePath, workingDir string) error {
