@@ -17,12 +17,13 @@ import (
 )
 
 type Config struct {
-	DiscordToken      string `json:"discordToken"`
-	ControlChannelID  string `json:"controlChannelID"`
-	StatusChannelID   string `json:"statusChannelID"`
-	LogChannelID      string `json:"logChannelID"`
-	SaveChannelID     string `json:"saveChannelID"`
-	BlackListFilePath string `json:"blackListFilePath"`
+	DiscordToken            string `json:"discordToken"`
+	ControlChannelID        string `json:"controlChannelID"`
+	StatusChannelID         string `json:"statusChannelID"`
+	ConnectionListChannelID string `json:"connectionListChannelID"`
+	LogChannelID            string `json:"logChannelID"`
+	SaveChannelID           string `json:"saveChannelID"`
+	BlackListFilePath       string `json:"blackListFilePath"`
 }
 
 var (
@@ -32,16 +33,19 @@ var (
 	//logChannelID      = "1275067875647819830"
 	//saveChannelID     = "1276705219518140416"
 	//blackListFilePath = "C:/SteamCMD/Stationeers/Blacklist.txt"
-	discordToken      string
-	controlChannelID  string
-	statusChannelID   string
-	logChannelID      string
-	saveChannelID     string
-	blackListFilePath string
-	discordSession    *discordgo.Session
-	logMessageBuffer  string
-	maxBufferSize     = 1000
-	bufferFlushTicker *time.Ticker
+	discordToken              string
+	controlChannelID          string
+	statusChannelID           string
+	logChannelID              string
+	ConnectionListChannelID   string
+	saveChannelID             string
+	blackListFilePath         string
+	discordSession            *discordgo.Session
+	logMessageBuffer          string
+	maxBufferSize             = 1000
+	bufferFlushTicker         *time.Ticker
+	connectedPlayers          = make(map[string]string) // SteamID -> Username
+	connectedPlayersMessageID string
 )
 
 func main() {
@@ -201,6 +205,9 @@ func checkForKeywords(logMessage string) {
 				steamID := matches[2]
 				message := fmt.Sprintf("Client %s (Steam ID: %s) is ready!", username, steamID)
 				sendMessageToStatusChannel(message)
+
+				connectedPlayers[steamID] = username
+				updateConnectedPlayersMessage(discordSession, ConnectionListChannelID)
 			},
 		},
 		{
@@ -208,8 +215,12 @@ func checkForKeywords(logMessage string) {
 			pattern: regexp.MustCompile(`Client\s+disconnected:\s+\d+\s+\|\s+(.+)\s+connectTime:\s+\d+,\d+s,\s+ClientId:\s+(\d+)`),
 			handler: func(matches []string) {
 				username := matches[1]
+				steamID := matches[2]
 				message := fmt.Sprintf("Client %s disconnected.", username)
 				sendMessageToStatusChannel(message)
+
+				delete(connectedPlayers, steamID)
+				updateConnectedPlayersMessage(discordSession, ConnectionListChannelID)
 			},
 		},
 		{
@@ -635,6 +646,46 @@ func isProcessRunning(processName string) bool {
 func handleServerRunCommand(content string) {
 	//send a unavailable at this time message to the control channel
 	sendMessageToControlChannel("Serverrun command is currently unavailable. Sent commmand: " + content)
+}
+
+func formatConnectedPlayers() string {
+	if len(connectedPlayers) == 0 {
+		return "No players are currently connected."
+	}
+
+	var sb strings.Builder
+	sb.WriteString("**Connected Players:**\n")
+	sb.WriteString("```\n")
+	sb.WriteString("Username              | Steam ID\n")
+	sb.WriteString("----------------------|------------------------\n")
+
+	for steamID, username := range connectedPlayers {
+		sb.WriteString(fmt.Sprintf("%-20s | %s\n", username, steamID))
+	}
+
+	sb.WriteString("```")
+	return sb.String()
+}
+
+func updateConnectedPlayersMessage(s *discordgo.Session, channelID string) {
+	content := formatConnectedPlayers()
+
+	if connectedPlayersMessageID == "" {
+		// Send a new message if it doesn't exist
+		msg, err := s.ChannelMessageSend(channelID, content)
+		if err != nil {
+			fmt.Println("Error sending connected players message:", err)
+			return
+		}
+		connectedPlayersMessageID = msg.ID
+	} else {
+		// Edit the existing message
+		_, err := s.ChannelMessageEdit(channelID, connectedPlayersMessageID, content)
+		if err != nil {
+			fmt.Println("Error updating connected players message:", err)
+			return
+		}
+	}
 }
 
 func startProcess(exePath, workingDir string) error {
