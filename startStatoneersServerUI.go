@@ -21,13 +21,11 @@ var (
 	statusChannelID   = "1276701394543313038"
 	logChannelID      = "1275067875647819830"
 	saveChannelID     = "1276705219518140416"
-	FILEPATH          = "C:/SteamCMD/Stationeers/Blacklist.txt"
+	blackListFilePath = "C:/SteamCMD/Stationeers/Blacklist.txt"
 	discordSession    *discordgo.Session
 	logMessageBuffer  string
 	maxBufferSize     = 1000
 	bufferFlushTicker *time.Ticker
-	serverCmd         *exec.Cmd
-	serverStdin       io.WriteCloser
 )
 
 func main() {
@@ -49,7 +47,7 @@ func main() {
 				fmt.Println("UI and API started successfully at http://localhost:8080.")
 			}
 		} else {
-			//fmt.Printf("Process %s is running.\n", processName)
+			fmt.Printf("Process %s is running.\n", processName)
 		}
 
 		// Wait before checking again
@@ -211,6 +209,21 @@ func sendMessageToStatusChannel(message string) {
 	}
 }
 
+// this function is intended to be used in the future instead of the individual channel senders above
+//func sendMessageToChannel(channelID, message string) {
+//	if discordSession == nil {
+//		fmt.Println("Discord session is not initialized")
+//		return
+//	}
+//
+//	_, err := discordSession.ChannelMessageSend(channelID, message)
+//	if err != nil {
+//		fmt.Printf("Error sending message to channel %s: %v", channelID, err)
+//	} else {
+//		fmt.Printf("Sent message to channel %s: %s", channelID, message)
+//	}
+//}
+
 func sendMessageToSavesChannel(message string) {
 	if discordSession == nil {
 		fmt.Println("Discord session is not initialized")
@@ -272,7 +285,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		handleUpdateCommand(s, m.ChannelID)
 
 	case strings.HasPrefix(content, "!serverrun"):
-		handleServerRunCommand(s, m.ChannelID, content)
+		handleServerRunCommand(content)
 
 	case strings.HasPrefix(content, "!help"):
 		handleHelpCommand(s, m.ChannelID)
@@ -305,6 +318,7 @@ Please stop the server before using restore or update commands.
 	_, err := s.ChannelMessageSend(channelID, helpMessage)
 	if err != nil {
 		fmt.Println("Error sending help message:", err)
+		sendMessageToControlChannel("Error sending help message.")
 	} else {
 		fmt.Println("Help message sent to control channel.")
 	}
@@ -443,7 +457,7 @@ func handleBanCommand(s *discordgo.Session, channelID string, content string) {
 	steamID := strings.TrimSpace(parts[1])
 
 	// Read the current blacklist
-	blacklist, err := readBlacklist(FILEPATH)
+	blacklist, err := readBlacklist(blackListFilePath)
 	if err != nil {
 		s.ChannelMessageSend(channelID, "Error reading blacklist file.")
 		return
@@ -459,7 +473,7 @@ func handleBanCommand(s *discordgo.Session, channelID string, content string) {
 	blacklist = appendToBlacklist(blacklist, steamID)
 
 	// Write the updated blacklist back to the file
-	err = os.WriteFile(FILEPATH, []byte(blacklist), 0644)
+	err = os.WriteFile(blackListFilePath, []byte(blacklist), 0644)
 	if err != nil {
 		s.ChannelMessageSend(channelID, "Error writing to blacklist file.")
 		return
@@ -478,7 +492,7 @@ func handleUnbanCommand(s *discordgo.Session, channelID string, content string) 
 	steamID := strings.TrimSpace(parts[1])
 
 	// Read the current blacklist
-	blacklist, err := readBlacklist(FILEPATH)
+	blacklist, err := readBlacklist(blackListFilePath)
 	if err != nil {
 		s.ChannelMessageSend(channelID, "Error reading blacklist file.")
 		return
@@ -494,7 +508,7 @@ func handleUnbanCommand(s *discordgo.Session, channelID string, content string) 
 	updatedBlacklist := removeFromBlacklist(blacklist, steamID)
 
 	// Write the updated blacklist back to the file
-	err = os.WriteFile(FILEPATH, []byte(updatedBlacklist), 0644)
+	err = os.WriteFile(blackListFilePath, []byte(updatedBlacklist), 0644)
 	if err != nil {
 		s.ChannelMessageSend(channelID, "Error writing to blacklist file.")
 		return
@@ -503,8 +517,14 @@ func handleUnbanCommand(s *discordgo.Session, channelID string, content string) 
 	s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s has been unbanned.", steamID))
 }
 
-func readBlacklist(filePath string) (string, error) {
-	data, err := os.ReadFile(filePath)
+func readBlacklist(blackListFilePath string) (string, error) {
+	file, err := os.Open(blackListFilePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close() // Ensure the file is closed after reading
+
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return "", err
 	}
@@ -561,51 +581,22 @@ func isProcessRunning(processName string) bool {
 	return strings.Contains(string(out), processName)
 }
 
-func handleServerRunCommand(s *discordgo.Session, channelID string, content string) {
-	// Extract the command string from the message
-	parts := strings.Split(content, ":")
-	if len(parts) != 2 {
-		s.ChannelMessageSend(channelID, "Invalid server run command. Use `!serverrun:<command>`.")
-		return
-	}
-	command := strings.TrimSpace(parts[1])
-
-	// Send the extracted command to the server
-	err := sendCommandToServer(command)
-	if err != nil {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("Failed to send command to server: %v", err))
-		return
-	}
-
-	s.ChannelMessageSend(channelID, fmt.Sprintf("Command sent to server: %s", command))
-}
-
-func sendCommandToServer(command string) error {
-	if serverStdin == nil {
-		sendMessageToControlChannel("server stdin is not initialized")
-		return fmt.Errorf("server stdin is not initialized")
-	}
-
-	_, err := serverStdin.Write([]byte(command + "\n"))
-	if err != nil {
-		sendMessageToControlChannel(fmt.Sprintf("failed to send command to server: %v", err))
-		return fmt.Errorf("failed to send command to server: %v", err)
-	}
-
-	return nil
+func handleServerRunCommand(content string) {
+	//send a unavailable at this time message to the control channel
+	sendMessageToControlChannel("Serverrun command is currently unavailable. Sent commmand: " + content)
 }
 
 func startProcess(exePath, workingDir string) error {
 	cmd := exec.Command(exePath)
 	cmd.Dir = workingDir
 
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return fmt.Errorf("error creating stdin pipe: %v", err)
-	}
+	//stdin, err := cmd.StdinPipe()
+	//if err != nil {
+	//	return fmt.Errorf("error creating stdin pipe: %v", err)
+	//}
 
-	serverStdin = stdin
-	serverCmd = cmd
+	//serverStdin = stdin
+	//serverCmd = cmd
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("error starting Server UI: %v", err)
