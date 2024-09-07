@@ -1,4 +1,4 @@
-# Stationeers Dedicated Server Control v1.1
+# Rework in Progress: Stationeers Dedicated Server Control v1.1
 
 ![Go](https://img.shields.io/badge/Go-1.22.1-blue)
 ![License](https://img.shields.io/github/license/jacksonthemaster/StationeersServerUI)
@@ -11,20 +11,43 @@ Also I wanted my friends to be able to start, stop and manage the Server without
 
 DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AUTHENTICATION MECHANISM; THIS SHOULD NOT UNDER ANY CIRCUMSTANCES BE PORT FORWARDED STRAIGHT OUT!
 
+## Coming Features & Current Bugs
+
+So, in the land of "things I didn't want to happen," I've discovered a lovely little bug in the backup system that's causing—wait for it—*backups to disappear*. Yes, exactly what you want in a backup system, right? Now, whether this catastrophe is entirely my fault or a byproduct of the game being... itself... remains to be seen. But, while I channel my inner ostrich (head firmly in the sand), I've slapped together a *temporary* production fix on our server, SpaceInc: backups will be more granular going forward. Yay, progress!
+
+Now, here's the fun part. The software is going to copy any backup to a secure location on your disk, all neatly segregated by date like some sort of highly organized digital filing cabinet. Restoring them? Oh yeah, that'll be more granular too. You'll be able to sort them by date and feel really smug about it.
+
+Oh, and I made that Discord integration: It’s coming along. Expect a control channel for starting, stopping, and restoring the server, along with other channels for logs, saves, and player data, all nicely formatted and ready for your Discord flex. Plus, live updates for connected players because we all need to know how many people are (or aren't) using the server, right?
+
+## When is "The Future"?
+
+You want to know when all of this magic will be available? Well, let’s just say it’ll be ready "soon™." As someone with a house, a wife, and approximately zero free time, this whole development thing gets... tricky. The changes are mostly done in a super-secret private repo, and I reckon I need about 5 to 15 hours to wrap this thing up. But hey, who's counting?
+
+## Linux Support
+
+For all my Linux people out there: yes, it’s coming. But, as of right now, I’m relying on Powershell to execute the game server, so... yeah. That’s pretty much it. Stay tuned for when the Linux fairies finally decide to bless this project.
+I'd say you can expect a Docker release then aswell. Because who wouldn't make a Docker release then.
+
 ## Features
 | UI Overview | Configuration | Backup Management |
 |:-----------:|:-------------:|:-----------------:|
 | ![UI Overview](media/UI-1.png) | ![Configuration](media/UI-2.png) | ![Backup Management](media/UI-3.png) |
-- Start and stop the server.
-- View real-time server output.
-- Manage server configurations.
-- List and restore backups.
-- Fully functional REST API for all operations.
+
+- Start and stop the server (because sometimes, the server just needs a break too).
+- View real-time server output (so you can stare at the logs and pretend you know what's going on).
+- Manage server configurations
+- List and restore backups
+- Fully functional REST API for all operations (because who doesn’t love APIs, right..?).
+
+### Coming *Soon™*:
+- Discord integration with a shiny control channel, log channel, save channel, and player log channel (all the channels you never knew you needed).
+- Granular backups with date-sorted directories, because losing unsaved progress is *so 2023*.
+- Linux support (yes, it’s real, and yes, it’s happening—just not right now, *soon™*)
 
 ## Requirements
 - Windows OS
 - Downloaded and installed the Stationeers Dedicated Server.
-- Administrative Privileges (Hostesly i havnt tested it without running as admin, but from my experience it..should'nt?
+- Administrative Privileges (Hostesly i havnt tested it without running as admin, but  it..should'nt run without..?!
 
 ## Quick Installation Instrcutions for Administrators & Server Operators
 
@@ -34,6 +57,7 @@ DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AU
 4. Access UI at `http://<server-ip>:8080`.
 5. Open firewall ports 27015, 27016, 8080.
 6. Check /config before starting the server.
+
 
 ## Detailed Installation Instrcutions for "Normal" Windows Users
 
