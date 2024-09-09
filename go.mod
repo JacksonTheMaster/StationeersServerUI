@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect

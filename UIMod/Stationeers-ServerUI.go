@@ -16,6 +16,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 var cmd *exec.Cmd
@@ -58,6 +60,7 @@ func LoadConfig() (*Config, error) {
 
 func main() {
 	outputChannel = make(chan string, 100)
+	go watchBackupDir()
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
 	http.HandleFunc("/", serveUI)
 	http.HandleFunc("/start", startServer)
@@ -68,6 +71,68 @@ func main() {
 	http.HandleFunc("/config", handleConfig)   // Serve configuration form
 	http.HandleFunc("/saveconfig", saveConfig) // Save configuration form
 	http.ListenAndServe(":8080", nil)
+}
+
+func watchBackupDir() {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		fmt.Println("Error creating watcher:", err)
+		return
+	}
+	defer watcher.Close()
+
+	config, err := LoadConfig()
+	if err != nil {
+		fmt.Println("Error loading config:", err)
+		return
+	}
+
+	backupDir := "../saves/" + config.SaveFileName + "/backup"
+	safeBackupDir := "../saves/" + config.SaveFileName + "/Safebackups"
+
+	// Ensure the safe backup directory exists
+	if err := os.MkdirAll(safeBackupDir, os.ModePerm); err != nil {
+		fmt.Println("Error creating safe backup directory:", err)
+		return
+	}
+
+	err = watcher.Add(backupDir)
+	if err != nil {
+		fmt.Println("Error watching backup directory:", err)
+		return
+	}
+
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
+			}
+			if event.Op&fsnotify.Create == fsnotify.Create {
+				fmt.Println("New backup file detected:", event.Name)
+				go copyBackupToSafeLocation(event.Name, safeBackupDir)
+			}
+
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			fmt.Println("Error watching backup directory:", err)
+		}
+	}
+}
+
+// Copy the detected backup file to a safe location
+func copyBackupToSafeLocation(srcFilePath string, safeBackupDir string) {
+	fileName := filepath.Base(srcFilePath)
+	dstFilePath := filepath.Join(safeBackupDir, fileName)
+
+	err := copyFile(srcFilePath, dstFilePath)
+	if err != nil {
+		fmt.Println("Error copying backup to safe location:", err)
+		return
+	}
+	fmt.Println("Backup successfully copied to safe location:", dstFilePath)
 }
 
 func serveUI(w http.ResponseWriter, r *http.Request) {
@@ -334,10 +399,11 @@ func listBackups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	basePath := "../saves/" + config.SaveFileName + "/backup"
-	files, err := os.ReadDir(basePath)
+	// Read from the Safebackups folder
+	safeBackupDir := "../saves/" + config.SaveFileName + "/Safebackups"
+	files, err := os.ReadDir(safeBackupDir)
 	if err != nil {
-		http.Error(w, "Unable to read backups directory", http.StatusInternalServerError)
+		http.Error(w, "Unable to read Safebackups directory", http.StatusInternalServerError)
 		return
 	}
 
@@ -354,7 +420,7 @@ func listBackups(w http.ResponseWriter, r *http.Request) {
 		if backupIndex != -1 {
 			if !backupIndices[backupIndex] {
 				backupIndices[backupIndex] = true
-				fullPath := filepath.Join(basePath, fileName)
+				fullPath := filepath.Join(safeBackupDir, fileName)
 				info, err := os.Stat(fullPath)
 				if err != nil {
 					http.Error(w, "Error getting file info", http.StatusInternalServerError)
@@ -450,7 +516,8 @@ func restoreBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backupDir := "../saves/" + config.SaveFileName + "/backup"
+	// Use the Safebackups folder for restoring
+	safeBackupDir := "../saves/" + config.SaveFileName + "/Safebackups"
 	saveDir := "../saves/" + config.SaveFileName
 	files := []struct {
 		backupName    string
@@ -467,17 +534,17 @@ func restoreBackup(w http.ResponseWriter, r *http.Request) {
 
 	// First, try to restore all files
 	for _, file := range files {
-		backupFile := filepath.Join(backupDir, file.backupName)
+		backupFile := filepath.Join(safeBackupDir, file.backupName)
 		destFile := filepath.Join(saveDir, file.destName)
 
 		err := copyFile(backupFile, destFile)
 		if err != nil {
 			// Try alternative file name with _AutoSave suffix
-			backupFileAlt := filepath.Join(backupDir, file.backupNameAlt)
+			backupFileAlt := filepath.Join(safeBackupDir, file.backupNameAlt)
 			errAlt := copyFile(backupFileAlt, destFile)
 			if errAlt != nil {
 				// Revert any successful operations if an error occurs
-				revertRestore(restoredFiles, saveDir, backupDir)
+				revertRestore(restoredFiles, saveDir, safeBackupDir)
 				http.Error(w, fmt.Sprintf("Error restoring file %s and %s: %v", file.backupName, file.backupNameAlt, err), http.StatusInternalServerError)
 				return
 			}
