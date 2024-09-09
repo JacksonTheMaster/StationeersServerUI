@@ -1,10 +1,10 @@
 {
     "discordToken": "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw",
-    "controlChannelID": "1275055797616771123",
-    "statusChannelID": "1276701394543313038",
-    "connectionListChannelID": "1278451877230542879",
-    "logChannelID": "1275067875647819830",
-    "saveChannelID": "1276705219518140416",
+    "controlChannelID": "1279897558495531129",
+    "statusChannelID": "1279897558495531129",
+    "connectionListChannelID": "1279897558495531129",
+    "logChannelID": "1279902452044267530",
+    "saveChannelID": "1279897558495531129",
     "blackListFilePath": "C:/SteamCMD/Stationeers/Blacklist.txt",
     "backupDir": "C:/SteamCMD/Stationeers/saves/EuropaProd/backup"
 }

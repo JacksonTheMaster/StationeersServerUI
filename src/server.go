@@ -1,44 +1,37 @@
 package main
 
 import (
+	"StationeersServerUI/src/api"
 	"StationeersServerUI/src/config"
 	discord "StationeersServerUI/src/discord"
 	"fmt"
-	"os/exec"
-	"strings"
+	"net/http"
 	"time"
 
 	"github.com/r3labs/sse"
 )
 
 func main() {
-	processName := "Stationeers-ServerUI.exe"
 	workingDir := "./UIMod/"
-	exePath := "./" + processName
 
 	configFilePath := workingDir + "config.json"
+
 	config.LoadConfig(configFilePath)
 
 	go discord.StartDiscordBot()
 	go startLogStream()
-
-	for {
-		if !isProcessRunning(processName) {
-			fmt.Printf("Process %s not running. Starting it...\n", processName)
-
-			// Start the process
-			if err := startProcess(exePath, workingDir); err != nil {
-				fmt.Printf("Failed to start process: %v\n", err)
-			} else {
-				fmt.Println("UI and API started successfully at http://localhost:8080.")
-			}
-		} else {
-			fmt.Printf("Process %s is running.\n", processName)
-		}
-
-		// Wait before checking again
-		time.Sleep(5 * time.Second)
-	}
+	go api.StartAPI()
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
+	http.HandleFunc("/", api.ServeUI)
+	http.HandleFunc("/start", api.StartServer)
+	http.HandleFunc("/stop", api.StopServer)
+	http.HandleFunc("/output", api.GetOutput)
+	http.HandleFunc("/backups", api.ListBackups)
+	http.HandleFunc("/restore", api.RestoreBackup)
+	http.HandleFunc("/config", api.HandleConfig)   // Serve configuration form
+	http.HandleFunc("/saveconfig", api.SaveConfig) // Save configuration form
+	http.ListenAndServe(":8080", nil)
+	time.Sleep(5 * time.Second)
 }
 
 func startLogStream() {
@@ -69,34 +62,4 @@ func startLogStream() {
 		// The error handling and reconnection logic should be inside the SubscribeRaw callback
 		break
 	}
-}
-
-func isProcessRunning(processName string) bool {
-	cmd := exec.Command("tasklist", "/fi", fmt.Sprintf(`imagename eq %s`, processName))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("Error checking process: %v\n", err)
-		return false
-	}
-	return strings.Contains(string(out), processName)
-}
-
-func startProcess(exePath, workingDir string) error {
-	cmd := exec.Command(exePath)
-	cmd.Dir = workingDir
-
-	//stdin, err := cmd.StdinPipe()
-	//if err != nil {
-	//	return fmt.Errorf("error creating stdin pipe: %v", err)
-	//}
-
-	//serverStdin = stdin
-	//serverCmd = cmd
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("error starting Server UI: %v", err)
-	}
-
-	fmt.Println("Ensure Windows Firewall allows incoming connections on game port and update port (27015 and 27016 by default).")
-	return nil
 }

@@ -9,3 +9,7 @@ MonoBleedingEdge/
 rocketstation_DedicatedServer_Data/
 */CommonRedist
 */saves
+UnityCrashHandler64.exe
+UnityPlayer.dll
+setting.xml
+rocketstation_DedicatedServer.exe

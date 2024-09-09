@@ -13,23 +13,30 @@ import (
 func StartDiscordBot() {
 	var err error
 	config.DiscordSession, err = discordgo.New("Bot " + config.DiscordToken)
+	fmt.Println("Discord token:", config.DiscordToken)
+	fmt.Println("ControlChannelID:", config.ControlChannelID)
+	fmt.Println("StatusChannelID:", config.StatusChannelID)
+	fmt.Println("ConnectionListChannelID:", config.ConnectionListChannelID)
+	fmt.Println("LogChannelID:", config.LogChannelID)
+	fmt.Println("SaveChannelID:", config.SaveChannelID)
 	if err != nil {
 		fmt.Println("Error creating Discord session:", err)
 		return
 	}
+	fmt.Println("Bot is now running and connected")
 
 	config.DiscordSession.AddHandler(messageCreate)
 
 	err = config.DiscordSession.Open()
 	if err != nil {
-		fmt.Println("Error opening connection:", err)
+		fmt.Println("Error opening Discord connection:", err)
 		return
 	}
 
 	fmt.Println("Bot is now running.")
 	// Start the buffer flush ticker to send the remaining buffer every 5 seconds
 	config.BufferFlushTicker = time.NewTicker(5 * time.Second)
-	sendMessageToStatusChannel("Bot reconnected to Discord. Good Morning, Stationeers!")
+	sendMessageToStatusChannel("Bot v1.30 nightly reconnected to Discord. Good Morning, Stationeers!")
 	go func() {
 		for range config.BufferFlushTicker.C {
 			flushLogBufferToDiscord()

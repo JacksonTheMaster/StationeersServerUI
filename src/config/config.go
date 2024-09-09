@@ -20,12 +20,6 @@ type Config struct {
 }
 
 var (
-	//discordToken      = "MTI3NTA1Mjk5Mjg0ODIwMzc3OA.GXBztW.UAa7ijUAsbu5hOtswa6IxXZn_d-QRH_bnpfFBw"
-	//controlChannelID  = "1275055797616771123"
-	//statusChannelID   = "1276701394543313038"
-	//logChannelID      = "1275067875647819830"
-	//saveChannelID     = "1276705219518140416"
-	//blackListFilePath = "C:/SteamCMD/Stationeers/Blacklist.txt"
 	DiscordToken              string
 	ControlChannelID          string
 	StatusChannelID           string
@@ -62,5 +56,12 @@ func LoadConfig(filename string) (*Config, error) {
 	fmt.Println("LogChannelID:", config.LogChannelID)
 	fmt.Println("SaveChannelID:", config.SaveChannelID)
 	fmt.Println("BlackListFilePath:", config.BlackListFilePath)
+	DiscordToken = config.DiscordToken
+	ControlChannelID = config.ControlChannelID
+	StatusChannelID = config.StatusChannelID
+	LogChannelID = config.LogChannelID
+	ConnectionListChannelID = config.ConnectionListChannelID
+	SaveChannelID = config.SaveChannelID
+	BlackListFilePath = config.BlackListFilePath
 	return &config, nil
 }
