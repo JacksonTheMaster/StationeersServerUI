@@ -35,7 +35,7 @@ func sendMessageToStatusChannel(message string) {
 	}
 }
 
-func sendMessageToSavesChannel(message string) {
+func SendMessageToSavesChannel(message string) {
 	if config.DiscordSession == nil {
 		fmt.Println("Discord session is not initialized")
 		return

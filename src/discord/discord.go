@@ -99,7 +99,7 @@ func checkForKeywords(logMessage string) {
 				backupIndex := matches[1]
 				currentTime := time.Now().UTC().Format(time.RFC3339)
 				message := fmt.Sprintf("World Saved: BackupIndex: %s UTCTime: %s", backupIndex, currentTime)
-				sendMessageToSavesChannel(message)
+				SendMessageToSavesChannel(message)
 				updateBotStatus(config.DiscordSession) // Update bot status
 			},
 		},

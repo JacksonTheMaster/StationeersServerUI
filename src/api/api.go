@@ -1,6 +1,7 @@
 package api
 
 import (
+	"StationeersServerUI/src/discord"
 	"bufio"
 	"encoding/xml"
 	"fmt"
@@ -66,7 +67,7 @@ func StartAPI() {
 func copyBackupToSafeLocation(srcFilePath string, safeBackupDir string) {
 	go func() {
 		// Introduce a 1-minute asynchronous wait before trying to copy the file
-		time.Sleep(1 * time.Minute)
+		time.Sleep(30 * time.Second)
 
 		fileName := filepath.Base(srcFilePath)
 		dstFilePath := filepath.Join(safeBackupDir, fileName)
@@ -86,6 +87,7 @@ func copyBackupToSafeLocation(srcFilePath string, safeBackupDir string) {
 		}
 
 		fmt.Println("Backup successfully copied to safe location:", dstFilePath)
+		discord.SendMessageToSavesChannel(fmt.Sprintf("Backup file %s copied to safe location.", dstFilePath))
 	}()
 }
 
