@@ -230,8 +230,3 @@ func handleUnbanCommand(s *discordgo.Session, channelID string, content string) 
 
 	s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s has been unbanned.", steamID))
 }
-
-func updateConnectedPlayersMessage(channelID string) {
-	content := formatConnectedPlayers()
-	sendAndEditMessageInConnectedPlayersChannel(channelID, content)
-}
