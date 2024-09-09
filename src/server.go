@@ -17,7 +17,6 @@ func main() {
 	configFilePath := workingDir + "config.json"
 
 	config.LoadConfig(configFilePath)
-
 	go discord.StartDiscordBot()
 	go startLogStream()
 	go api.StartAPI()
@@ -31,7 +30,6 @@ func main() {
 	http.HandleFunc("/config", api.HandleConfig)   // Serve configuration form
 	http.HandleFunc("/saveconfig", api.SaveConfig) // Save configuration form
 	http.ListenAndServe(":8080", nil)
-	time.Sleep(5 * time.Second)
 }
 
 func startLogStream() {
