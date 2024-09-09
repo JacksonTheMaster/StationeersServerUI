@@ -2,5 +2,10 @@
 */media
 ./MonoBleedingEdge
 ./rocketstation_DedicatedServer_Data
+MonoBleedingEdge
+rocketstation_DedicatedServer_Data
+**/_CommonRedist/
+MonoBleedingEdge/
+rocketstation_DedicatedServer_Data/
 */CommonRedist
 */saves
