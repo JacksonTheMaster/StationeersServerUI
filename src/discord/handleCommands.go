@@ -107,6 +107,34 @@ func handleListCommand(s *discordgo.Session, channelID string, content string) {
 	}
 }
 
+func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, content string) {
+	parts := strings.Split(content, ":")
+	if len(parts) != 2 {
+		s.ChannelMessageSend(m.ChannelID, "❌Invalid restore command. Use `!restore:<index>`.")
+		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
+		return
+	}
+	SendCommandToAPI("/stop")
+	indexStr := parts[1]
+	index, err := strconv.Atoi(indexStr)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "❌Invalid index provided for restore.")
+		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
+		return
+	}
+
+	url := fmt.Sprintf("http://localhost:8080/restore?index=%d", index)
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("❌Failed to restore backup at index %d.", index))
+		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
+		return
+	}
+
+	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅Backup %d restored successfully, Starting Server...", index))
+	SendCommandToAPI("/start")
+}
+
 func handleUpdateCommand(s *discordgo.Session, channelID string) {
 	// Notify that the update process is starting
 	s.ChannelMessageSend(channelID, "🕛Starting the server update process...")
@@ -135,34 +163,6 @@ func handleUpdateCommand(s *discordgo.Session, channelID string) {
 		// Notify that the update process has finished
 		s.ChannelMessageSend(channelID, "✅Game Update process completed successfully. Server is up to date.")
 	}
-}
-
-func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, content string) {
-	parts := strings.Split(content, ":")
-	if len(parts) != 2 {
-		s.ChannelMessageSend(m.ChannelID, "❌Invalid restore command. Use `!restore:<index>`.")
-		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
-		return
-	}
-	SendCommandToAPI("/stop")
-	indexStr := parts[1]
-	index, err := strconv.Atoi(indexStr)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "❌Invalid index provided for restore.")
-		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
-		return
-	}
-
-	url := fmt.Sprintf("http://localhost:8080/restore?index=%d", index)
-	resp, err := http.Get(url)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("❌Failed to restore backup at index %d.", index))
-		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
-		return
-	}
-
-	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅Backup %d restored successfully, Starting Server...", index))
-	SendCommandToAPI("/start")
 }
 
 func handleBanCommand(s *discordgo.Session, channelID string, content string) {

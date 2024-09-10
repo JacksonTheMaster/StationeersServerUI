@@ -16,6 +16,7 @@ type Config struct {
 	ConnectionListChannelID string `json:"connectionListChannelID"`
 	LogChannelID            string `json:"logChannelID"`
 	SaveChannelID           string `json:"saveChannelID"`
+	ControlPanelChannelID   string `json:"controlPanelChannelID"`
 	BlackListFilePath       string `json:"blackListFilePath"`
 }
 
@@ -33,6 +34,9 @@ var (
 	BufferFlushTicker         *time.Ticker
 	ConnectedPlayers          = make(map[string]string) // SteamID -> Username
 	ConnectedPlayersMessageID string
+	ControlMessageID          string
+	BackupRestoreMessageID    string
+	ControlPanelChannelID     string
 )
 
 func LoadConfig(filename string) (*Config, error) {
@@ -63,5 +67,6 @@ func LoadConfig(filename string) (*Config, error) {
 	ConnectionListChannelID = config.ConnectionListChannelID
 	SaveChannelID = config.SaveChannelID
 	BlackListFilePath = config.BlackListFilePath
+	ControlPanelChannelID = config.ControlPanelChannelID
 	return &config, nil
 }

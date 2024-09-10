@@ -26,6 +26,7 @@ func StartDiscordBot() {
 	fmt.Println("Bot is now running and connected")
 
 	config.DiscordSession.AddHandler(messageCreate)
+	config.DiscordSession.AddHandler(reactionAddHandler)
 
 	err = config.DiscordSession.Open()
 	if err != nil {
@@ -36,13 +37,13 @@ func StartDiscordBot() {
 	fmt.Println("Bot is now running.")
 	// Start the buffer flush ticker to send the remaining buffer every 5 seconds
 	config.BufferFlushTicker = time.NewTicker(5 * time.Second)
-	sendMessageToStatusChannel("🤖Bot v1.33 Prod-Beta connected to Discord.")
+	sendMessageToStatusChannel("🤖Bot v1.33 SpaceInc. Prod-Release connected to Discord.")
 	go func() {
 		for range config.BufferFlushTicker.C {
 			flushLogBufferToDiscord()
 		}
 	}()
-
+	SendControlMessage()
 	select {} // Keep the program running
 }
 
