@@ -12,7 +12,7 @@ func SendMessageToControlChannel(message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-
+	clearMessagesAboveLastN(config.ControlChannelID, 20)
 	_, err := config.DiscordSession.ChannelMessageSend(config.ControlChannelID, message)
 	if err != nil {
 		fmt.Println("Error sending message to control channel:", err)
@@ -26,7 +26,7 @@ func sendMessageToStatusChannel(message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-
+	clearMessagesAboveLastN(config.StatusChannelID, 10)
 	_, err := config.DiscordSession.ChannelMessageSend(config.StatusChannelID, message)
 	if err != nil {
 		fmt.Println("Error sending message to status channel:", err)
@@ -40,7 +40,7 @@ func SendMessageToSavesChannel(message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-
+	clearMessagesAboveLastN(config.SaveChannelID, 8)
 	_, err := config.DiscordSession.ChannelMessageSend(config.SaveChannelID, message)
 	if err != nil {
 		fmt.Println("Error sending message to saves channel:", err)
@@ -60,7 +60,7 @@ func sendAndEditMessageInConnectedPlayersChannel(channelID, message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-
+	clearMessagesAboveLastN(config.ControlChannelID, 1)
 	if config.ConnectedPlayersMessageID == "" {
 		// Send a new message if there's no existing message to edit
 		msg, err := config.DiscordSession.ChannelMessageSend(channelID, message)
@@ -89,4 +89,33 @@ func updateBotStatus(s *discordgo.Session) {
 	if err != nil {
 		fmt.Println("Error updating bot status:", err)
 	}
+}
+
+// CLEAR MESSAGES
+func clearMessagesAboveLastN(channelID string, keep int) {
+	go func() {
+		if config.DiscordSession == nil {
+			fmt.Println("Discord session is not initialized")
+			return
+		}
+
+		// Retrieve the last 100 messages in the channel (Discord API limit)
+		messages, err := config.DiscordSession.ChannelMessages(channelID, 100, "", "", "")
+		if err != nil {
+			fmt.Printf("Error fetching messages from channel %s: %v\n", channelID, err)
+			return
+		}
+
+		// If there are more than 'keep' messages, delete the excess ones
+		if len(messages) > keep {
+			for _, message := range messages[keep:] {
+				err := config.DiscordSession.ChannelMessageDelete(channelID, message.ID)
+				if err != nil {
+					fmt.Printf("Error deleting message %s in channel %s: %v\n", message.ID, channelID, err)
+				} else {
+					fmt.Printf("Deleted message %s in channel %s\n", message.ID, channelID)
+				}
+			}
+		}
+	}()
 }

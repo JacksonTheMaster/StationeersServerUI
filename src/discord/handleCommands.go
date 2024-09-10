@@ -51,7 +51,7 @@ func handleListCommand(s *discordgo.Session, channelID string, content string) {
 		} else {
 			top, err = strconv.Atoi(parts[1])
 			if err != nil || top < 1 {
-				s.ChannelMessageSend(channelID, "Invalid number provided. Use `!list:<number>` or `!list:all`.")
+				s.ChannelMessageSend(channelID, "❌Invalid number provided. Use `!list:<number>` or `!list:all`.")
 				return
 			}
 		}
@@ -61,7 +61,7 @@ func handleListCommand(s *discordgo.Session, channelID string, content string) {
 	resp, err := http.Get("http://localhost:8080/backups")
 	if err != nil {
 		fmt.Println("Failed to fetch backup list:", err)
-		s.ChannelMessageSend(channelID, "Failed to fetch backup list.")
+		s.ChannelMessageSend(channelID, "❌Failed to fetch backup list.")
 		return
 	}
 	defer resp.Body.Close()
@@ -70,7 +70,7 @@ func handleListCommand(s *discordgo.Session, channelID string, content string) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Failed to read backup list response:", err)
-		s.ChannelMessageSend(channelID, "Failed to read backup list.")
+		s.ChannelMessageSend(channelID, "❌Failed to read backup list.")
 		return
 	}
 
@@ -109,7 +109,7 @@ func handleListCommand(s *discordgo.Session, channelID string, content string) {
 
 func handleUpdateCommand(s *discordgo.Session, channelID string) {
 	// Notify that the update process is starting
-	s.ChannelMessageSend(channelID, "Starting the server update process...")
+	s.ChannelMessageSend(channelID, "🕛Starting the server update process...")
 
 	// PowerShell command to run SteamCMD
 	powerShellScript := `
@@ -122,7 +122,7 @@ func handleUpdateCommand(s *discordgo.Session, channelID string) {
 	err := cmd.Start()
 	if err != nil {
 		fmt.Printf("Error starting update command: %v\n", err)
-		s.ChannelMessageSend(channelID, "Failed to start the update process.")
+		s.ChannelMessageSend(channelID, "❌Failed to start the update process.")
 		return
 	}
 
@@ -130,42 +130,46 @@ func handleUpdateCommand(s *discordgo.Session, channelID string) {
 	err = cmd.Wait()
 	if err != nil {
 		fmt.Printf("Error during update process: %v\n", err)
-		s.ChannelMessageSend(channelID, "The update process encountered an error.")
+		s.ChannelMessageSend(channelID, "❌The update process encountered an error.")
 	} else {
 		// Notify that the update process has finished
-		s.ChannelMessageSend(channelID, "Game Update process completed successfully. Server is up to date.")
+		s.ChannelMessageSend(channelID, "✅Game Update process completed successfully. Server is up to date.")
 	}
 }
 
 func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, content string) {
 	parts := strings.Split(content, ":")
 	if len(parts) != 2 {
-		s.ChannelMessageSend(m.ChannelID, "Invalid restore command. Use `!restore:<index>`.")
+		s.ChannelMessageSend(m.ChannelID, "❌Invalid restore command. Use `!restore:<index>`.")
+		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
 		return
 	}
-
+	SendCommandToAPI("/stop")
 	indexStr := parts[1]
 	index, err := strconv.Atoi(indexStr)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Invalid index provided for restore.")
+		s.ChannelMessageSend(m.ChannelID, "❌Invalid index provided for restore.")
+		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
 		return
 	}
 
 	url := fmt.Sprintf("http://localhost:8080/restore?index=%d", index)
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Failed to restore backup at index %d.", index))
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("❌Failed to restore backup at index %d.", index))
+		sendMessageToStatusChannel("⚠️Restore command received, but not able to restore Server.")
 		return
 	}
 
-	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Backup %d restored successfully.", index))
+	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅Backup %d restored successfully, Starting Server...", index))
+	SendCommandToAPI("/start")
 }
 
 func handleBanCommand(s *discordgo.Session, channelID string, content string) {
 	// Extract the SteamID from the command
 	parts := strings.Split(content, ":")
 	if len(parts) != 2 {
-		s.ChannelMessageSend(channelID, "Invalid ban command. Use `!ban:<SteamID>`.")
+		s.ChannelMessageSend(channelID, "❌Invalid ban command. Use `!ban:<SteamID>`.")
 		return
 	}
 	steamID := strings.TrimSpace(parts[1])
@@ -173,13 +177,13 @@ func handleBanCommand(s *discordgo.Session, channelID string, content string) {
 	// Read the current blacklist
 	blacklist, err := readBlacklist(config.BlackListFilePath)
 	if err != nil {
-		s.ChannelMessageSend(channelID, "Error reading blacklist file.")
+		s.ChannelMessageSend(channelID, "❌Error reading blacklist file.")
 		return
 	}
 
 	// Check if the SteamID is already in the blacklist
 	if strings.Contains(blacklist, steamID) {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s is already banned.", steamID))
+		s.ChannelMessageSend(channelID, fmt.Sprintf("❌SteamID %s is already banned.", steamID))
 		return
 	}
 
@@ -189,18 +193,18 @@ func handleBanCommand(s *discordgo.Session, channelID string, content string) {
 	// Write the updated blacklist back to the file
 	err = os.WriteFile(config.BlackListFilePath, []byte(blacklist), 0644)
 	if err != nil {
-		s.ChannelMessageSend(channelID, "Error writing to blacklist file.")
+		s.ChannelMessageSend(channelID, "❌Error writing to blacklist file.")
 		return
 	}
 
-	s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s has been banned.", steamID))
+	s.ChannelMessageSend(channelID, fmt.Sprintf("✅SteamID %s has been banned.", steamID))
 }
 
 func handleUnbanCommand(s *discordgo.Session, channelID string, content string) {
 	// Extract the SteamID from the command
 	parts := strings.Split(content, ":")
 	if len(parts) != 2 {
-		s.ChannelMessageSend(channelID, "Invalid unban command. Use `!unban:<SteamID>`.")
+		s.ChannelMessageSend(channelID, "❌Invalid unban command. Use `!unban:<SteamID>`.")
 		return
 	}
 	steamID := strings.TrimSpace(parts[1])
@@ -208,13 +212,13 @@ func handleUnbanCommand(s *discordgo.Session, channelID string, content string) 
 	// Read the current blacklist
 	blacklist, err := readBlacklist(config.BlackListFilePath)
 	if err != nil {
-		s.ChannelMessageSend(channelID, "Error reading blacklist file.")
+		s.ChannelMessageSend(channelID, "❌Error reading blacklist file.")
 		return
 	}
 
 	// Check if the SteamID is in the blacklist
 	if !strings.Contains(blacklist, steamID) {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s is not banned.", steamID))
+		s.ChannelMessageSend(channelID, fmt.Sprintf("✅SteamID %s is not banned.", steamID))
 		return
 	}
 
@@ -224,9 +228,9 @@ func handleUnbanCommand(s *discordgo.Session, channelID string, content string) 
 	// Write the updated blacklist back to the file
 	err = os.WriteFile(config.BlackListFilePath, []byte(updatedBlacklist), 0644)
 	if err != nil {
-		s.ChannelMessageSend(channelID, "Error writing to blacklist file.")
+		s.ChannelMessageSend(channelID, "❌Error writing to blacklist file.")
 		return
 	}
 
-	s.ChannelMessageSend(channelID, fmt.Sprintf("SteamID %s has been unbanned.", steamID))
+	s.ChannelMessageSend(channelID, fmt.Sprintf("✅SteamID %s has been unbanned.", steamID))
 }

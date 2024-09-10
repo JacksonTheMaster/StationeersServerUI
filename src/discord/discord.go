@@ -36,7 +36,7 @@ func StartDiscordBot() {
 	fmt.Println("Bot is now running.")
 	// Start the buffer flush ticker to send the remaining buffer every 5 seconds
 	config.BufferFlushTicker = time.NewTicker(5 * time.Second)
-	sendMessageToStatusChannel("Bot v1.30 nightly reconnected to Discord. Good Morning, Stationeers!")
+	sendMessageToStatusChannel("🤖Bot v1.33 Prod-Beta connected to Discord.")
 	go func() {
 		for range config.BufferFlushTicker.C {
 			flushLogBufferToDiscord()
@@ -49,7 +49,7 @@ func StartDiscordBot() {
 func checkForKeywords(logMessage string) {
 	// List of keywords to detect and their corresponding messages
 	keywordActions := map[string]string{
-		"Ready": "Attention! Server is ready to connect!",
+		"Ready": "🔔Server is ready to connect!",
 		// "No clients connected.": "No clients connected. Server is going into idle mode!",
 	}
 
@@ -71,7 +71,7 @@ func checkForKeywords(logMessage string) {
 			handler: func(matches []string) {
 				username := matches[1]
 				steamID := matches[2]
-				message := fmt.Sprintf("Client %s (Steam ID: %s) is ready!", username, steamID)
+				message := fmt.Sprintf("🔗Client %s (Steam ID: %s) is ready!", username, steamID)
 				sendMessageToStatusChannel(message)
 
 				config.ConnectedPlayers[steamID] = username
@@ -84,7 +84,7 @@ func checkForKeywords(logMessage string) {
 			handler: func(matches []string) {
 				username := matches[1]
 				steamID := matches[2]
-				message := fmt.Sprintf("Client %s disconnected.", username)
+				message := fmt.Sprintf("\u200dClient %s disconnected.", username)
 				sendMessageToStatusChannel(message)
 
 				delete(config.ConnectedPlayers, steamID)
@@ -98,7 +98,7 @@ func checkForKeywords(logMessage string) {
 			handler: func(matches []string) {
 				backupIndex := matches[1]
 				currentTime := time.Now().UTC().Format(time.RFC3339)
-				message := fmt.Sprintf("World Saved: BackupIndex: %s UTCTime: %s", backupIndex, currentTime)
+				message := fmt.Sprintf("💾World Saved: BackupIndex: %s UTCTime: %s", backupIndex, currentTime)
 				SendMessageToSavesChannel(message)
 				updateBotStatus(config.DiscordSession) // Update bot status
 			},
@@ -123,15 +123,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	switch {
 	case strings.HasPrefix(content, "!start"):
 		SendCommandToAPI("/start")
-		s.ChannelMessageSend(m.ChannelID, "Server is starting...")
-		sendMessageToStatusChannel("Start command received from @Server Controller, Server is trying to start...")
+		s.ChannelMessageSend(m.ChannelID, "🕛Server is starting...")
+		sendMessageToStatusChannel("🕛Start command received from Server Controller, Server is Starting...")
 
 	case strings.HasPrefix(content, "!stop"):
 		SendCommandToAPI("/stop")
-		s.ChannelMessageSend(m.ChannelID, "Server is stopping...")
-		sendMessageToStatusChannel("Stop command received from @Server Controller, Server is stopping...")
+		s.ChannelMessageSend(m.ChannelID, "🕛Server is stopping...")
+		sendMessageToStatusChannel("🕛Stop command received from Server Controller, flatlining Server in 5 Seconds...")
 
 	case strings.HasPrefix(content, "!restore"):
+		sendMessageToStatusChannel("⚠️Restore command received, flatlining and restoring Server in 5 Seconds. Server will come back online in about 60 Seconds.")
 		handleRestoreCommand(s, m, content)
 
 	case strings.HasPrefix(content, "!list"):
