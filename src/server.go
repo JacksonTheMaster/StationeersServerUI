@@ -17,10 +17,13 @@ func main() {
 	configFilePath := workingDir + "config.json"
 
 	config.LoadConfig(configFilePath)
-	go discord.StartDiscordBot()
+	//if config.IsDiscordEnabled true start discord bot else skip
+	if config.IsDiscordEnabled {
+		go discord.StartDiscordBot()
+	}
 	go startLogStream()
 	go api.StartAPI()
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./UIMod/static/"))))
 	http.HandleFunc("/", api.ServeUI)
 	http.HandleFunc("/start", api.StartServer)
 	http.HandleFunc("/stop", api.StopServer)

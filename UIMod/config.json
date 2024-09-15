@@ -6,5 +6,6 @@
     "logChannelID": "1279902452044267530",
     "saveChannelID": "1279897558495531129",
     "blackListFilePath": "C:/SteamCMD/Stationeers/Blacklist.txt",
-    "backupDir": "C:/SteamCMD/Stationeers/saves/EuropaProd/backup"
+    "backupDir": "C:/SteamCMD/Stationeers/saves/EuropaProd/backup",
+    "isDiscordEnabled": true
 }
