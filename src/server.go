@@ -30,8 +30,9 @@ func main() {
 	http.HandleFunc("/output", api.GetOutput)
 	http.HandleFunc("/backups", api.ListBackups)
 	http.HandleFunc("/restore", api.RestoreBackup)
-	http.HandleFunc("/config", api.HandleConfig)   // Serve configuration form
-	http.HandleFunc("/saveconfig", api.SaveConfig) // Save configuration form
+	http.HandleFunc("/config", api.HandleConfig)
+	http.HandleFunc("/saveconfig", api.SaveConfig)
+	http.HandleFunc("/sendcommand", api.SendCommandToServer)
 	http.ListenAndServe(":8080", nil)
 }
 
