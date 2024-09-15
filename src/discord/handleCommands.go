@@ -24,9 +24,10 @@ func handleHelpCommand(s *discordgo.Session, channelID string) {
 - ` + "`!ban:<SteamID>`" + `: Bans a player by their SteamID. Usage: ` + "`!ban:76561198334231312`" + `.
 - ` + "`!unban:<SteamID>`" + `: Unbans a player by their SteamID. Usage: ` + "`!unban:76561198334231312`" + `.
 - ` + "`!update`" + `: Updates the server files if there is a game update available. (Currently Stable Branch only)
+- ` + "`!validate`" + `: Validates the server files if there is a game update available. (Currently Stable Branch only)
 - ` + "`!help`" + `: Displays this help message.
 
-Please stop the server before using restore or update commands.
+Please stop the server before using update commands.
 	`
 
 	_, err := s.ChannelMessageSend(channelID, helpMessage)
@@ -132,6 +133,8 @@ func handleRestoreCommand(s *discordgo.Session, m *discordgo.MessageCreate, cont
 	}
 
 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅Backup %d restored successfully, Starting Server...", index))
+	//sleep 5 sec to give the server time to start
+	time.Sleep(5 * time.Second)
 	SendCommandToAPI("/start")
 }
 
@@ -142,7 +145,7 @@ func handleUpdateCommand(s *discordgo.Session, channelID string) {
 	// PowerShell command to run SteamCMD
 	powerShellScript := `
 		cd C:\SteamCMD
-		.\steamcmd +force_install_dir C:/SteamCMD/Stationeers/ +login anonymous +app_update 600760 -beta public validate +quit
+		.\steamcmd +force_install_dir C:/SteamCMD/Stationeers/ +login anonymous +app_update 600760 -beta public +quit
 	`
 
 	// Execute the PowerShell command
@@ -162,6 +165,36 @@ func handleUpdateCommand(s *discordgo.Session, channelID string) {
 	} else {
 		// Notify that the update process has finished
 		s.ChannelMessageSend(channelID, "✅Game Update process completed successfully. Server is up to date.")
+	}
+}
+
+func handleValidateCommand(s *discordgo.Session, channelID string) {
+	// Notify that the update process is starting
+	s.ChannelMessageSend(channelID, "🕛Starting the server validate process...")
+
+	// PowerShell command to run SteamCMD
+	powerShellScript := `
+		cd C:\SteamCMD
+		.\steamcmd +force_install_dir C:/SteamCMD/Stationeers/ +login anonymous +app_update 600760 -beta public -validate +quit
+	`
+
+	// Execute the PowerShell command
+	cmd := exec.Command("powershell", "-Command", powerShellScript)
+	err := cmd.Start()
+	if err != nil {
+		fmt.Printf("Error starting update command: %v\n", err)
+		s.ChannelMessageSend(channelID, "❌Failed to start the validate process.")
+		return
+	}
+
+	// Wait for the process to complete
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Printf("Error during update process: %v\n", err)
+		s.ChannelMessageSend(channelID, "❌The validate process encountered an error.")
+	} else {
+		// Notify that the update process has finished
+		s.ChannelMessageSend(channelID, "✅Game validate process completed successfully. Server is valid, but custom changes are overwritten.")
 	}
 }
 

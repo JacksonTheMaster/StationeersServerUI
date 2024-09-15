@@ -2,6 +2,7 @@ package discord
 
 import (
 	"fmt"
+	"time"
 
 	"StationeersServerUI/src/config"
 
@@ -50,13 +51,17 @@ func handleControlReactions(s *discordgo.Session, r *discordgo.MessageReactionAd
 	switch r.Emoji.Name {
 	case "▶️": // Start action
 		SendCommandToAPI("/start")
-		actionMessage = "🕛Server is starting... triggered via Control Panel."
+		actionMessage = "🕛Server is Starting..."
 	case "⏹️": // Stop action
 		SendCommandToAPI("/stop")
-		actionMessage = "🛑Server is stopping... triggered via Control Panel."
+		actionMessage = "🛑Server is Stopping..."
 	case "♻️": // Restart action
-		SendCommandToAPI("/restart")
-		actionMessage = "♻️Server is restarting... triggered via Control Panel."
+		actionMessage = "♻️Server is restarting..."
+		SendCommandToAPI("/stop")
+		//sleep 5 sec
+		time.Sleep(5 * time.Second)
+		SendCommandToAPI("/start")
+
 	default:
 		fmt.Println("Unknown reaction:", r.Emoji.Name)
 		return
@@ -71,7 +76,7 @@ func handleControlReactions(s *discordgo.Session, r *discordgo.MessageReactionAd
 	username := user.Username
 
 	// Send the action message to the control channel
-	SendMessageToControlChannel(fmt.Sprintf("%s triggered by %s.", actionMessage, username))
+	sendMessageToStatusChannel(fmt.Sprintf("%s triggered by %s.", actionMessage, username))
 
 	// Remove the reaction after processing
 	err = s.MessageReactionRemove(config.ControlPanelChannelID, r.MessageID, r.Emoji.APIName(), r.UserID)

@@ -151,6 +151,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case strings.HasPrefix(content, "!unban"):
 		handleUnbanCommand(s, m.ChannelID, content)
 
+	case strings.HasPrefix(content, "!validate"):
+		handleValidateCommand(s, m.ChannelID)
 	default:
 		// Optionally handle unrecognized commands or ignore them
 	}

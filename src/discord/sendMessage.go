@@ -26,7 +26,7 @@ func sendMessageToStatusChannel(message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-	clearMessagesAboveLastN(config.StatusChannelID, 10)
+	//clearMessagesAboveLastN(config.StatusChannelID, 10)
 	_, err := config.DiscordSession.ChannelMessageSend(config.StatusChannelID, message)
 	if err != nil {
 		fmt.Println("Error sending message to status channel:", err)
@@ -40,7 +40,7 @@ func SendMessageToSavesChannel(message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-	clearMessagesAboveLastN(config.SaveChannelID, 8)
+	clearMessagesAboveLastN(config.SaveChannelID, 300)
 	_, err := config.DiscordSession.ChannelMessageSend(config.SaveChannelID, message)
 	if err != nil {
 		fmt.Println("Error sending message to saves channel:", err)
