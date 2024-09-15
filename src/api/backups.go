@@ -298,3 +298,141 @@ func copyBackupToSafeLocation(srcFilePath string, safeBackupDir string) {
 		discord.SendMessageToSavesChannel(fmt.Sprintf("Backup file %s copied to safe location.", dstFilePath))
 	}()
 }
+
+func CleanUpBackups(backupDir, safeBackupDir string) {
+	// Cleanup the backup folder
+	err := cleanBackupFolder(backupDir, time.Hour*24) // Only retain backups from the current day in the backup folder
+	if err != nil {
+		fmt.Printf("Error cleaning backup folder: %v\n", err)
+	}
+
+	// Cleanup the Safebackups folder with custom retention rules
+	err = cleanSafebackupsFolder(safeBackupDir)
+	if err != nil {
+		fmt.Printf("Error cleaning Safebackups folder: %v\n", err)
+	}
+}
+
+// Cleanup the backup folder, keeping only files from the current day
+func cleanBackupFolder(backupDir string, maxAge time.Duration) error {
+	files, err := os.ReadDir(backupDir)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		fullPath := filepath.Join(backupDir, file.Name())
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			return err
+		}
+
+		// Delete files older than 24 hours (current day)
+		if now.Sub(info.ModTime()) > maxAge {
+			err = os.Remove(fullPath)
+			if err != nil {
+				fmt.Printf("Error removing file %s: %v\n", fullPath, err)
+			}
+		}
+	}
+	return nil
+}
+
+// Cleanup the Safebackups folder according to your custom retention rules
+func cleanSafebackupsFolder(safeBackupDir string) error {
+	files, err := os.ReadDir(safeBackupDir)
+	if err != nil {
+		return err
+	}
+
+	type fileInfo struct {
+		name    string
+		modTime time.Time
+	}
+
+	var backups []fileInfo
+	now := time.Now()
+
+	// Collect file information
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		fullPath := filepath.Join(safeBackupDir, file.Name())
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			return err
+		}
+		backups = append(backups, fileInfo{name: file.Name(), modTime: info.ModTime()})
+	}
+
+	// Sort backups by modification time (newest first)
+	sort.Slice(backups, func(i, j int) bool {
+		return backups[i].modTime.After(backups[j].modTime)
+	})
+
+	// Tracking the last kept backups for each retention period
+	var lastKept15Min, lastKeptHour, lastKeptDay time.Time
+
+	for _, backup := range backups {
+		age := now.Sub(backup.modTime)
+
+		// Keep backups younger than 24 hours
+		if age < time.Hour*24 {
+			continue
+		}
+
+		// Retain backups older than 24 hours but within 48 hours every 15 minutes
+		if age < time.Hour*48 {
+			if lastKept15Min.IsZero() || backup.modTime.Sub(lastKept15Min) > time.Minute*15 {
+				lastKept15Min = backup.modTime
+				continue
+			}
+		}
+
+		// Retain backups older than 48 hours but younger than 7 days every hour
+		if age < time.Hour*24*7 {
+			if lastKeptHour.IsZero() || backup.modTime.Sub(lastKeptHour) > time.Hour {
+				lastKeptHour = backup.modTime
+				continue
+			}
+		}
+
+		// Retain one backup per day for backups older than 7 days
+		if age >= time.Hour*24*7 {
+			if lastKeptDay.IsZero() || backup.modTime.Sub(lastKeptDay) > time.Hour*24 {
+				lastKeptDay = backup.modTime
+				continue
+			}
+		}
+
+		// If the file doesn't meet any retention criteria, delete it
+		fullPath := filepath.Join(safeBackupDir, backup.name)
+		err := os.Remove(fullPath)
+		if err != nil {
+			fmt.Printf("Error removing backup file %s: %v\n", fullPath, err)
+		} else {
+			fmt.Printf("Removed old backup file: %s\n", fullPath)
+		}
+	}
+
+	return nil
+}
+
+func StartBackupCleanupRoutine(backupDir, safeBackupDir string) {
+	ticker := time.NewTicker(24 * time.Hour) // Run cleanup every 24 hours
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			fmt.Println("Starting backup cleanup...")
+			CleanUpBackups(backupDir, safeBackupDir)
+		}
+	}
+}
