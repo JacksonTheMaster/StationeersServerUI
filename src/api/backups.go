@@ -16,6 +16,13 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+type backupGroup struct {
+	binFile  string
+	xmlFile  string
+	metaFile string
+	modTime  time.Time
+}
+
 func ListBackups(w http.ResponseWriter, r *http.Request) {
 	config, err := loadConfig()
 	if err != nil {
@@ -343,43 +350,65 @@ func cleanBackupFolder(backupDir string, maxAge time.Duration) error {
 	return nil
 }
 
-// Cleanup the Safebackups folder according to your custom retention rules
 func cleanSafebackupsFolder(safeBackupDir string) error {
 	files, err := os.ReadDir(safeBackupDir)
 	if err != nil {
 		return err
 	}
 
-	type fileInfo struct {
-		name    string
-		modTime time.Time
-	}
-
-	var backups []fileInfo
+	backupMap := make(map[int]backupGroup)
 	now := time.Now()
 
-	// Collect file information
+	// Collect file information and group by index
 	for _, file := range files {
 		if file.IsDir() {
 			continue
 		}
+
+		backupIndex := parseBackupIndex(file.Name())
+		if backupIndex == -1 {
+			continue
+		}
+
 		fullPath := filepath.Join(safeBackupDir, file.Name())
 		info, err := os.Stat(fullPath)
 		if err != nil {
 			return err
 		}
-		backups = append(backups, fileInfo{name: file.Name(), modTime: info.ModTime()})
+
+		group, exists := backupMap[backupIndex]
+		if !exists {
+			group = backupGroup{modTime: info.ModTime()}
+		}
+
+		// Add files to the appropriate group based on file type
+		if strings.HasSuffix(file.Name(), ".bin") {
+			group.binFile = fullPath
+		} else if strings.HasSuffix(file.Name(), ".xml") && strings.Contains(file.Name(), "world(") {
+			group.xmlFile = fullPath
+		} else if strings.HasSuffix(file.Name(), ".xml") && strings.Contains(file.Name(), "world_meta(") {
+			group.metaFile = fullPath
+		}
+
+		group.modTime = info.ModTime() // Ensure the modTime is the same across files
+
+		backupMap[backupIndex] = group
 	}
 
-	// Sort backups by modification time (newest first)
-	sort.Slice(backups, func(i, j int) bool {
-		return backups[i].modTime.After(backups[j].modTime)
+	// Sort backup groups by modification time (newest first)
+	var sortedBackups []backupGroup
+	for _, group := range backupMap {
+		sortedBackups = append(sortedBackups, group)
+	}
+
+	sort.Slice(sortedBackups, func(i, j int) bool {
+		return sortedBackups[i].modTime.After(sortedBackups[j].modTime)
 	})
 
 	// Tracking the last kept backups for each retention period
 	var lastKept15Min, lastKeptHour, lastKeptDay time.Time
 
-	for _, backup := range backups {
+	for _, backup := range sortedBackups {
 		age := now.Sub(backup.modTime)
 
 		// Keep backups younger than 24 hours
@@ -411,17 +440,41 @@ func cleanSafebackupsFolder(safeBackupDir string) error {
 			}
 		}
 
-		// If the file doesn't meet any retention criteria, delete it
-		fullPath := filepath.Join(safeBackupDir, backup.name)
-		err := os.Remove(fullPath)
-		if err != nil {
-			fmt.Printf("Error removing backup file %s: %v\n", fullPath, err)
-		} else {
-			fmt.Printf("Removed old backup file: %s\n", fullPath)
-		}
+		// If the group doesn't meet any retention criteria, delete all files in the group
+		deleteBackupFiles(backup) // No issue here, passing the value directly works
 	}
 
 	return nil
+}
+
+// Helper function to delete all files in a backup group
+func deleteBackupFiles(backup backupGroup) {
+	if backup.binFile != "" {
+		err := os.Remove(backup.binFile)
+		if err != nil {
+			fmt.Printf("Error removing .bin file %s in deleteBackupFiles: %v\n", backup.binFile, err)
+		} else {
+			fmt.Printf("Removed .bin file: %s\n", backup.binFile)
+		}
+	}
+
+	if backup.xmlFile != "" {
+		err := os.Remove(backup.xmlFile)
+		if err != nil {
+			fmt.Printf("Error removing .xml file %s in deleteBackupFiles: %v\n", backup.xmlFile, err)
+		} else {
+			fmt.Printf("Removed .xml file: %s\n", backup.xmlFile)
+		}
+	}
+
+	if backup.metaFile != "" {
+		err := os.Remove(backup.metaFile)
+		if err != nil {
+			fmt.Printf("Error removing meta file %s in deleteBackupFiles: %v\n", backup.metaFile, err)
+		} else {
+			fmt.Printf("Removed meta file: %s\n", backup.metaFile)
+		}
+	}
 }
 
 func StartBackupCleanupRoutine() {
