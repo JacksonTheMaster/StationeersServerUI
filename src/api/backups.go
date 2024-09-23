@@ -424,15 +424,21 @@ func cleanSafebackupsFolder(safeBackupDir string) error {
 	return nil
 }
 
-func StartBackupCleanupRoutine(backupDir, safeBackupDir string) {
+func StartBackupCleanupRoutine() {
 	ticker := time.NewTicker(24 * time.Hour) // Run cleanup every 24 hours
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			fmt.Println("Starting backup cleanup...")
-			CleanUpBackups(backupDir, safeBackupDir)
-		}
+	config, err := loadConfig()
+	if err != nil {
+		fmt.Println("Error loading config:", err)
+		return
+	}
+
+	safeBackupDir := "./saves/" + config.SaveFileName + "/Safebackups"
+	backupDir := "./saves/" + config.SaveFileName + "/backup"
+
+	for range ticker.C {
+		fmt.Println("Starting backup cleanup...")
+		CleanUpBackups(backupDir, safeBackupDir)
 	}
 }

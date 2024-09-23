@@ -23,6 +23,7 @@ func main() {
 	}
 	go startLogStream()
 	go api.StartAPI()
+	go api.StartBackupCleanupRoutine()
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./UIMod/static/"))))
 	http.HandleFunc("/", api.ServeUI)
 	http.HandleFunc("/start", api.StartServer)
