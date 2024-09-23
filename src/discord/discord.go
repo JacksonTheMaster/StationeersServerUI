@@ -83,7 +83,7 @@ func checkForKeywords(logMessage string) {
 		},
 		{
 			// Example: "Client Jacksonthemaster (76561198334231312). Receiving"
-			pattern: regexp.MustCompile(`Client\s+(.+)\s+\((\d+)\)\.\s+Receiving`),
+			pattern: regexp.MustCompile(`Client:?\s+(.+?)\s+\((\d+)\)\.\s+Receiving`),
 			handler: func(matches []string) {
 				username := matches[1]
 				steamID := matches[2]
