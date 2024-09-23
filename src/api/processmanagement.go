@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os/exec"
-	"strconv"
 	"strings"
+	"syscall"
 )
 
 func StartServer(w http.ResponseWriter, r *http.Request) {
@@ -125,47 +125,26 @@ func StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the PID of the process by name
-	pid, err := getPIDByName("rocketstation_DedicatedServer")
+	// Attempt a graceful shutdown
+	err := cmd.Process.Signal(syscall.SIGTERM)
 	if err != nil {
-		fmt.Fprintf(w, "Error finding process: %v", err)
-		return
+		// If sending SIGTERM fails, attempt to kill the process
+		fmt.Fprintf(w, "Error sending SIGTERM to server: %v. Attempting to kill the process.\n", err)
+
+		err = cmd.Process.Kill()
+		if err != nil {
+			fmt.Fprintf(w, "Error killing server process: %v", err)
+			return
+		}
 	}
 
-	// Terminate the process by PID
-	err = exec.Command("taskkill", "/PID", strconv.Itoa(pid), "/F").Run()
-	if err != nil {
-		fmt.Fprintf(w, "Error stopping server: %v", err)
+	// Wait for the process to exit
+	err = cmd.Wait()
+	if err != nil && !strings.Contains(err.Error(), "exit status") {
+		fmt.Fprintf(w, "Error waiting for process: %v", err)
 		return
 	}
-
-	// Close all client channels
-	clientsMu.Lock()
-	for _, clientChan := range clients {
-		close(clientChan)
-	}
-	clients = nil
-	clientsMu.Unlock()
 
 	cmd = nil
 	fmt.Fprintf(w, "Server stopped.")
-}
-
-func getPIDByName(name string) (int, error) {
-	cmd := exec.Command("powershell", "-Command", fmt.Sprintf(`(Get-Process -Name "%s" | Select-Object -ExpandProperty Id) -join ","`, name))
-	output, err := cmd.Output()
-	if err != nil {
-		return 0, err
-	}
-
-	lines := strings.Split(strings.TrimSpace(string(output)), ",")
-	if len(lines) > 0 {
-		pid, err := strconv.Atoi(lines[0])
-		if err != nil {
-			return 0, err
-		}
-		return pid, nil
-	}
-
-	return 0, fmt.Errorf("process %s not found", name)
 }
