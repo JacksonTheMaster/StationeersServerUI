@@ -8,10 +8,22 @@ import (
 	"net/http"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/r3labs/sse"
 )
 
 func main() {
+
+	// Check if the branch is not "Prod" and enable pprof if its not
+	if config.Branch != "Prod" {
+		go func() {
+			err := http.ListenAndServe("localhost:6060", nil)
+			if err != nil {
+				fmt.Printf("Error starting pprof server: %v\n", err)
+			}
+		}()
+	}
 	workingDir := "./UIMod/"
 
 	configFilePath := workingDir + "config.json"
