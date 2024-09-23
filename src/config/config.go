@@ -19,6 +19,7 @@ type Config struct {
 	ControlPanelChannelID   string `json:"controlPanelChannelID"`
 	BlackListFilePath       string `json:"blackListFilePath"`
 	IsDiscordEnabled        bool   `json:"isDiscordEnabled"`
+	ErrorChannelID          string `json:"errorChannelID"`
 }
 
 var (
@@ -26,6 +27,7 @@ var (
 	ControlChannelID          string
 	StatusChannelID           string
 	LogChannelID              string
+	ErrorChannelID            string
 	ConnectionListChannelID   string
 	SaveChannelID             string
 	BlackListFilePath         string
@@ -65,6 +67,7 @@ func LoadConfig(filename string) (*Config, error) {
 	fmt.Println("SaveChannelID:", config.SaveChannelID)
 	fmt.Println("BlackListFilePath:", config.BlackListFilePath)
 	fmt.Println("IsDiscordEnabled:", config.IsDiscordEnabled)
+	fmt.Println("ErrorChannelID:", config.ErrorChannelID)
 	DiscordToken = config.DiscordToken
 	ControlChannelID = config.ControlChannelID
 	StatusChannelID = config.StatusChannelID
@@ -74,5 +77,6 @@ func LoadConfig(filename string) (*Config, error) {
 	BlackListFilePath = config.BlackListFilePath
 	ControlPanelChannelID = config.ControlPanelChannelID
 	IsDiscordEnabled = config.IsDiscordEnabled
+	ErrorChannelID = config.ErrorChannelID
 	return &config, nil
 }

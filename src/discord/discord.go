@@ -50,7 +50,9 @@ func StartDiscordBot() {
 func checkForKeywords(logMessage string) {
 	// List of keywords to detect and their corresponding messages
 	keywordActions := map[string]string{
-		"Ready": "🔔Server is ready to connect!",
+		"Ready":                               "🔔Server is ready to connect!",
+		"Unloading 1 Unused Serialized files": "🕑Server made a critical step towards availability, will be ready to connect soon!",
+		"EXCEPTION":                           "Server Error detected.",
 		// "No clients connected.": "No clients connected. Server is going into idle mode!",
 	}
 
@@ -80,6 +82,16 @@ func checkForKeywords(logMessage string) {
 			},
 		},
 		{
+			// Example: "Client Jacksonthemaster (76561198334231312). Receiving"
+			pattern: regexp.MustCompile(`Client\s+(.+)\s+\((\d+)\)\.\s+Receiving`),
+			handler: func(matches []string) {
+				username := matches[1]
+				steamID := matches[2]
+				message := fmt.Sprintf("🔗Client %s (Steam ID: %s) is trying to connect...", username, steamID)
+				sendMessageToStatusChannel(message)
+			},
+		},
+		{
 			// Example: "Client disconnected: 135108291984612402 | Jacksonthemaster"
 			pattern: regexp.MustCompile(`Client\s+disconnected:\s+\d+\s+\|\s+(.+)\s+connectTime:\s+\d+,\d+s,\s+ClientId:\s+(\d+)`),
 			handler: func(matches []string) {
@@ -102,6 +114,18 @@ func checkForKeywords(logMessage string) {
 				message := fmt.Sprintf("💾World Saved: BackupIndex: %s UTCTime: %s", backupIndex, currentTime)
 				SendMessageToSavesChannel(message)
 				updateBotStatus(config.DiscordSession) // Update bot status
+			},
+		},
+		{
+			// Detect messy exceptions (based on common patterns in the stack trace)
+			// We'll capture multiple lines until we hit the end of the exception.
+			pattern: regexp.MustCompile(`(?m)^\s*>\s*\d{2}:\d{2}:\d{2}:.*Exception.*|>\s+\d{2}:\d{2}:\d{2}:.*StackTrace`),
+			handler: func(matches []string) {
+				// Gather the full exception by collecting all subsequent lines that start with "> HH:MM:SS"
+				exception := logMessage
+
+				// Send the complete exception to the dedicated error channel
+				sendMessageToErrorChannel(fmt.Sprintf("🚨 Exception detected:\n```\n%s\n```", exception))
 			},
 		},
 		// Add more complex patterns and handlers here
