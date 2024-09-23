@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-var stdin io.WriteCloser
-
 func StartServer(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -44,13 +42,6 @@ func StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Capture stdin to send commands to the process later
-	stdin, err = cmd.StdinPipe()
-	if err != nil {
-		fmt.Fprintf(w, "Error creating StdinPipe: %v", err)
-		return
-	}
-
 	// Start the command
 	err = cmd.Start()
 	if err != nil {
@@ -63,32 +54,6 @@ func StartServer(w http.ResponseWriter, r *http.Request) {
 	go readPipe(stderr)
 
 	fmt.Fprintf(w, "Server started.")
-}
-
-func SendCommandToServer(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	if cmd == nil || cmd.Process == nil {
-		fmt.Fprintf(w, "Server is not running.")
-		return
-	}
-
-	command := r.URL.Query().Get("command")
-	if command == "" {
-		http.Error(w, "No command provided", http.StatusBadRequest)
-		return
-	}
-
-	// Simulate pressing "Enter" by sending the command followed by a newline
-	// Try \r\n first (Windows-style newline)
-	_, err := stdin.Write([]byte(command + "\n"))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error sending command: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "Command sent: %s", command)
 }
 
 func readPipe(pipe io.ReadCloser) {
