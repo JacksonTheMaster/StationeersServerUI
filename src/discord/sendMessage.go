@@ -36,13 +36,15 @@ func sendMessageToStatusChannel(message string) {
 	}
 }
 
-func sendMessageToErrorChannel(message string) {
+func sendMessageToErrorChannel(message string) []*discordgo.Message {
 	if config.DiscordSession == nil {
 		fmt.Println("Discord session is not initialized")
-		return
+		return nil
 	}
 
 	maxMessageLength := 2000 // Discord's message character limit
+	var sentMessages []*discordgo.Message
+
 	// Function to split the message into chunks and send each one
 	for len(message) > 0 {
 		if len(message) > maxMessageLength {
@@ -53,23 +55,32 @@ func sendMessageToErrorChannel(message string) {
 			}
 
 			// Send the chunk
-			_, err := config.DiscordSession.ChannelMessageSend(config.ErrorChannelID, message[:splitIndex])
+			sentMessage, err := config.DiscordSession.ChannelMessageSend(config.ErrorChannelID, message[:splitIndex])
 			if err != nil {
 				fmt.Println("Error sending message to error channel:", err)
-				return
+				return sentMessages // Return whatever was sent before the error
 			}
+
+			// Add sent message to the list
+			sentMessages = append(sentMessages, sentMessage)
 
 			// Remove the sent chunk from the message
 			message = message[splitIndex:]
 		} else {
 			// Send the remaining part of the message
-			_, err := config.DiscordSession.ChannelMessageSend(config.ErrorChannelID, message)
+			sentMessage, err := config.DiscordSession.ChannelMessageSend(config.ErrorChannelID, message)
 			if err != nil {
 				fmt.Println("Error sending message to error channel:", err)
+				return sentMessages // Return whatever was sent before the error
 			}
+
+			// Add the final sent message to the list
+			sentMessages = append(sentMessages, sentMessage)
 			break
 		}
 	}
+
+	return sentMessages
 }
 
 func SendMessageToSavesChannel(message string) {

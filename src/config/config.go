@@ -38,6 +38,7 @@ var (
 	ConnectedPlayers          = make(map[string]string) // SteamID -> Username
 	ConnectedPlayersMessageID string
 	ControlMessageID          string
+	ExceptionMessageID        string
 	BackupRestoreMessageID    string
 	ControlPanelChannelID     string
 	IsDiscordEnabled          bool

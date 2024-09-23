@@ -44,9 +44,50 @@ func reactionAddHandler(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	// Check if the reaction was added to the control message for server control
 	if r.MessageID == config.ControlMessageID {
 		handleControlReactions(s, r)
+		return
+	}
+
+	// Check if the reaction was added to the last exception message
+	if r.MessageID == config.ExceptionMessageID {
+		handleExceptionReactions(s, r)
+		return
 	}
 
 	// Optionally, add more message-specific handlers here for other features
+}
+
+func handleExceptionReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+	var actionMessage string
+
+	switch r.Emoji.Name {
+	case "♻️": // Stop server action due to exception
+		actionMessage = "🛑 Server is manually restarting due to critical exception."
+		SendCommandToAPI("/stop")
+		//sleep 5 sec
+		time.Sleep(5 * time.Second)
+		SendCommandToAPI("/start")
+
+	default:
+		fmt.Println("Unknown reaction:", r.Emoji.Name)
+		return
+	}
+
+	// Get the user who triggered the action
+	user, err := s.User(r.UserID)
+	if err != nil {
+		fmt.Printf("Error fetching user details: %v\n", err)
+		return
+	}
+	username := user.Username
+
+	// Send the action message to the error channel
+	sendMessageToErrorChannel(fmt.Sprintf("%s triggered by %s.", actionMessage, username))
+
+	// Remove the reaction after processing
+	err = s.MessageReactionRemove(config.ErrorChannelID, r.MessageID, r.Emoji.APIName(), r.UserID)
+	if err != nil {
+		fmt.Printf("Error removing reaction: %v\n", err)
+	}
 }
 
 // handleControlReactions - Handles reactions for server control actions

@@ -118,14 +118,23 @@ func checkForKeywords(logMessage string) {
 		},
 		{
 			// Detect messy exceptions (based on common patterns in the stack trace)
-			// We'll capture multiple lines until we hit the end of the exception.
 			pattern: regexp.MustCompile(`(?m)^\s*>\s*\d{2}:\d{2}:\d{2}:.*Exception.*|>\s+\d{2}:\d{2}:\d{2}:.*StackTrace`),
 			handler: func(matches []string) {
 				// Gather the full exception by collecting all subsequent lines that start with "> HH:MM:SS"
 				exception := logMessage
 
-				// Send the complete exception to the dedicated error channel
-				sendMessageToErrorChannel(fmt.Sprintf("🚨 Exception detected:\n```\n%s\n```", exception))
+				// Send the complete exception to the dedicated error channel and capture the sent messages
+				sentMessages := sendMessageToErrorChannel(fmt.Sprintf("🚨 Exception detected:\n```\n%s\n```", exception))
+
+				// Add reactions to each message that was sent
+				for _, msg := range sentMessages {
+					config.DiscordSession.MessageReactionAdd(config.ErrorChannelID, msg.ID, "♻️") // restart server
+				}
+
+				// Optionally store the last message ID for further handling (e.g., reaction tracking)
+				if len(sentMessages) > 0 {
+					config.ExceptionMessageID = sentMessages[len(sentMessages)-1].ID
+				}
 			},
 		},
 		// Add more complex patterns and handlers here
