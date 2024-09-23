@@ -12,7 +12,7 @@ func SendMessageToControlChannel(message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-	clearMessagesAboveLastN(config.ControlChannelID, 20)
+	//clearMessagesAboveLastN(config.ControlChannelID, 20)
 	_, err := config.DiscordSession.ChannelMessageSend(config.ControlChannelID, message)
 	if err != nil {
 		fmt.Println("Error sending message to control channel:", err)
@@ -40,7 +40,7 @@ func SendMessageToSavesChannel(message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-	clearMessagesAboveLastN(config.SaveChannelID, 300)
+	//clearMessagesAboveLastN(config.SaveChannelID, 300)
 	_, err := config.DiscordSession.ChannelMessageSend(config.SaveChannelID, message)
 	if err != nil {
 		fmt.Println("Error sending message to saves channel:", err)
@@ -60,7 +60,10 @@ func sendAndEditMessageInConnectedPlayersChannel(channelID, message string) {
 		fmt.Println("Discord session is not initialized")
 		return
 	}
-	clearMessagesAboveLastN(config.ControlChannelID, 1)
+	//only clear messages if we are on the beta branch
+	if config.Branch == "Prod" {
+		clearMessagesAboveLastN(config.ControlChannelID, 1)
+	}
 	if config.ConnectedPlayersMessageID == "" {
 		// Send a new message if there's no existing message to edit
 		msg, err := config.DiscordSession.ChannelMessageSend(channelID, message)

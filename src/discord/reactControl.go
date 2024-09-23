@@ -26,7 +26,12 @@ func SendControlMessage() {
 	config.DiscordSession.MessageReactionAdd(config.ControlPanelChannelID, msg.ID, "⏹️") // Stop
 	config.DiscordSession.MessageReactionAdd(config.ControlPanelChannelID, msg.ID, "♻️") // Restart
 	config.ControlMessageID = msg.ID
-	clearMessagesAboveLastN(config.ControlPanelChannelID, 1) // Store the message ID for later reference
+	if config.Branch == "Prod" {
+		clearMessagesAboveLastN(config.ControlPanelChannelID, 1)
+	}
+	if config.Branch != "Prod" {
+		clearMessagesAboveLastN(config.ControlPanelChannelID, 15)
+	}
 }
 
 // reactionAddHandler - Handles reactions added to messages

@@ -37,7 +37,7 @@ func StartDiscordBot() {
 	fmt.Println("Bot is now running.")
 	// Start the buffer flush ticker to send the remaining buffer every 5 seconds
 	config.BufferFlushTicker = time.NewTicker(5 * time.Second)
-	sendMessageToStatusChannel("🤖Bot v1.33 SpaceInc. Prod-Release connected to Discord.")
+	sendMessageToStatusChannel("🤖 Bot Version " + config.Version + " Branch " + config.Branch + "connected to Discord.")
 	go func() {
 		for range config.BufferFlushTicker.C {
 			flushLogBufferToDiscord()
