@@ -24,11 +24,27 @@ func flushLogBufferToDiscord() {
 		return
 	}
 
-	_, err := config.DiscordSession.ChannelMessageSend(config.LogChannelID, config.LogMessageBuffer)
-	if err != nil {
-		fmt.Println("Error sending log to Discord:", err)
-	} else {
-		//fmt.Println("Flushed log buffer to Discord.")
-		config.LogMessageBuffer = "" // Clear the buffer after sending
+	const discordMaxMessageLength = 2000
+	message := config.LogMessageBuffer
+
+	for len(message) > 0 {
+		// Determine how much of the message we can send
+		chunkSize := discordMaxMessageLength
+		if len(message) < discordMaxMessageLength {
+			chunkSize = len(message)
+		}
+
+		// Send the chunk to Discord
+		_, err := config.DiscordSession.ChannelMessageSend(config.LogChannelID, message[:chunkSize])
+		if err != nil {
+			fmt.Println("Error sending log to Discord:", err)
+			break
+		}
+
+		// Move to the next chunk
+		message = message[chunkSize:]
 	}
+
+	// Clear the buffer after sending
+	config.LogMessageBuffer = ""
 }
