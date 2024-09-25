@@ -129,7 +129,7 @@ func StopServer(w http.ResponseWriter, r *http.Request) {
 	err := cmd.Process.Signal(syscall.SIGTERM)
 	if err != nil {
 		// If sending SIGTERM fails, attempt to kill the process
-		fmt.Fprintf(w, "Error sending SIGTERM to server: %v. Attempting to kill the process.\n", err)
+		fmt.Fprintf(w, "(Known issue) Error sending SIGTERM to server: %v. Killing the process.\n", err)
 
 		err = cmd.Process.Kill()
 		if err != nil {
