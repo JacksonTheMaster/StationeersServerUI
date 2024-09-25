@@ -18,9 +18,7 @@ func flushLogBufferToDiscord() {
 	if len(config.LogMessageBuffer) == 0 {
 		return // No messages to send
 	}
-
-	if config.DiscordSession == nil {
-		fmt.Println("Discord session is not initialized")
+	if !config.IsDiscordEnabled || config.DiscordSession == nil {
 		return
 	}
 
