@@ -108,18 +108,41 @@ func getAdditionalParams(settings []string) string {
 // SaveConfig saves the updated configuration to the XML file
 func SaveConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
-		settings := []string{
-			"StartLocalHost", r.FormValue("StartLocalHost"),
-			"ServerVisible", r.FormValue("ServerVisible"),
-			"GamePort", r.FormValue("GamePort"),
-			"UpdatePort", r.FormValue("UpdatePort"),
-			"AutoSave", r.FormValue("AutoSave"),
-			"SaveInterval", r.FormValue("SaveInterval"),
-			"LocalIpAddress", r.FormValue("LocalIpAddress"),
-			"ServerPassword", r.FormValue("ServerPassword"),
-			"AdminPassword", r.FormValue("AdminPassword"),
-			"ServerMaxPlayers", r.FormValue("ServerMaxPlayers"),
-			"ServerName", r.FormValue("ServerName"),
+		// Collect settings only if their values are not empty
+		var settings []string
+
+		if startLocalHost := r.FormValue("StartLocalHost"); startLocalHost != "" {
+			settings = append(settings, "StartLocalHost", startLocalHost)
+		}
+		if serverVisible := r.FormValue("ServerVisible"); serverVisible != "" {
+			settings = append(settings, "ServerVisible", serverVisible)
+		}
+		if gamePort := r.FormValue("GamePort"); gamePort != "" {
+			settings = append(settings, "GamePort", gamePort)
+		}
+		if updatePort := r.FormValue("UpdatePort"); updatePort != "" {
+			settings = append(settings, "UpdatePort", updatePort)
+		}
+		if autoSave := r.FormValue("AutoSave"); autoSave != "" {
+			settings = append(settings, "AutoSave", autoSave)
+		}
+		if saveInterval := r.FormValue("SaveInterval"); saveInterval != "" {
+			settings = append(settings, "SaveInterval", saveInterval)
+		}
+		if localIpAddress := r.FormValue("LocalIpAddress"); localIpAddress != "" {
+			settings = append(settings, "LocalIpAddress", localIpAddress)
+		}
+		if serverPassword := r.FormValue("ServerPassword"); serverPassword != "" {
+			settings = append(settings, "ServerPassword", serverPassword)
+		}
+		if adminPassword := r.FormValue("AdminPassword"); adminPassword != "" {
+			settings = append(settings, "AdminPassword", adminPassword)
+		}
+		if serverMaxPlayers := r.FormValue("ServerMaxPlayers"); serverMaxPlayers != "" {
+			settings = append(settings, "ServerMaxPlayers", serverMaxPlayers)
+		}
+		if serverName := r.FormValue("ServerName"); serverName != "" {
+			settings = append(settings, "ServerName", serverName)
 		}
 
 		// Append additional parameters if any
@@ -135,12 +158,7 @@ func SaveConfig(w http.ResponseWriter, r *http.Request) {
 				ExePath  string `xml:"exePath"`
 				Settings string `xml:"settings"`
 			}{
-				ExePath: "./rocketstation_DedicatedServer.exe",
-				// hardcoded ../rocketstation_DedicatedServer.exe for now, otherwise this is a security risk because an attacker could run a malicious exe and or command on the server
-				// explaination: if the exepath is set to powershell.exe again, and matching parameters are set, the server would be able to run arbitrary code on the server.
-				// this is very much an RCE vulnerability, and thus should be avoided at all costs.
-				// with the hardcoded exepath, the server will not be able to run arbitrary code, but it will still be able to run the server with the given parameters.
-				//more info: https://github.com/JacksonTheMaster/StationeersServerUI/issues/
+				ExePath:  "./rocketstation_DedicatedServer.exe",
 				Settings: settingsStr,
 			},
 			SaveFileName: r.FormValue("saveFileName"),
