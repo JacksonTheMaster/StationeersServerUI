@@ -22,81 +22,74 @@ header {
 }
 
 main {
-    max-width: 800px;
+    max-width: 900px;
     width: 100%;
-    padding: 20px;
+    padding: 30px;
     box-sizing: border-box;
     background-color: #1f1f1f;
-    border-radius: 8px;
-    margin: 20px 0;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    margin: 40px 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 h1, h2 {
-    color: #e0e0e0;
+    color: #ffffff;
+    margin-bottom: 20px;
+    font-size: 2rem;
 }
 
 #controls {
-    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping of buttons */
+    gap: 10px;
+    margin-bottom: 30px;
+    justify-content: center;
 }
 
 button {
-    padding: 10px 20px;
-    margin: 5px;
-    font-size: 16px;
+    padding: 12px 24px;
+    font-size: 18px;
     background-color: #3a3a3a;
-    color: #e0e0e0;
+    color: #ffffff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 button:hover {
     background-color: #575757;
+    transform: translateY(-2px);
 }
 
-input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    box-sizing: border-box;
-    background-color: #262626;
-    color: #e0e0e0;
-    border: 1px solid #3a3a3a;
-    border-radius: 4px;
-    font-size: 16px;
+button:active {
+    background-color: #444;
+    transform: translateY(0);
 }
 
-input[type="submit"] {
-    padding: 10px 20px;
-    font-size: 16px;
-    background-color: #3a3a3a;
-    color: #e0e0e0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-input[type="submit"]:hover {
-    background-color: #575757;
+#status {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #f0f0f0;
+    text-align: center;
 }
 
 #console {
     border: 1px solid #3a3a3a;
-    padding: 10px;
+    padding: 15px;
     height: 300px;
     overflow-y: scroll;
     background-color: #262626;
-    margin-bottom: 20px;
-    border-radius: 4px;
+    margin-bottom: 30px;
+    border-radius: 8px;
 }
 
 #backups {
-    margin-top: 20px;
+    margin-top: 40px;
 }
 
 .backup-item {
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 ul {
@@ -106,18 +99,90 @@ ul {
 
 li {
     background-color: #262626;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+li:hover {
+    background-color: #333;
 }
 
 li button {
+    padding: 8px 16px;
     background-color: #575757;
+    color: #fff;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 li button:hover {
+    background-color: #444;
+}
+
+input[type="text"], input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    background-color: #262626;
+    color: #e0e0e0;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    font-size: 16px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+input[type="text"]:focus {
+    background-color: #333;
+    border-color: #575757;
+}
+
+input[type="submit"] {
+    width: auto;
+    padding: 12px 30px;
+    font-size: 18px;
     background-color: #3a3a3a;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+input[type="submit"]:hover {
+    background-color: #575757;
+    transform: translateY(-2px);
+}
+
+/* Mobile Viewport Adjustments */
+@media only screen and (max-width: 768px) {
+    main {
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    h1, h2 {
+        font-size: 1.5rem;
+    }
+
+    #controls {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 15px;
+    }
+
+    button {
+        width: 100%; /* Full-width buttons for mobile */
+        font-size: 16px;
+    }
+
+    #console {
+        height: 200px; /* Smaller console height for mobile */
+    }
 }
