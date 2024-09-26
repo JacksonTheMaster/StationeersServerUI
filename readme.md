@@ -12,8 +12,6 @@ Also I wanted my friends to be able to start, stop and manage the Server without
 DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AUTHENTICATION MECHANISM; THIS SHOULD NOT UNDER ANY CIRCUMSTANCES BE PORT FORWARDED STRAIGHT OUT!
 
 ## Features
-These images show the v1.1 UI and NOT the v2.3.0 UI.
-I will be updating the UI images soon™
 | UI Overview | Configuration | Backup Management |
 |:-----------:|:-------------:|:-----------------:|
 | ![UI Overview](media/UI-1.png) | ![Configuration](media/UI-2.png) | ![Backup Management](media/UI-3.png) |
