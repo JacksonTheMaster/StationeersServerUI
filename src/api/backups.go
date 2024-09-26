@@ -85,7 +85,7 @@ func ListBackups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(output) == 0 {
-		fmt.Fprint(w, "No valid backup files found. Is the directory specified?")
+		fmt.Fprint(w, "No valid backup files found. Is the directory specified and valid?")
 		return
 	}
 
