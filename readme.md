@@ -37,10 +37,10 @@ DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AU
 | --- | --- |
 | !start | Starts the server.
 | !stop | Stops the server.
-| !restore:<index> | Restores a backup at the specified index.
+| !restore:<number/backupindex> | Restores a backup at the specified index.
 | !list:<number/all> | Lists the most recent backups. Defaults to 5 backups.
-| !ban:<SteamID> | Bans a player by their SteamID.
-| !unban:<SteamID> | Unbans a player by their SteamID.
+| !ban:SteamID | Bans a player by their SteamID.
+| !unban:SteamID | Unbans a player by their SteamID.
 | !update | Updates the server files if there is a game update available. (Currently Stable Branch only)
 | !help | Displays a help message.
 
@@ -48,15 +48,15 @@ DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AU
 
 | Notification | Description |
 | --- | --- |
-| Server Ready | When the server status changes to ready while startup, a notification will be sent to the server status channel.
-| Player Connection | When a player connects to the server, a notification will be sent to the server status channel.
-| Player Disconnection | When a player disconnects from the server, a notification will be sent to the server status channel.
-| Exception | When an exception is detected, a notification will be sent to the server log channel.
-| Error | When an error is detected, a notification will be sent to the server log channel.
+| Server Ready | When the server status changes to ready while startup, a notification will be sent
+| Player Connection | When a player connects to the server, a notification will be sent 
+| Player Disconnection | When a player disconnects from the server, a notification will be sent
+| Exception | When an exception is detected, a notification will be sent 
+| Error | When an error is detected, a notification will be sent 
 
 ## Discord Integration Setup
 
-- Create a Discord Bot and add it to your server. You can find instructions on how to do this [here](https://docs.jmg-it.de/ishouldaddthis).
+- Create a Discord Bot and add it to your server. You can find instructions on how to do this [here](https://chatgpt.com/).
 - Obtain an OAuth2 Token for your Discord Bot.
 - Add the OAuth2 Token to the "DiscordToken" field in the config.json file.
 - Enter the channel IDs for the server control, server status, and server log channels in the config.json file.
