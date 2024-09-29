@@ -1,7 +1,7 @@
 <Config>
   <server>
     <exePath>./rocketstation_DedicatedServer.exe</exePath>
-    <settings>StartLocalHost true ServerVisible true GamePort 27016 UpdatePort 27015 AutoSave true SaveInterval 500 LocalIpAddress 10.0.50.166 ServerMaxPlayers 1 ServerName StationeersServerWithUI</settings>
+    <settings>StartLocalHost true ServerVisible true GamePort 27016 UpdatePort 27015 AutoSave true SaveInterval 500 LocalIpAddress 127.0.0.1 ServerMaxPlayers 1 ServerName StationeersServerWithUI</settings>
   </server>
   <saveFileName>EuropaProd</saveFileName>
 </Config>

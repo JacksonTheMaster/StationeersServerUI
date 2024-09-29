@@ -111,6 +111,10 @@ function setDefaultConsoleMessage() {
     
     const bootCompleteMessage = "System boot complete.\nINFO: Press 'Start' to launch the game server.";
 
+    // Random chance to trigger a funny bug (e.g., 20% chance)
+    const bugChance = Math.random();
+    const bugMessage = "ERROR: Nuclear parts in airflow detected! Initiating repair sequence...";
+
     // First, type the boot title
     typeTextWithCallback(consoleElement, bootTitle, 50, () => {
         // After the title is typed, start the progress bar update sequence
@@ -127,18 +131,46 @@ function setDefaultConsoleMessage() {
                     index++;
                 } else {
                     clearInterval(bootInterval);  // Stop when progress is done
-                    // Display the completion message
-                    setTimeout(() => {
-                        const completionElement = document.createElement('div');
-                        completionElement.innerHTML = bootCompleteMessage.replace(/\n/g, '<br>'); // Add the completion message
-                        consoleElement.appendChild(completionElement);
+                    
+                    if (bugChance < 0.05) {
+                        const bugElement = document.createElement('div');
+                        bugElement.style.color = 'red'; // Make it look like an error
+                        bugElement.textContent = bugMessage;
+                        consoleElement.appendChild(bugElement);
                         consoleElement.scrollTop = consoleElement.scrollHeight;
-                    }, 500);  // Delay for .5 second after progress reaches 100%
+
+                        // Delay for 2 seconds before "repairing"
+                        setTimeout(() => {
+                            const repairMessage = "Repair complete. Continuing boot sequence...";
+                            const repairElement = document.createElement('div');
+                            repairElement.style.color = 'green';
+                            repairElement.textContent = repairMessage;
+                            consoleElement.appendChild(repairElement);
+                            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+                            // Finally, display the completion message after another short delay
+                            setTimeout(() => {
+                                const completionElement = document.createElement('div');
+                                completionElement.innerHTML = bootCompleteMessage.replace(/\n/g, '<br>'); // Add the completion message
+                                consoleElement.appendChild(completionElement);
+                                consoleElement.scrollTop = consoleElement.scrollHeight;
+                            }, 1000); // Delay for 1 second after repair message
+                        }, 2000); // Repair after 2 seconds
+                    } else {
+                        // Display the normal completion message
+                        setTimeout(() => {
+                            const completionElement = document.createElement('div');
+                            completionElement.innerHTML = bootCompleteMessage.replace(/\n/g, '<br>'); // Add the completion message
+                            consoleElement.appendChild(completionElement);
+                            consoleElement.scrollTop = consoleElement.scrollHeight;
+                        }, 200);  // Delay for .5 second after progress reaches 100%
+                    }
                 }
-            }, 200);  // Each progress update every 200ms
-        }, 2000);  // Initial delay of 1s to simulate a pause
+            }, 150);  // Each progress update every 150ms
+        }, 100);  // Initial delay of 2s to simulate a pause
     });
 }
+
 
 fetchOutput();
 fetchBackups();

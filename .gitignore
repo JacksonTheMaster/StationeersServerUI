@@ -14,3 +14,5 @@ UnityPlayer.dll
 setting.xml
 rocketstation_DedicatedServer.exe
 /saves/*
+.github/
+repos.md
