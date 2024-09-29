@@ -70,7 +70,7 @@ func main() {
 	http.HandleFunc("/restore", api.RestoreBackup)
 	http.HandleFunc("/config", api.HandleConfig)
 	http.HandleFunc("/saveconfig", api.SaveConfig)
-	http.HandleFunc("/futherconfig", api.HandleConfigJSON)
+	http.HandleFunc("/furtherconfig", api.HandleConfigJSON)
 	http.HandleFunc("/saveconfigasjson", api.SaveConfigJSON)
 
 	fmt.Println(string(colorYellow), "Starting the HTTP server on port 8080...", string(colorReset))
