@@ -40,7 +40,7 @@ func HandleConfigJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	htmlFile, err := os.ReadFile("./UIMod/futherconfig.html")
+	htmlFile, err := os.ReadFile("./UIMod/furtherconfig.html")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading discord.html: %v", err), http.StatusInternalServerError)
 		return
@@ -110,7 +110,7 @@ func SaveConfigJSON(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, "/futherconfig", http.StatusSeeOther)
+		http.Redirect(w, r, "/furtherconfig", http.StatusSeeOther)
 	} else {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	}
