@@ -229,7 +229,7 @@ func revertRestore(restoredFiles map[string]string, saveDir, backupDir string) {
 	}
 }
 
-func watchBackupDir() {
+func WatchBackupDir() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		fmt.Println("Error creating watcher:", err)
@@ -252,16 +252,26 @@ func watchBackupDir() {
 		return
 	}
 
+	// Check if the backup directory exists
+	if _, err := os.Stat(backupDir); os.IsNotExist(err) {
+		// If the directory doesn't exist, log a warning and skip watching it
+		fmt.Printf("Warning: Backup directory %s does not exist, skipping watch.\n", backupDir)
+		return
+	}
+
+	// Add the backup directory to the watcher
 	err = watcher.Add(backupDir)
 	if err != nil {
 		fmt.Println("Error watching backup directory:", backupDir, err)
 		return
 	}
 
+	// Watch for events in the backup directory
 	for {
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
+				fmt.Println("Watcher closed.")
 				return
 			}
 			if event.Op&fsnotify.Create == fsnotify.Create {
@@ -271,6 +281,7 @@ func watchBackupDir() {
 
 		case err, ok := <-watcher.Errors:
 			if !ok {
+				fmt.Println("Watcher error channel closed.")
 				return
 			}
 			fmt.Println("Error watching backup directory:", err)
@@ -492,6 +503,14 @@ func StartBackupCleanupRoutine() {
 
 	for range ticker.C {
 		fmt.Println("Starting backup cleanup...")
+
+		// Check if the backup directory exists, if not log and continue
+		if _, err := os.Stat(backupDir); os.IsNotExist(err) {
+			fmt.Printf("Warning: Backup directory %s does not exist, skipping cleanup.\n", backupDir)
+			continue
+		}
+
+		// If the directory exists, proceed with the cleanup
 		CleanUpBackups(backupDir, safeBackupDir)
 	}
 }

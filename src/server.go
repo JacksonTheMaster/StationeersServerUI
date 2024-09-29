@@ -7,6 +7,7 @@ import (
 	"StationeersServerUI/src/install"
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -40,17 +41,6 @@ func main() {
 
 	fmt.Println(string(colorGreen), "Installation complete!", string(colorReset))
 
-	// Check if the branch is not "Prod" and enable pprof if it's not
-	if config.Branch != "Release" {
-		go func() {
-			fmt.Println(string(colorMagenta), "Starting pprof server on localhost:6060...", string(colorReset))
-			err := http.ListenAndServe("localhost:6060", nil)
-			if err != nil {
-				fmt.Printf(string(colorRed)+"Error starting pprof server: %v\n"+string(colorReset), err)
-			}
-		}()
-	}
-
 	workingDir := "./UIMod/"
 	configFilePath := workingDir + "config.json"
 
@@ -68,6 +58,7 @@ func main() {
 	fmt.Println(string(colorBlue), "Starting API services...", string(colorReset))
 	go api.StartAPI()
 	go api.StartBackupCleanupRoutine()
+	go api.WatchBackupDir()
 
 	fs := http.FileServer(http.Dir("./UIMod"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
@@ -83,12 +74,18 @@ func main() {
 	http.HandleFunc("/saveconfigasjson", api.SaveConfigJSON)
 
 	fmt.Println(string(colorYellow), "Starting the HTTP server on port 8080...", string(colorReset))
+	fmt.Println(string(colorGreen), "UI available at: http://127.0.0.1:8080", string(colorReset))
+
+	// Start the HTTP server and check for errors
 	err := http.ListenAndServe(":8080", nil)
+
 	if err != nil {
 		fmt.Printf(string(colorRed)+"Error starting HTTP server: %v\n"+string(colorReset), err)
-	} else {
-		fmt.Println(string(colorGreen), "Server started successfully!", string(colorReset))
-		fmt.Println(string(colorGreen), "UI available at: http://127.0.0.1:8080", string(colorReset))
+		os.Exit(1)
+	}
+	fmt.Println(string(colorGreen), "UI available at: http://127.0.0.1:8080", string(colorReset))
+	if config.Branch != "Release" {
+		fmt.Println(string(colorMagenta), "Starting pprof server on localhost:6060...", string(colorReset))
 	}
 }
 
@@ -98,26 +95,31 @@ func startLogStream() {
 	client.Headers["Connection"] = "keep-alive"
 	client.Headers["Cache-Control"] = "no-cache"
 
-	for {
-		// Attempt to connect to the SSE stream
-		fmt.Println(string(colorYellow), "Attempting to connect to SSE stream...", string(colorReset))
+	retryDelay := 5 * time.Second // Retry every 5 seconds
 
-		err := client.SubscribeRaw(func(msg *sse.Event) {
-			if len(msg.Data) > 0 {
-				logMessage := string(msg.Data)
-				discord.AddToLogBuffer(logMessage)
-				fmt.Println(string(colorGreen), "Received SSE log message:", logMessage, string(colorReset))
+	go func() {
+		for {
+			fmt.Println(string(colorYellow), "Attempting to connect to SSE stream...", string(colorReset))
+
+			err := client.SubscribeRaw(func(msg *sse.Event) {
+				if len(msg.Data) > 0 {
+					logMessage := string(msg.Data)
+					discord.AddToLogBuffer(logMessage)
+					//fmt.Println(string(colorGreen), "Serverlog:", logMessage, string(colorReset))
+					//dont spam the console with the server log
+				}
+			})
+
+			if err != nil {
+				// Instead of logging errors repeatedly, retry silently until the endpoint is available
+				fmt.Println(string(colorYellow), "SSE stream not available yet, retrying in 5 seconds...", string(colorReset))
+				time.Sleep(retryDelay)
+				continue
 			}
-		})
 
-		if err != nil {
-			fmt.Printf(string(colorRed)+"Error subscribing to SSE stream: %v\n"+string(colorReset), err)
-			fmt.Println(string(colorYellow), "Reconnecting in 5 seconds...", string(colorReset))
-			time.Sleep(5 * time.Second)
-			continue // Retry connection
+			// Successfully connected, break the loop and handle messages
+			fmt.Println(string(colorGreen), "Connected to SSE stream.", string(colorReset))
+			return
 		}
-
-		// Instead of breaking the loop, we let it continue handling incoming messages.
-		// The reconnection logic will handle errors or disconnects automatically.
-	}
+	}()
 }
