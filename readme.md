@@ -55,7 +55,7 @@ DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AU
 | Error | When an error is detected, a notification will be sent 
 
 ## Discord Integration Setup
-- use the "further setup" button on the UI
+- *use the "further setup" button on the UI!*
 - Create a Discord Bot and add it to your server. You can find instructions on how to do this [here](https://chatgpt.com/).
 - Obtain an OAuth2 Token for your Discord Bot.
 - Add the OAuth2 Token to the "DiscordToken" field in the config.json file.

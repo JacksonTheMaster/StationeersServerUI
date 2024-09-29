@@ -4,12 +4,11 @@ go 1.22.1
 
 require (
 	github.com/bwmarrin/discordgo v0.28.1
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc
 )
 
 require (
-	github.com/creack/pty v1.1.23 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
