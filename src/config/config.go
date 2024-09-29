@@ -42,8 +42,8 @@ var (
 	BackupRestoreMessageID    string
 	ControlPanelChannelID     string
 	IsDiscordEnabled          bool
-	Version                   = "2.4.0"
-	Branch                    = "Installer"
+	Version                   = "2.4.1"
+	Branch                    = "Release"
 )
 
 func LoadConfig(filename string) (*Config, error) {
