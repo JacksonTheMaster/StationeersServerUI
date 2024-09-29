@@ -41,7 +41,7 @@ func main() {
 	fmt.Println(string(colorGreen), "Installation complete!", string(colorReset))
 
 	// Check if the branch is not "Prod" and enable pprof if it's not
-	if config.Branch != "Prod" {
+	if config.Branch != "Release" {
 		go func() {
 			fmt.Println(string(colorMagenta), "Starting pprof server on localhost:6060...", string(colorReset))
 			err := http.ListenAndServe("localhost:6060", nil)
