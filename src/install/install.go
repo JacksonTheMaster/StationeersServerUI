@@ -37,14 +37,15 @@ func CheckAndDownloadUIMod() {
 
 		// List of files to download
 		files := map[string]string{
-			"apiinfo.html":    "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/apiinfo.html",
-			"config.html":     "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/config.html",
-			"config.json":     "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/config.json",
-			"config.xml":      "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/config.xml",
-			"index.html":      "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/index.html",
-			"script.js":       "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/script.js",
-			"stationeers.png": "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/stationeers.png",
-			"style.css":       "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/style.css",
+			"apiinfo.html":       "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/apiinfo.html",
+			"config.html":        "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/config.html",
+			"furtherconfig.html": "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/furtherconfig.html",
+			"config.json":        "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/config.json",
+			"config.xml":         "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/config.xml",
+			"index.html":         "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/index.html",
+			"script.js":          "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/script.js",
+			"stationeers.png":    "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/stationeers.png",
+			"style.css":          "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/style.css",
 		}
 
 		// Download each file

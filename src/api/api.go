@@ -22,7 +22,6 @@ type Config struct {
 
 func StartAPI() {
 	outputChannel = make(chan string, 100)
-	go watchBackupDir()
 }
 
 func ServeUI(w http.ResponseWriter, r *http.Request) {
