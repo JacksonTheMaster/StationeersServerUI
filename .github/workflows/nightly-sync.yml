@@ -5,7 +5,7 @@ name: Push to Public Nightly Branch
 on:
   push:
     branches:
-      - 'nightly'   # This triggers the action whenever there's a push to the nightly branch in the private repo
+      - ''   # This triggers the action whenever there's a push to the nightly branch in the private repo
 
 jobs:
   push_to_public_nightly:
