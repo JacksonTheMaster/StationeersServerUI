@@ -4,8 +4,10 @@ import (
 	"StationeersServerUI/src/api"
 	"StationeersServerUI/src/config"
 	discord "StationeersServerUI/src/discord"
+	"StationeersServerUI/src/install"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	_ "net/http/pprof"
@@ -15,6 +17,14 @@ import (
 
 func main() {
 
+	var wg sync.WaitGroup
+
+	// Start the installation process and wait for it to complete
+	wg.Add(1)
+	go install.Install(&wg)
+
+	// Wait for the installation to finish before starting the rest of the server
+	wg.Wait()
 	// Check if the branch is not "Prod" and enable pprof if its not
 	if config.Branch != "Prod" {
 		go func() {
