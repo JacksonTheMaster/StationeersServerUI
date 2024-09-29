@@ -1,0 +1,221 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+    font-family: 'Press Start 2P', cursive;
+    background-color: #000000;
+    color: #00FFAB;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-shadow: 0 0 10px rgba(0, 255, 171, 0.7), 0 0 20px rgba(0, 255, 171, 0.4);
+}
+
+header {
+    width: 100%;
+    background-color: #1b1b2f;
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 2px solid #00FFAB;
+    box-shadow: 0 4px 20px rgba(0, 255, 171, 0.4);
+}
+
+#banner {
+    width: 60%;
+    max-width: 500px;
+    border-radius: 12px;
+}
+
+main {
+    max-width: 1000px;
+    width: 90%;
+    padding: 30px;
+    box-sizing: border-box;
+    background-color: #1b1b2f;
+    border-radius: 10px;
+    margin: 40px 0;
+    box-shadow: 0 15px 50px rgba(0, 255, 171, 0.3);
+    border: 3px solid #00FFAB;
+}
+
+h1, h2 {
+    color: #00FFAB;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+    line-height: 1.6; /* Added line-height for more spacing */
+}
+
+#controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    justify-content: space-around;
+}
+
+button {
+    padding: 12px 24px; /* Reduced height a bit */
+    font-size: 1rem;
+    background-color: #3a3a3a;
+    color: #00FFAB;
+    border: 2px solid #00FFAB;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 171, 0.4), 0 0 20px rgba(0, 255, 171, 0.1);
+}
+
+button:hover {
+    background-color: #444;
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(0, 255, 171, 0.7), 0 0 30px rgba(0, 255, 171, 0.5);
+}
+
+#status {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    text-align: center;
+    line-height: 1.8; /* More space between lines */
+}
+
+#console {
+    border: 2px solid #00FFAB;
+    padding: 20px;
+    height: 400px;
+    overflow-y: scroll;
+    background-color: #000000;
+    color: #00FFAB;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 10px rgba(0, 255, 171, 0.5);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#backups {
+    margin-top: 40px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    color: #00FFAB;
+}
+
+li {
+    background-color: #10101A;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px solid #00FFAB;
+    transition: background-color 0.3s ease;
+    line-height: 1.6; /* Added line spacing */
+}
+
+li:hover {
+    background-color: #222;
+}
+
+li button {
+    padding: 8px 16px;
+    background-color: #00FFAB;
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Press Start 2P', cursive;
+    transition: background-color 0.3s ease;
+}
+
+li button:hover {
+    background-color: #00e0ab;
+}
+
+input[type="text"], input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    background-color: #10101A;
+    color: #00FFAB;
+    border: 2px solid #00FFAB;
+    border-radius: 4px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1rem;
+}
+
+input[type="submit"] {
+    width: auto;
+    padding: 12px 30px;
+    background-color: #3a3a3a;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+input[type="submit"]:hover {
+    background-color: #444;
+    transform: translateY(-3px);
+}
+
+/* Cursor animation */
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.blinking-cursor {
+    font-weight: bold;
+    font-size: 24px;
+    color: #00FFAB;
+    animation: blink 1s infinite;
+}
+
+/* Mobile adjustments */
+@media only screen and (max-width: 768px) {
+    main {
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    h1, h2 {
+        margin-bottom: 20px; /* Reduce spacing on mobile */
+        font-size: 1.2rem;
+    }
+
+    #controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    button {
+        width: 100%;
+        font-size: 0.9rem; /* Smaller font for mobile */
+        padding: 10px 20px; /* Reduce button height */
+    }
+
+    #console {
+        height: 200px;
+    }
+
+    li {
+        flex-direction: column; /* Stack content vertically on mobile */
+        padding: 12px;
+        text-align: center;
+        word-wrap: break-word; /* Prevents overflow */
+    }
+
+    li button {
+        margin-top: 10px;
+        width: 100%;
+    }
+}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Server Control</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <img src="/static/stationeers.png" alt="Stationeers Banner" id="banner">
+    </header>
+    <main>
+        <h1>Stationeers Dedicated Server Control v2.2.X</h1>
+        <div id="controls">
+            <button onclick="startServer()">Start Server</button>
+            <button onclick="stopServer()">Stop Server</button>
+            <button onclick="window.location.href = '/config'">Edit Configuration</button>
+            <button onclick="window.location.href = '/static/apiinfo.html'">REST-API Information</button>
+        </div>
+        <p id="status"></p>
+        <div id="console"></div>
+        <div id="backups">
+            <h2>Saves</h2>
+            <ul id="backupList"></ul>
+        </div>
+        <br><br>
+        Copyright &copy; 2024 JMG J. Langisch. Licensed under <a href="https://github.com/jmgit/stationeers-server-ui/blob/main/LICENSE">MIT License</a>.
+    </main>
+    <script src="/static/script.js"></script>
+</body>
+</html>
