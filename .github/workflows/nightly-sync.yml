@@ -1,0 +1,38 @@
+# .github/workflows/nightly-sync.yml
+
+name: Push to Public Nightly Branch
+
+on:
+  push:
+    branches:
+      - 'nightly'   # This triggers the action whenever there's a push to the nightly branch in the private repo
+
+jobs:
+  push_to_public_nightly:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the private repo's code
+      - name: Checkout private repository code
+        uses: actions/checkout@v3
+
+      # Set up Git configuration
+      - name: Set up Git config
+        run: |
+          git config --global user.name "JacksonTheMaster"
+          git config --global user.email "jakob.langisch@gmail.com"
+
+      # Add the public repository as a remote
+      - name: Add public repository as remote
+        run: |
+          git remote add public https://JacksonTheMaster:${{ secrets.PAT_TOKEN }}@github.com/JacksonTheMaster/StationeersServerUI.git
+          git fetch public
+
+      # Force push to the public repo's nightly branch
+      - name: Push to public nightly branch
+        run: |
+          git push public HEAD:nightly --force
+
+      # Optional: Remove the public remote if you don't want it sticking around
+      - name: Clean up remotes
+        run: git remote remove public
