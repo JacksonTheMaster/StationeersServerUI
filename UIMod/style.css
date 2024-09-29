@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Press Start 2P', cursive;
     background-color: #000000;
@@ -180,6 +184,50 @@ input[type="submit"]:hover {
     animation: blink 1s infinite;
 }
 
+
+
+select {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    background-color: #10101A;
+    color: #00FFAB;
+    border: 2px solid #00FFAB;
+    border-radius: 4px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1rem;
+    cursor: pointer;
+    appearance: none; /* Removes default styling for better customization */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 171, 0.4), 0 0 20px rgba(0, 255, 171, 0.1);
+}
+
+select:hover {
+    background-color: #111;
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(0, 255, 171, 0.7), 0 0 30px rgba(0, 255, 171, 0.5);
+}
+
+select option {
+    background-color: #1b1b2f; /* Background for dropdown items */
+    color: #00FFAB; /* Text color for dropdown items */
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Add a down arrow icon for the select dropdown */
+select::after {
+    content: '▼';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #00FFAB;
+}
+
 /* Mobile adjustments */
 @media only screen and (max-width: 768px) {
     main {
@@ -217,5 +265,12 @@ input[type="submit"]:hover {
     li button {
         margin-top: 10px;
         width: 100%;
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    select {
+        font-size: 0.9rem;
+        padding: 10px;
     }
 }

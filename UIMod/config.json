@@ -1,11 +1,12 @@
 {
-    "discordToken": "redacted",
-    "controlChannelID": "1279897558495531129",
-    "statusChannelID": "1279897558495531129",
-    "connectionListChannelID": "1279897558495531129",
-    "logChannelID": "1279902452044267530",
-    "saveChannelID": "1279897558495531129",
-    "controlPanelChannelID": "1279897558495531129",
-    "blackListFilePath": "C:/SteamCMD/Stationeers/Blacklist.txt",
-    "isDiscordEnabled": false
+  "discordToken": "redacted",
+  "controlChannelID": "1279897558495531129",
+  "statusChannelID": "1279897558495531129",
+  "connectionListChannelID": "1279897558495531129",
+  "logChannelID": "1279902452044267530",
+  "saveChannelID": "1279897558495531129",
+  "controlPanelChannelID": "1279897558495531129",
+  "blackListFilePath": "./Blacklist.txt",
+  "isDiscordEnabled": false,
+  "errorChannelID": "1279897558495531129"
 }

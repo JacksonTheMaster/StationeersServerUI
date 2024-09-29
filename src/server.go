@@ -46,6 +46,8 @@ func main() {
 	http.HandleFunc("/restore", api.RestoreBackup)
 	http.HandleFunc("/config", api.HandleConfig)
 	http.HandleFunc("/saveconfig", api.SaveConfig)
+	http.HandleFunc("/futherconfig", api.HandleConfigJSON)
+	http.HandleFunc("/saveconfigasjson", api.SaveConfigJSON)
 	http.ListenAndServe(":8080", nil)
 }
 

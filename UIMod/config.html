@@ -1,76 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Configuration</title>
-    <link rel="stylesheet" href="/static/style.css">
+       <meta charset="UTF-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>Edit Configuration</title>
+       <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
-    <header>
-        <img src="/static/stationeers.png" alt="Stationeers Banner" id="banner">
-    </header>
-    <main>
-        <button onclick="window.location.href = '/'">Cancel</button>
-        <h1>Edit Configuration</h1>
-        <form action="/saveconfig" method="post">
-            <label for="exePath">Server Executable Path:</label><br>
-            <input type="text" id="exePath" name="exePath" value="{{ExePath}}" readonly><br>
-            
-            <label for="StartLocalHost">Start Local Host:</label><br>
-            <input type="text" id="StartLocalHost" name="StartLocalHost" value="{{StartLocalHost}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="ServerVisible">Server Visible:</label><br>
-            <input type="text" id="ServerVisible" name="ServerVisible" value="{{ServerVisible}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="GamePort">Game Port:</label><br>
-            <input type="text" id="GamePort" name="GamePort" value="{{GamePort}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="UpdatePort">Update Port:</label><br>
-            <input type="text" id="UpdatePort" name="UpdatePort" value="{{UpdatePort}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="AutoSave">Auto Save:</label><br>
-            <input type="text" id="AutoSave" name="AutoSave" value="{{AutoSave}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="SaveInterval">Save Interval:</label><br>
-            <input type="text" id="SaveInterval" name="SaveInterval" value="{{SaveInterval}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="LocalIpAddress">Local IP Address:</label><br>
-            <input type="text" id="LocalIpAddress" name="LocalIpAddress" value="{{LocalIpAddress}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="ServerPassword">Server Password:</label><br>
-            <input type="text" id="ServerPassword" name="ServerPassword" value="{{ServerPassword}}" 
-                   pattern="^\S*$" title="No spaces allowed"><br>
-            
-            <label for="AdminPassword">Admin Password:</label><br>
-            <input type="text" id="AdminPassword" name="AdminPassword" value="{{AdminPassword}}" 
-                   pattern="^\S*$" title="No spaces allowed"><br>
-            
-            <label for="ServerMaxPlayers">Server Max Players:</label><br>
-            <input type="text" id="ServerMaxPlayers" name="ServerMaxPlayers" value="{{ServerMaxPlayers}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="ServerName">Server Name:</label><br>
-            <input type="text" id="ServerName" name="ServerName" value="{{ServerName}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br>
-            
-            <label for="AdditionalParams">Additional Parameters: (CustomParam1 Value1 CustomParam2 Value2)</label><br>
-            <input type="text" id="AdditionalParams" name="AdditionalParams" value="{{AdditionalParams}}" 
-                   pattern="^\S*$" title="No spaces allowed"><br>
-            
-            <label for="saveFileName">Save File Name:</label><br>
-            <input type="text" id="saveFileName" name="saveFileName" value="{{SaveFileName}}" 
-                   pattern="^\S*$" title="No spaces allowed" required><br><br>
-            
-            <input type="submit" value="Save">
-        </form>
-    </main>
+       <header>
+              <img src="/static/stationeers.png" alt="Stationeers Banner" id="banner">
+       </header>
+       <main>
+              <h1>Edit Configuration</h1>
+              <form action="/saveconfig" method="post">
+                     <label for="exePath">Server Executable Path:</label><br>
+                     <input type="text" id="exePath" name="exePath" value="{{ExePath}}" readonly><br>
+
+                     <label for="StartLocalHost">Start Local Host:</label><br>
+                     <input type="text" id="StartLocalHost" name="StartLocalHost" value="{{StartLocalHost}}"
+                            pattern="^\S*$" title="No spaces allowed" required><br>
+
+                     <label for="ServerVisible">Server Visible:</label><br>
+                     <input type="text" id="ServerVisible" name="ServerVisible" value="{{ServerVisible}}"
+                            pattern="^\S*$" title="No spaces allowed" required><br>
+
+                     <label for="GamePort">Game Port:</label><br>
+                     <input type="text" id="GamePort" name="GamePort" value="{{GamePort}}" pattern="^\S*$"
+                            title="No spaces allowed" required><br>
+
+                     <label for="UpdatePort">Update Port:</label><br>
+                     <input type="text" id="UpdatePort" name="UpdatePort" value="{{UpdatePort}}" pattern="^\S*$"
+                            title="No spaces allowed" required><br>
+
+                     <label for="AutoSave">Auto Save:</label><br>
+                     <input type="text" id="AutoSave" name="AutoSave" value="{{AutoSave}}" pattern="^\S*$"
+                            title="No spaces allowed" required><br>
+
+                     <label for="SaveInterval">Save Interval:</label><br>
+                     <input type="text" id="SaveInterval" name="SaveInterval" value="{{SaveInterval}}" pattern="^\S*$"
+                            title="No spaces allowed" required><br>
+
+                     <label for="LocalIpAddress">Local IP Address:</label><br>
+                     <input type="text" id="LocalIpAddress" name="LocalIpAddress" value="{{LocalIpAddress}}"
+                            pattern="^\S*$" title="No spaces allowed" required><br>
+
+                     <label for="ServerPassword">Server Password:</label><br>
+                     <input type="text" id="ServerPassword" name="ServerPassword" value="{{ServerPassword}}"
+                            pattern="^\S*$" title="No spaces allowed"><br>
+
+                     <label for="AdminPassword">Admin Password (inop with current Stationeers builds):</label><br>
+                     <input type="text" id="AdminPassword" name="AdminPassword" value="{{AdminPassword}}"
+                            pattern="^\S*$" title="No spaces allowed. Also, this Admin Pwd seems to not work any more with the Stationeers Dedicated Server. "><br>
+
+                     <label for="ServerMaxPlayers">Server Max Players:</label><br>
+                     <input type="text" id="ServerMaxPlayers" name="ServerMaxPlayers" value="{{ServerMaxPlayers}}"
+                            pattern="^\S*$" title="No spaces allowed" required><br>
+
+                     <label for="ServerName">Server Name:</label><br>
+                     <input type="text" id="ServerName" name="ServerName" value="{{ServerName}}" pattern="^\S*$"
+                            title="No spaces allowed" required><br>
+
+                     <label for="AdditionalParams">Additional Parameters: (CustomParam1 Value1 CustomParam2
+                            Value2)</label><br>
+                     <input type="text" id="AdditionalParams" name="AdditionalParams" value="{{AdditionalParams}}"
+                            pattern="^\S*$" title="No spaces allowed"><br>
+
+                     <label for="saveFileName">Save File Name:</label><br>
+                     <input type="text" id="saveFileName" name="saveFileName" value="{{SaveFileName}}" pattern="^\S*$"
+                            title="No spaces allowed" required><br><br>
+
+                     <input type="submit" value="Save">
+              </form>
+       </main>
 </body>
+
 </html>
