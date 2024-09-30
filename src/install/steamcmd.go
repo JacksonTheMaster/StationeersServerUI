@@ -78,7 +78,7 @@ func installSteamCMDWindows() {
 			return
 		}
 
-		fmt.Println(ColorGreen + "SteamCMD installed successfully." + ColorReset)
+		fmt.Println(ColorGreen + "💾SteamCMD installed successfully." + ColorReset)
 	}
 
 	// Run SteamCMD
@@ -91,12 +91,12 @@ func installSteamCMDLinux() {
 
 	// Check if SteamCMD is already installed
 	if _, err := os.Stat(steamCMDDir); os.IsNotExist(err) {
-		fmt.Println(ColorYellow + "SteamCMD not found, downloading..." + ColorReset)
+		fmt.Println(ColorYellow + "⚠️SteamCMD not found, downloading..." + ColorReset)
 
 		// Create SteamCMD directory
 		err := os.MkdirAll(steamCMDDir, os.ModePerm)
 		if err != nil {
-			fmt.Printf(ColorRed+"Error creating SteamCMD directory: %v\n"+ColorReset, err)
+			fmt.Printf(ColorRed+"❌Error creating SteamCMD directory: %v\n"+ColorReset, err)
 			return
 		}
 
@@ -104,7 +104,7 @@ func installSteamCMDLinux() {
 		downloadURL := "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
 		resp, err := http.Get(downloadURL)
 		if err != nil {
-			fmt.Printf(ColorRed+"Error downloading SteamCMD: %v\n"+ColorReset, err)
+			fmt.Printf(ColorRed+"❌Error downloading SteamCMD: %v\n"+ColorReset, err)
 			return
 		}
 		defer resp.Body.Close()
@@ -112,18 +112,18 @@ func installSteamCMDLinux() {
 		// Read tar.gz content
 		err = untar(steamCMDDir, resp.Body)
 		if err != nil {
-			fmt.Printf(ColorRed+"Error extracting SteamCMD tar.gz: %v\n"+ColorReset, err)
+			fmt.Printf(ColorRed+"❌Error extracting SteamCMD tar.gz: %v\n"+ColorReset, err)
 			return
 		}
 
 		// Ensure executable permissions
 		err = os.Chmod(filepath.Join(steamCMDDir, "steamcmd.sh"), 0755)
 		if err != nil {
-			fmt.Printf(ColorRed+"Error setting SteamCMD executable permissions: %v\n"+ColorReset, err)
+			fmt.Printf(ColorRed+"❌Error setting SteamCMD executable permissions: %v\n"+ColorReset, err)
 			return
 		}
 
-		fmt.Println(ColorGreen + "SteamCMD installed successfully." + ColorReset)
+		fmt.Println(ColorGreen + "✅SteamCMD installed successfully." + ColorReset)
 	}
 
 	// Run SteamCMD
@@ -134,7 +134,7 @@ func installSteamCMDLinux() {
 func runSteamCMD(steamCMDDir string) {
 	currentDir, err := os.Getwd()
 	if err != nil {
-		fmt.Printf(ColorRed+"Error getting current working directory: %v\n"+ColorReset, err)
+		fmt.Printf(ColorRed+"❌Error getting current working directory: %v\n"+ColorReset, err)
 		return
 	}
 
@@ -151,14 +151,14 @@ func runSteamCMD(steamCMDDir string) {
 	cmd.Stderr = os.Stderr
 
 	// Run the command
-	fmt.Println(ColorBlue + "Running SteamCMD..." + ColorReset)
+	fmt.Println(ColorBlue + "🕑 Running SteamCMD..." + ColorReset)
 	err = cmd.Run()
 	if err != nil {
-		fmt.Printf(ColorRed+"Error running SteamCMD: %v\n"+ColorReset, err)
+		fmt.Printf(ColorRed+"❌ Error running SteamCMD: %v\n"+ColorReset, err)
 		return
 	}
 
-	fmt.Println(ColorGreen + "SteamCMD command executed successfully." + ColorReset)
+	fmt.Println(ColorGreen + "✅ SteamCMD executed successfully." + ColorReset)
 }
 
 // unzip extracts a zip archive
