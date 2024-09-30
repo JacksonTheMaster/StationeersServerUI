@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
@@ -42,7 +41,8 @@ var (
 	BackupRestoreMessageID    string
 	ControlPanelChannelID     string
 	IsDiscordEnabled          bool
-	Version                   = "2.4.2"
+	IsFirstTimeSetup          bool
+	Version = "2.4.3"
 	Branch                    = "Release"
 )
 
@@ -60,15 +60,16 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, err
 	}
 	//print all the values to console
-	fmt.Println("DiscordToken:", config.DiscordToken)
-	fmt.Println("ControlChannelID:", config.ControlChannelID)
-	fmt.Println("StatusChannelID:", config.StatusChannelID)
-	fmt.Println("ConnectionListChannelID:", config.ConnectionListChannelID)
-	fmt.Println("LogChannelID:", config.LogChannelID)
-	fmt.Println("SaveChannelID:", config.SaveChannelID)
-	fmt.Println("BlackListFilePath:", config.BlackListFilePath)
-	fmt.Println("IsDiscordEnabled:", config.IsDiscordEnabled)
-	fmt.Println("ErrorChannelID:", config.ErrorChannelID)
+	//fmt.Println("DiscordToken:", config.DiscordToken)
+	//fmt.Println("ControlChannelID:", config.ControlChannelID)
+	//fmt.Println("StatusChannelID:", config.StatusChannelID)
+	//fmt.Println("ConnectionListChannelID:", config.ConnectionListChannelID)
+	//fmt.Println("LogChannelID:", config.LogChannelID)
+	//fmt.Println("SaveChannelID:", config.SaveChannelID)
+	//fmt.Println("BlackListFilePath:", config.BlackListFilePath)
+	//fmt.Println("IsDiscordEnabled:", config.IsDiscordEnabled)
+	//fmt.Println("ErrorChannelID:", config.ErrorChannelID)
+	//fmt.Println("IsFirstTimeSetup:", IsFirstTimeSetup)
 	DiscordToken = config.DiscordToken
 	ControlChannelID = config.ControlChannelID
 	StatusChannelID = config.StatusChannelID

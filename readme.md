@@ -4,128 +4,199 @@
 ![License](https://img.shields.io/github/license/jacksonthemaster/StationeersServerUI)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
 
-Stationeers Dedicated Server Control is a web-based tool for managing a Stationeers dedicated server. It offers an intuitive UI with a retro computer theme and a robust REST API for server operations, configuration management, and backup handling. Additionally, it features full Discord integration, allowing you to monitor and manage the server directly from your Discord server. This makes it easier for your community to manage restores and restarts. Information about this feature will be published soon™
-
-I created this project to make it easier for me to manage my Stationeers server more efficiently, especially to restore backups. With the enhanced backup management features, such as grouping backups and improved backup deletion logic, managing server backups is now more straightforward than ever.
-Also I wanted my friends to be able to start, stop and manage the Server without having to ask me to restore the lastest backup because some base exploded. So here we are.
-
-DISCLAIMER: PUBLISHING THIS UI TO THE WEB SHOULD ONLY BE DONE BEHIND A SECURE AUTHENTICATION MECHANISM; THIS SHOULD NOT UNDER ANY CIRCUMSTANCES BE PORT FORWARDED STRAIGHT OUT!
-
-## Features
 | UI Overview | Configuration | Backup Management |
 |:-----------:|:-------------:|:-----------------:|
 | ![UI Overview](media/UI-1.png) | ![Configuration](media/UI-2.png) | ![Backup Management](media/UI-3.png) |
-- Start and stop the server.
-- View real-time server output.
-- Manage server configurations.
-- List and restore backups.
-- Fully functional REST API for all operations.
-## Discord Integration Features
-- View server status and console output in real-time.
-- Monitor server status and receive notifications.
-- Manage server starts stops and restarts directly from Discord.
-- Manage restores and backup control directly from Discord.
-- Granular access control for server management commands, notifications, and the Server Log! (Just use Discord's role system)
-- Get alerts for exceptions and errors, including Cysharp error detection.
-- Get alerts for player connections and disconnections.
-- Get a table of connected players and their Steam IDs
-- Option to ban players by their Steam ID.
 
-### Discord Commands
+## Introduction
 
-| Command | Description |
-| --- | --- |
-| !start | Starts the server.
-| !stop | Stops the server.
-| !restore:<number/backupindex> | Restores a backup at the specified index.
-| !list:<number/all> | Lists the most recent backups. Defaults to 5 backups.
-| !ban:SteamID | Bans a player by their SteamID.
-| !unban:SteamID | Unbans a player by their SteamID.
-| !update | Updates the server files if there is a game update available. (Currently Stable Branch only)
-| !help | Displays a help message.
+Stationeers Dedicated Server Control is a user-friendly, web-based tool for managing a Stationeers dedicated server. It features an intuitive retro computer-themed interface, allowing you to easily start and stop the server, view real-time server output, manage configurations, and handle backups—all from your web browser.
+
+Additionally, it offers full Discord integration, enabling you and your community to monitor and manage the server directly from a Discord server. Features include real-time server status updates, console output, and the ability to start, stop, and restore backups via Discord commands.
+
+**Important:** For security reasons, do not expose this UI directly to the internet without a secure authentication mechanism. Do not port forward the UI directly.
+
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [First-Time Setup](#first-time-setup)
+- [Discord Integration](#discord-integration)
+  - [Features](#discord-integration-features)
+  - [Setup Instructions](#discord-integration-setup)
+- [Usage](#usage)
+- [License](#license)
+- [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
+
+## Features
+
+- Start and stop the Stationeers server with ease.
+- View real-time server console output.
+- Manage server configurations through a user-friendly interface.
+- List and restore backups, with enhanced backup management features.
+- Fully functional REST API for advanced operations (optional).
+- Full Discord integration for server monitoring and management.
+
+## Requirements
+
+- Windows OS (tested on Windows; Linux support coming soon).
+- Administrative privileges on the server machine.
+- An empty folder of your choice to install the server control software.
+
+## Installation
+
+### Quick Installation Instructions
+
+1. **Download and Run the Application**
+
+   - Download the latest release executable file (`.exe`) from the [releases page](https://github.com/JacksonTheMaster/StationeersServerUI/releases).
+   - Place it in an empty folder of your choice.
+   - Run the executable. A console window will open, displaying output.
+
+2. **Access the Web Interface**
+
+   - Open your web browser.
+   - Navigate to `http://<IP-OF-YOUR-SERVER>:8080`.
+     - Replace `<IP-OF-YOUR-SERVER>` with the local IP address of your server. You can find this by opening Command Prompt and typing `ipconfig`.
+
+3. **Allow External Connections (Optional)**
+
+   - If you want others on your network to access the server UI or the gameserver, you'll need to adjust your Windows Firewall settings:
+     - Go to **Control Panel > System and Security > Windows Defender Firewall**.
+     - Click on **Advanced settings**.
+     - Select **Inbound Rules** and click on **New Rule...**.
+     - Choose **Port** and click **Next**.
+     - for the gameserver, select **TCP** and enter `27015, 27016` in the **Specific local ports** field.
+     - for the WebUI(This Software), select **TCP** and enter `8080` in the **Specific local ports** field.
+     - Click **Next**.
+     - Choose **Allow the connection** and click **Next**.
+     - Select the network profiles of your choise (Domain, Private, Public) and click **Next**.
+     - Name the rule (e.g., "Stationeers Server Ports") and click **Finish**.
+   - **Note:** Depending on your network setup, you may need to configure port forwarding on your router to allow external connections. Please refer to your router's documentation for instructions.
+
+
+## First-Time Setup
+
+To successfully run the server for the first time, follow these steps:
+Follow the Installation Instructions above.
+Only turn to this section when the magenta Text in the Console tells you to do so.
+
+1. **Prepare Your Save File**
+
+   - Copy an existing Stationeers save folder into the `/saves` directory created during the installation.
+
+2. **Configure the Save File Name**
+
+   - In the web interface, click on the **Config** button.
+   - Enter the name of your save folder in the **Save File Name** field.
+   - You might restart the Software at this point to be sure, but it's technically not necessary.
+
+3. **Start the Server**
+
+   - Return to the main page of the web interface.
+   - Click on the **Start Server** button.
+   - The server will begin to start up, and you can monitor the console output in real-time.
+
+## Discord Integration
+
+### Discord Integration Features
+
+- **Real-Time Monitoring:**
+  - View server status and console output directly in Discord.
+  - Receive notifications for server events such as player connections/disconnections, exceptions, and errors.
+- **Server Management Commands:**
+  - Start, stop, and restart the server.
+  - Restore backups.
+  - Ban and unban players by their Steam ID.
+  - Update server files (currently supports the stable branch only).
+- **Access Control:**
+  - Utilize Discord's role system for granular access control over server management commands and notifications.
 
 ### Discord Notifications
 
-| Notification | Description |
-| --- | --- |
-| Server Ready | When the server status changes to ready while startup, a notification will be sent
-| Player Connection | When a player connects to the server, a notification will be sent 
-| Player Disconnection | When a player disconnects from the server, a notification will be sent
-| Exception | When an exception is detected, a notification will be sent 
-| Error | When an error is detected, a notification will be sent 
+The bot can send notifications for the following events:
+
+- **Server Ready:** Notifies when the server status changes to ready.
+- **Player Connection/Disconnection:** Alerts when a player connects or disconnects.
+- **Exceptions and Errors:** Sends notifications when exceptions or errors are detected, including Cysharp error detection.
+- **Player List:** Provides a table of connected players and their Steam IDs.
 
 ## Discord Integration Setup
-- *use the "further setup" button on the UI!*
-- Create a Discord Bot and add it to your server. You can find instructions on how to do this [here](https://chatgpt.com/).
-- Obtain an OAuth2 Token for your Discord Bot.
-- Add the OAuth2 Token to the "DiscordToken" field in the config.json file.
-- Enter the channel IDs for the server control, server status, and server log channels in the config.json file.
-- These IDs can be found by right-clicking on the channel and selecting "Copy ID".
-- This can technically be one channel, but I recommend using atlest two separate channels (seperate log by any means)
-- Enable the Discord integration in the config.json file.
-- Restart the Software.
 
+1. **Create a Discord Bot**
 
-## Requirements
-- Window OS is tested, Linux is still not a priority but will be soon™.
-- Administrative Privileges
-- an Empty folder of your Choice
+   - Follow the instructions on [Discord's Developer Portal](https://discord.com/developers/applications) to create a new bot and add it to your Discord server.
 
+2. **Obtain the Bot Token**
 
+   - In the bot settings, under the **Bot** tab, copy the **Token**. Keep this token secure.
 
-## Quick Installation Instrcutions for Administrators & Server Operators
+3. **Configure the Bot in the Server Control UI**
 
-1. Download & run the exe release file.
-2. read the console output
-3. Open your web browser and type `http://<IP-OF-YOUR-SERVER>:8080` in the address bar. Replace `<IP-OF-YOUR-SERVER>` with the actual IP address of your server. You can find this by opening the Command Prompt and typing `ipconfig`.
-4. To allow other users to connect to your UI and the Server, open the Windows Firewall settings:
-    - Go to Control Panel > System and Security > Windows Defender Firewall.
-    - Click "Advanced settings" on the left.
-    - In the Windows Firewall with Advanced Security window, click "Inbound Rules" on the left.
-    - Click "New Rule..." on the right.
-    - Select "Port" and click "Next".
-    - Choose "TCP" and enter "27015, 27016, 8080" in the Specific local ports field. Click "Next".
-    - Allow the connection and click "Next".
-    - Select the network types to apply this rule (usually Domain, Private, and Public) and click "Next".
-    - Name the rule something recognizable (e.g., "Stationeers Server Ports") and click "Finish".
-    - __Note__:  Depending on your Setup, you might need to Port forward those ports on your router. For this, please consider using google or any other search engine exept bing to find a tutorial on how to do this.
-5. Before starting your Server, ensure the configuration files on the /config and /furtherconfig page are set up correctly.
+   - In the web interface, click on the **Further Setup** button.
+   - Enter the bot's token in the **Discord Token** field.
+   - Create a Discord Server if not already done.
+   - Create a Discord Channel for the Server Control (commands), Server Status, and Server Log, and the Control Panel. Additionally, create a Discord Channel for the Error Channel.
 
+   - Input the **Channel IDs** on the further Setup Page.
+     - **Server Control Channel ID**: For sending commands to the bot.
+     - **Server Status Channel ID**: For receiving server status notifications.
+     - **Server Log Channel ID**: For viewing real-time console output.
+     - **Control Panel Channel ID**: For the Control Panel.
+     - **Error Channel ID**: For the Error Channel.
+   - **Note:** To get a channel's ID, right-click on the channel in Discord and select **Copy ID**.
 
+4. **Enable Discord Integration**
 
-## REST API Information
+   - In the **Further Setup** page, check the **Discord Enabled** checkbox.
 
-This server is based on Go, so it's basically a REST-API with some HTML files on top. All UI actions are API calls, so you can fully use the API to control the server.
+5. **Restart the Application**
 
-### API Endpoints
+   - Close the application and run the executable again to apply the changes.
 
-- **Start Server**: `/start` (GET)
-- **Stop Server**: `/stop` (GET)
-- **Get Server Output**: `/output` (GET)
-- **List Backups**: `/backups` (GET)
-- **Restore Backup**: `/restore?index=<index>` (GET)
-- **Edit Configuration**: `/config` (GET)
-- **Save Configuration**: `/saveconfig` (POST Form Data)
+## Usage
 
-### Form Data Explanation
+### Web Interface
 
-- **SaveFileName**: The name of the save file to load. This is the name of the file without the extension. Example: `Mars`.
-- **Settings**: The server settings. Use the UI to get the correct settings if you're unsure.
+- **Start/Stop Server:** Use the **Start Server** and **Stop Server** buttons on the main page.
+- **View Server Output:** Monitor real-time console output directly in the web interface.
+- **Manage Configurations:**
+  - Click on the **Config** button to edit server settings.
+  - Ensure all settings are correct before starting the server.
+- **Backup Management:**
+  - Access the **Backups** page to list and restore backups.
+  - Backups are grouped and have improved deletion logic for easier management.
 
-## UI
+#### Discord Commands
 
-The web interface provides buttons to start and stop the server, edit configuration, and manage backups. The current server status and console output are displayed in real-time.
+| Command                       | Description                                                         |
+|-------------------------------|---------------------------------------------------------------------|
+| `!start`                      | Starts the server.                                                  |
+| `!stop`                       | Stops the server.                                                   |
+| `!restore:<backup_index>`     | Restores a backup at the specified index.                           |
+| `!list:<number/all>`          | Lists recent backups (defaults to 5 if number not specified).       |
+| `!ban:<SteamID>`              | Bans a player by their SteamID.                                     |
+| `!unban:<SteamID>`            | Unbans a player by their SteamID.                                   |
+| `!update`                     | Updates the server files if a game update is available.             |
+| `!help`                       | Displays help information for the bot commands.                     |
+
+### Important Notes
+
+- **Do Not Expose the UI Publicly:** For security reasons, do not expose the UI directly to the internet without proper authentication mechanisms.
+- **Server Updates:** Currently, only the stable branch is supported for updates via Discord commands.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](link-to-license-file) file for details.
 
 ## Contributing
 
-Contributions are welcome! Feel free to open issues or submit pull requests!
+Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ## Acknowledgments
 
-- [JacksonTheMaster](https://github.com/JacksonTheMaster) Developed with ❤️ and 💧 by J. Langisch.
-- [Go](https://go.dev/) for the Go programming language.
-- [RocketWerkz](https://github.com/RocketWerkz) for creating the Stationeers game.
+- **[JacksonTheMaster](https://github.com/JacksonTheMaster):** Developed with ❤️ and 💧 by J. Langisch.
+- **[Go](https://go.dev/):** For the Go programming language.
+- **[RocketWerkz](https://rocketwerkz.com/):** For creating the Stationeers game.
