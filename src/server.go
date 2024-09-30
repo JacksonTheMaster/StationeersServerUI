@@ -75,9 +75,11 @@ func main() {
 
 	fmt.Println(string(colorYellow), "Starting the HTTP server on port 8080...", string(colorReset))
 	fmt.Println(string(colorGreen), "UI available at: http://127.0.0.1:8080", string(colorReset))
-	fmt.Println(string(colorMagenta), "For first time Setup, follow the instructions on:", string(colorReset))
-	fmt.Println(string(colorMagenta), "https://github.com/jacksonthemaster/StationeersServerUI/blob/main/readme.md#first-time-setup", string(colorReset))
-	fmt.Println(string(colorMagenta), "Or just copy your save folder to /Saves and edit the save file name from the UI (Config Page)", string(colorReset))
+	if config.IsFirstTimeSetup {
+		fmt.Println(string(colorMagenta), "For first time Setup, follow the instructions on:", string(colorReset))
+		fmt.Println(string(colorMagenta), "https://github.com/jacksonthemaster/StationeersServerUI/blob/main/readme.md#first-time-setup", string(colorReset))
+		fmt.Println(string(colorMagenta), "Or just copy your save folder to /Saves and edit the save file name from the UI (Config Page)", string(colorReset))
+	}
 	if config.Branch != "Release" {
 		fmt.Println(string(colorRed), "⚠️Starting pprof server on /debug/pprof", string(colorReset))
 	}

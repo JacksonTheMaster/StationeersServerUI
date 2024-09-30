@@ -254,8 +254,6 @@ func WatchBackupDir() {
 
 	// Check if the backup directory exists
 	if _, err := os.Stat(backupDir); os.IsNotExist(err) {
-		// If the directory doesn't exist, log a warning and skip watching it
-		fmt.Printf("Warning: Backup directory %s does not exist, skipping watch. If this is the first startup, Ignore this message as there is no Save yet\n", backupDir)
 		return
 	}
 

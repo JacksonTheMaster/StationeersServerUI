@@ -1,6 +1,7 @@
 package install
 
 import (
+	"StationeersServerUI/src/config"
 	"fmt"
 	"io"
 	"net/http"
@@ -58,7 +59,8 @@ func CheckAndDownloadUIMod() {
 			"stationeers.png":    "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/stationeers.png",
 			"style.css":          "https://raw.githubusercontent.com/JacksonTheMaster/StationeersServerUI/main/UIMod/style.css",
 		}
-
+		//set the first time setup flag to true
+		config.IsFirstTimeSetup = true
 		// Download each file
 		for fileName, url := range files {
 			err := downloadFile(workingDir+fileName, url)
@@ -72,6 +74,7 @@ func CheckAndDownloadUIMod() {
 		fmt.Println("✅ All files downloaded successfully.")
 	} else {
 		fmt.Println("♻️ Folder ./UIMod already exists. Skipping download.")
+		config.IsFirstTimeSetup = false
 	}
 }
 

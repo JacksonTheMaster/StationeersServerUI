@@ -41,6 +41,7 @@ var (
 	BackupRestoreMessageID    string
 	ControlPanelChannelID     string
 	IsDiscordEnabled          bool
+	IsFirstTimeSetup          bool
 	Version                   = "2.4.2"
 	Branch                    = "Release"
 )
@@ -68,6 +69,7 @@ func LoadConfig(filename string) (*Config, error) {
 	//fmt.Println("BlackListFilePath:", config.BlackListFilePath)
 	//fmt.Println("IsDiscordEnabled:", config.IsDiscordEnabled)
 	//fmt.Println("ErrorChannelID:", config.ErrorChannelID)
+	//fmt.Println("IsFirstTimeSetup:", IsFirstTimeSetup)
 	DiscordToken = config.DiscordToken
 	ControlChannelID = config.ControlChannelID
 	StatusChannelID = config.StatusChannelID
