@@ -8,6 +8,9 @@
 |:-----------:|:-------------:|:-----------------:|
 | ![UI Overview](media/UI-1.png) | ![Configuration](media/UI-2.png) | ![Backup Management](media/UI-3.png) |
 
+## Known Bug
+The Server config page got a rework. I broke the functionality doing this. Whoopsies. Please use Settings.xml in the main Server dir until I fix this issue. The SaveName on the Config Page still has to be specified for the backup system to work properly, and to be able to restore from Discord.
+
 ## Introduction
 
 Stationeers Dedicated Server Control is a user-friendly, web-based tool for managing a Stationeers dedicated server. It features an intuitive retro computer-themed interface, allowing you to easily start and stop the server, view real-time server output, manage configurations, and handle backups—all from your web browser.
@@ -38,6 +41,7 @@ Additionally, it offers full Discord integration, enabling you and your communit
 - List and restore backups, with enhanced backup management features.
 - Fully functional REST API for advanced operations (optional).
 - Full Discord integration for server monitoring and management.
+- Auto Deletion of Backups older than 2 days.
 
 ## Requirements
 
