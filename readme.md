@@ -34,7 +34,9 @@ Additionally, it offers full Discord integration, enabling you and your communit
 - [Acknowledgments](#acknowledgments)
 
 ## Features
-
+- Place Executable in an Empty folder and run it, Stationeers Server ready.
+- Auto Update the Server at Software Startup
+- Auto SteamCMD Setup
 - Start and stop the Stationeers server with ease.
 - View real-time server console output.
 - Manage server configurations through a user-friendly interface.
