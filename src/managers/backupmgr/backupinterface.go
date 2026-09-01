@@ -18,6 +18,28 @@ var activeHTTPHandlers []*HTTPHandler
 // initMutex ensures thread-safe initialization of the global backup manager
 var initMutex sync.Mutex
 
+var backupCopiedHandler = struct {
+	sync.RWMutex
+	handler func(SaveSummary)
+}{}
+
+// SetBackupCopiedHandler configures the optional consumer for cheap metadata
+// from newly copied safe backups. Passing nil disables the callback.
+func SetBackupCopiedHandler(handler func(SaveSummary)) {
+	backupCopiedHandler.Lock()
+	backupCopiedHandler.handler = handler
+	backupCopiedHandler.Unlock()
+}
+
+func notifyBackupCopied(summary SaveSummary) {
+	backupCopiedHandler.RLock()
+	handler := backupCopiedHandler.handler
+	backupCopiedHandler.RUnlock()
+	if handler != nil {
+		handler(summary)
+	}
+}
+
 // InitGlobalBackupManager initializes the global backup manager instance
 func InitGlobalBackupManager(bmconfig BackupConfig) error {
 	// Lock to prevent concurrent initialization

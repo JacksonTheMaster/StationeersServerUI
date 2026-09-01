@@ -78,6 +78,7 @@ func ReloadBackupManager() {
 
 func ReloadDiscordBot() {
 	if !config.GetIsDiscordEnabled() {
+		discordbot.DisableRuntimeState()
 		if config.DiscordSession != nil {
 			logger.Discord.Info("Discord integration disabled, closing existing session")
 			config.DiscordSession.Close()

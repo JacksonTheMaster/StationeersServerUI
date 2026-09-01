@@ -8,6 +8,7 @@ import (
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/backupmgr"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -36,9 +37,7 @@ func sendServerStatusPanel() {
 		return
 	}
 
-	embed := buildStatusPanelEmbed(nil)
-	components := buildPanelComponents()
-	sendOrEditStatusPanel(channelID, embed, components)
+	refreshStatusPanel()
 	clearMessagesAboveLastN(channelID, 1)
 	logger.Discord.Info("Server status panel sent successfully")
 }
@@ -53,9 +52,8 @@ func UpdateStatusPanelPlayerConnected(username, steamID string, connectionTime t
 	if channelID == "" {
 		return
 	}
-	embed := buildStatusPanelEmbed(players)
-	components := buildPanelComponents()
-	sendOrEditStatusPanel(channelID, embed, components)
+	setStatusPanelPlayers(players)
+	refreshStatusPanel()
 }
 
 // UpdateStatusPanelPlayerDisconnected updates the panel when a player disconnects
@@ -68,13 +66,12 @@ func UpdateStatusPanelPlayerDisconnected(steamID string, players map[string]stri
 	if channelID == "" {
 		return
 	}
-	embed := buildStatusPanelEmbed(players)
-	components := buildPanelComponents()
-	sendOrEditStatusPanel(channelID, embed, components)
+	setStatusPanelPlayers(players)
+	refreshStatusPanel()
 }
 
 // buildStatusPanelEmbed creates a combined server info + connected players embed
-func buildStatusPanelEmbed(players map[string]string) *discordgo.MessageEmbed {
+func buildStatusPanelEmbed(players map[string]string, summary *backupmgr.SaveSummary) *discordgo.MessageEmbed {
 	serverName := config.GetServerName()
 
 	embed := &discordgo.MessageEmbed{
@@ -116,7 +113,30 @@ func buildStatusPanelEmbed(players map[string]string) *discordgo.MessageEmbed {
 		embed.Color = 0x57F287 // Green when players are online
 	}
 
+	if summary != nil {
+		embed.Fields = append(embed.Fields,
+			&discordgo.MessageEmbedField{Name: backupStatEmoji("days", "🗓️") + " Days Played", Value: fmt.Sprintf("**%d**", summary.DaysPlayed), Inline: true},
+			&discordgo.MessageEmbedField{Name: backupStatEmoji("things", "🧱") + " Things", Value: fmt.Sprintf("**%d**", summary.Things), Inline: true},
+			&discordgo.MessageEmbedField{Name: backupStatEmoji("atmospheres", "🌐") + " Atmospheres", Value: fmt.Sprintf("**%d**", summary.Atmospheres), Inline: true},
+			&discordgo.MessageEmbedField{Name: backupStatEmoji("rooms", "🏠") + " Rooms", Value: fmt.Sprintf("**%d**", summary.Rooms), Inline: true},
+			&discordgo.MessageEmbedField{Name: backupStatEmoji("pipe_networks", "🔧") + " Pipe Networks", Value: fmt.Sprintf("**%d**", summary.PipeNetworks), Inline: true},
+			&discordgo.MessageEmbedField{Name: backupStatEmoji("cable_networks", "⚡") + " Cable Networks", Value: fmt.Sprintf("**%d**", summary.CableNetworks), Inline: true},
+		)
+	}
+
 	return embed
+}
+
+func refreshStatusPanel() {
+	if !config.GetIsDiscordEnabled() || config.DiscordSession == nil {
+		return
+	}
+	channelID := config.GetStatusPanelChannelID()
+	if channelID == "" {
+		return
+	}
+	players, summary := statusPanelSnapshot()
+	sendOrEditStatusPanel(channelID, buildStatusPanelEmbed(players, summary), buildPanelComponents())
 }
 
 // buildPanelComponents returns the action row with interactive buttons

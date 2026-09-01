@@ -12,6 +12,7 @@ import (
 // InitializeDiscordBot starts or restarts the Discord bot and connects it to the Discord API.
 func InitializeDiscordBot() {
 	var err error
+	prepareDiscordRuntimeState()
 
 	// Clean up previous session
 	if config.DiscordSession != nil {
@@ -45,6 +46,8 @@ func InitializeDiscordBot() {
 		logger.Discord.Error("Error opening Discord connection: " + err.Error())
 		return
 	}
+	syncApplicationEmojis(config.DiscordSession)
+	initializeDiscordBackupSummary()
 
 	// Register handlers and commands after session is open
 	config.DiscordSession.AddHandler(listenToDiscordReactions)

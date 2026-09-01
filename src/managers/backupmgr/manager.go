@@ -175,6 +175,14 @@ func (m *BackupManager) handleNewBackup(filePath string) {
 		}
 
 		logger.Backup.Debug("Backup successfully copied to safe location: " + dstPath)
+		summary, err := ReadSaveSummary(dstPath)
+		if err != nil {
+			logger.Backup.Warn("Could not read metadata from copied backup " + dstPath + ": " + err.Error())
+			return
+		}
+		// Consumers such as Discord may perform network I/O. Do not keep the
+		// backup manager locked while notifying them.
+		go notifyBackupCopied(summary)
 	}()
 }
 

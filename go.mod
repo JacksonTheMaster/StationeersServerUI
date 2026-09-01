@@ -3,7 +3,7 @@ module github.com/JacksonTheMaster/StationeersServerUI/v5
 go 1.26
 
 require (
-	github.com/bwmarrin/discordgo v0.28.1
+	github.com/bwmarrin/discordgo v0.29.0
 	github.com/charmbracelet/bubbles v0.21.1
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
