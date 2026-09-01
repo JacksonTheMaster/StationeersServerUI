@@ -1126,6 +1126,43 @@ body.modal-open {
     letter-spacing: 1px;
 }
 
+.workshop-add-section {
+    background: linear-gradient(135deg, var(--primary-glow-soft), color-mix(in srgb, var(--accent) 6%, transparent));
+    border-color: var(--primary);
+}
+
+.slp-section-heading h3 {
+    margin-bottom: 8px;
+}
+
+.workshop-mod-input {
+    width: 100%;
+    min-height: 130px;
+    padding: 16px;
+    resize: vertical;
+    background: var(--input-bg);
+    color: var(--text-bright);
+    border: 1px solid var(--primary-dim);
+    border-radius: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+.workshop-mod-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow-soft);
+}
+
+.workshop-add-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 12px;
+}
+
 .slp-install-section {
     background: linear-gradient(135deg, var(--primary-glow-soft), color-mix(in srgb, var(--accent) 8%, transparent));
     border: 2px solid var(--primary);
@@ -1259,6 +1296,33 @@ body.modal-open {
     cursor: wait;
 }
 
+.mod-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.mod-card-actions .mod-update-button {
+    margin-top: 0;
+}
+
+.mod-workshop-link {
+    padding: 5px 12px;
+    color: var(--text-bright);
+    border: 1px solid var(--primary-dim);
+    border-radius: 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    text-decoration: none;
+}
+
+.mod-workshop-link:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
 .slp-button.danger {
     background-color: var(--danger);
     border-color: var(--danger);
@@ -1312,6 +1376,16 @@ body.modal-open {
     .manage-buttons {
         flex-direction: column;
     }
+
+    .workshop-add-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .workshop-add-actions .slp-button {
+        width: 100%;
+    }
+
 }
 
 #modPackageUploadZone {
@@ -1393,60 +1467,6 @@ body.modal-open {
 
 #modPackageUploadProgress.active {
     display: block;
-}
-
-/* SLP Beta Disclaimer */
-.slp-disclaimer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 400px;
-    padding: 40px;
-}
-
-.slp-disclaimer-content {
-    text-align: center;
-    max-width: 500px;
-    padding: 50px;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--warning) 8%, transparent), color-mix(in srgb, var(--warning) 5%, transparent));
-    border: 2px solid color-mix(in srgb, var(--warning) 50%, transparent);
-    border-radius: 16px;
-    box-shadow: 0 0 30px color-mix(in srgb, var(--warning) 15%, transparent);
-}
-
-.slp-disclaimer-icon {
-    font-size: 64px;
-    display: block;
-    margin-bottom: 20px;
-    filter: drop-shadow(0 0 15px color-mix(in srgb, var(--warning) 50%, transparent));
-}
-
-.slp-disclaimer-content h2 {
-    color: var(--warning);
-    font-family: 'Press Start 2P', cursive;
-    font-size: 1.2rem;
-    margin: 0 0 25px 0;
-    text-shadow: 0 0 15px color-mix(in srgb, var(--warning) 40%, transparent);
-}
-
-.slp-disclaimer-content p {
-    color: var(--text-dim);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1rem;
-    line-height: 1.8;
-    margin: 0 0 15px 0;
-}
-
-.slp-disclaimer-content .slp-button {
-    margin-top: 25px;
-}
-
-.slp-content-hidden {
-    display: none;
-}
-
-.slp-disclaimer-hidden {
-    display: none;
 }
 
 .notification {
@@ -1698,4 +1718,14 @@ body.modal-open {
     border-radius: 12px;
     border: 2px dashed var(--primary-dim);
     margin: 10px 0;
+}
+
+@media (max-width: 768px) {
+    .mods-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mod-image-container {
+        height: 200px;
+    }
 }

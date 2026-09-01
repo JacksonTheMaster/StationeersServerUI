@@ -679,19 +679,6 @@
         </div>
 
         <div id="slp-config-tab" class="tab-content">
-            <!-- Beta Disclaimer -->
-            <div id="slp-disclaimer" class="slp-disclaimer">
-                <div class="slp-disclaimer-content">
-                    <span class="slp-disclaimer-icon">⚠️</span>
-                    <h2>Beta Feature</h2>
-                    <p>The SLP (Stationeers LaunchPad) Integration is currently in <strong>Beta</strong> and is subject to change.</p>
-                    <p>Handle with care and report any issues you encounter.</p>
-                    <button class="slp-button slp-button-large" onclick="acknowledgeSLPDisclaimer()">I Understand, Continue</button>
-                </div>
-            </div>
-
-            <!-- Actual SLP Content (hidden by default) -->
-            <div id="slp-content" class="slp-content-hidden">
             {{if eq .IsStationeersLaunchPadEnabled "false"}}
             <div class="slp-section slp-install-section">
                 <div class="slp-install-header">
@@ -714,6 +701,22 @@
             {{end}}
 
             {{if eq .IsStationeersLaunchPadEnabled "true"}}
+            <div class="slp-section workshop-add-section">
+                <div class="slp-section-heading">
+                    <div>
+                        <span class="panel-kicker">Steam Workshop</span>
+                        <h3>Add Workshop Mods</h3>
+                    </div>
+                </div>
+                <p>Paste one or more Workshop URLs or numeric IDs. Separate entries with a new line, comma, or space.</p>
+                <textarea id="workshopModInput" class="workshop-mod-input" rows="5"
+                    placeholder="https://steamcommunity.com/sharedfiles/filedetails/?id=1234567890&#10;9876543210"></textarea>
+                <div class="workshop-add-actions">
+                    <span class="input-info">SSUI downloads and installs every valid item using SteamCMD.</span>
+                    <button id="installWorkshopModsBtn" class="slp-button" onclick="installWorkshopMods()">⬇️ Download & Install</button>
+                </div>
+            </div>
+
             <div class="slp-section">
                 <h3>{{.UIText_SLP_UploadModPackage}}</h3>
                 <p>{{.UIText_SLP_UploadDescription}}</p>
@@ -755,7 +758,6 @@
                 </div>
             </div>
             {{end}}
-            </div><!-- End slp-content -->
         </div>
 
         <div id="detectionmanager-config-tab" class="tab-content">
@@ -857,7 +859,15 @@
     </footer>
 
     <script>
-        function showConfigTab(tabId) {
+        const configTabs = {
+            settings: 'server-config-tab',
+            discord: 'discord-config-tab',
+            slp: 'slp-config-tab',
+            dmgr: 'detectionmanager-config-tab',
+            theme: 'theme-config-tab'
+        };
+
+        function showConfigTab(tabId, updateUrl = true) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -876,6 +886,18 @@
             if (button) {
                 button.classList.add('active');
             }
+
+            if (updateUrl) {
+                const tabName = Object.keys(configTabs).find(name => configTabs[name] === tabId) || 'settings';
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tabName);
+                window.history.replaceState({}, '', url);
+            }
+        }
+
+        function showConfigTabFromUrl() {
+            const requestedTab = new URLSearchParams(window.location.search).get('tab') || 'settings';
+            showConfigTab(configTabs[requestedTab] || configTabs.settings, false);
         }
 
         document.getElementById('isDiscordEnabled').addEventListener('change', function () {
@@ -924,6 +946,8 @@
                 showConfigTab(tabId);
             });
         });
+        window.addEventListener('popstate', showConfigTabFromUrl);
+        showConfigTabFromUrl();
     </script>
     <script src="/static/js/theme-engine.js"></script>
     <script src="/static/js/theme-editor.js"></script>

@@ -74,13 +74,23 @@ func DownloadWorkshopItems(workshopHandles []string) ([]string, error) {
 		steamcmddir = SteamCMDWindowsDir
 	}
 
+	steamcmdPath := filepath.Join(steamcmddir, executable)
+	if _, err := os.Stat(steamcmdPath); err != nil {
+		err := fmt.Errorf("SteamCMD executable not found at %s (is SteamCMD disabled?)", steamcmdPath)
+		logger.Install.Error("❌ " + err.Error())
+		logs = append(logs, err.Error())
+		return logs, err
+	}
+
 	// Download each workshop item
+	var downloadedHandles []string
+	var failedHandles []string
 	for i, appID := range workshopHandles {
 		logger.Install.Infof("📦 Downloading workshop item %d/%d: %s", i+1, len(workshopHandles), appID)
 
 		// Build SteamCMD command
 		cmd := exec.Command(
-			filepath.Join(steamcmddir, executable),
+			steamcmdPath,
 			"+force_install_dir", "../",
 			"+login", "anonymous",
 			"+workshop_download_item", "544550", appID,
@@ -122,22 +132,38 @@ func DownloadWorkshopItems(workshopHandles []string) ([]string, error) {
 				logger.Install.Warnf("⚠️  Error running SteamCMD for workshop item %s: %s", appID, err.Error())
 				logs = append(logs, fmt.Sprintf("Error running SteamCMD for workshop item %s: %s", appID, err.Error()))
 			}
+			failedHandles = append(failedHandles, appID)
 			continue // Continue with next workshop item even if this one fails
 		}
 
 		logger.Install.Debugf("✅ Successfully downloaded workshop item: %s", appID)
 		logs = append(logs, fmt.Sprintf("Successfully downloaded workshop item: %s", appID))
+		downloadedHandles = append(downloadedHandles, appID)
 	}
 
-	logger.Install.Info("✅ Workshop items download complete")
-	logs = append(logs, "Workshop items download complete")
+	if len(failedHandles) > 0 {
+		logger.Install.Warn("⚠️ Workshop items download completed with failures")
+		logs = append(logs, "Workshop items download completed with failures")
+	} else {
+		logger.Install.Info("✅ Workshop items download complete")
+		logs = append(logs, "Workshop items download complete")
+	}
 
-	// Copy downloaded items to mods directory
-	logs2, err := copyDownloadedItemsToMods(workshopHandles)
-	logs = append(logs, logs2...)
-	if err != nil {
-		logger.Install.Error("❌ Error copying workshop items to mods directory: " + err.Error())
-		logs = append(logs, "Error copying workshop items to mods directory: "+err.Error())
+	// Copy only items whose SteamCMD download succeeded.
+	if len(downloadedHandles) > 0 {
+		logs2, err := copyDownloadedItemsToMods(downloadedHandles)
+		logs = append(logs, logs2...)
+		if err != nil {
+			logger.Install.Error("❌ Error copying workshop items to mods directory: " + err.Error())
+			logs = append(logs, "Error copying workshop items to mods directory: "+err.Error())
+			return logs, err
+		}
+	}
+
+	if len(failedHandles) > 0 {
+		err := fmt.Errorf("failed to download %d workshop item(s): %s", len(failedHandles), strings.Join(failedHandles, ", "))
+		logger.Install.Error("❌ " + err.Error())
+		logs = append(logs, err.Error())
 		return logs, err
 	}
 
@@ -147,6 +173,7 @@ func DownloadWorkshopItems(workshopHandles []string) ([]string, error) {
 // copyDownloadedItemsToMods copies downloaded workshop items from the Steam directory to ./mods
 func copyDownloadedItemsToMods(workshopHandles []string) ([]string, error) {
 	var logs []string
+	var missingHandles []string
 	// Determine the steam content directory based on OS
 	var steamContentDir string
 	if runtime.GOOS == "windows" {
@@ -179,6 +206,7 @@ func copyDownloadedItemsToMods(workshopHandles []string) ([]string, error) {
 		if err != nil || !srcInfo.IsDir() {
 			logger.Install.Errorf("❌ Workshop item not found at expected path: %s (skipping)", srcPath)
 			logs = append(logs, fmt.Sprintf("Workshop item not found at expected path: %s (skipping)", srcPath))
+			missingHandles = append(missingHandles, appID)
 			continue
 		}
 
@@ -207,6 +235,9 @@ func copyDownloadedItemsToMods(workshopHandles []string) ([]string, error) {
 
 	logger.Install.Info("✅ Workshop items copy complete")
 	logs = append(logs, "Workshop items copy complete")
+	if len(missingHandles) > 0 {
+		return logs, fmt.Errorf("workshop item(s) missing after download: %s", strings.Join(missingHandles, ", "))
+	}
 	return logs, nil
 }
 

@@ -1,36 +1,7 @@
-// SLP Beta Disclaimer Handler
-function acknowledgeSLPDisclaimer() {
-    const disclaimer = document.getElementById('slp-disclaimer');
-    const content = document.getElementById('slp-content');
-    
-    if (disclaimer && content) {
-        disclaimer.classList.add('slp-disclaimer-hidden');
-        content.classList.remove('slp-content-hidden');
-        
-        // Store acknowledgment in session storage (resets on browser close)
-        sessionStorage.setItem('slp-disclaimer-acknowledged', 'true');
-    }
-}
-
-// Check if disclaimer was already acknowledged this session
-function checkSLPDisclaimerState() {
-    const acknowledged = sessionStorage.getItem('slp-disclaimer-acknowledged');
-    if (acknowledged === 'true') {
-        const disclaimer = document.getElementById('slp-disclaimer');
-        const content = document.getElementById('slp-content');
-        
-        if (disclaimer && content) {
-            disclaimer.classList.add('slp-disclaimer-hidden');
-            content.classList.remove('slp-content-hidden');
-        }
-    }
-}
-
-// Initialize disclaimer state on page load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkSLPDisclaimerState);
-} else {
-    checkSLPDisclaimerState();
+function reloadConfigTab(tab = 'slp') {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.location.assign(url.toString());
 }
 
 function showNotification(message, type = 'info') {
@@ -72,8 +43,7 @@ function installSLP() {
             if (data.success) {
                 showPopup('success', 'Stationeers Launch Pad installed successfully! The page will refresh automatically.');
                 setButtonLoading('installSLPBtn', false);
-                // Reload after 3 seconds to show the success message
-                setTimeout(() => window.location.reload(), 3000);
+                setTimeout(() => reloadConfigTab('slp'), 1200);
             } else {
                 showPopup('error', 'Failed to install SLP:\n\n' + (data.error || 'Unknown error'));
                 setButtonLoading('installSLPBtn', false);
@@ -98,7 +68,7 @@ function uninstallSLP() {
             if (data.success) {
                 showPopup('success', 'Stationeers Launch Pad uninstalled successfully! The page will refresh automatically.');
                 setButtonLoading('uninstallSLPBtn', false);
-                setTimeout(() => window.location.reload(), 3000);
+                setTimeout(() => reloadConfigTab('slp'), 1200);
             } else {
                 showPopup('error', 'Failed to uninstall SLP:\n\n' + (data.error || 'Unknown error'));
                 setButtonLoading('uninstallSLPBtn', false);
@@ -123,7 +93,7 @@ function reinstallSLP() {
             if (data.success) {
                 showPopup('success', 'Stationeers Launch Pad reinstalled successfully!' + (data.version ? ' (Version: ' + data.version + ')' : '') + ' The page will refresh automatically.');
                 setButtonLoading('reinstallSLPBtn', false);
-                setTimeout(() => window.location.reload(), 3000);
+                setTimeout(() => reloadConfigTab('slp'), 1200);
             } else {
                 showPopup('error', 'Failed to reinstall SLP:\n\n' + (data.error || 'Unknown error'));
                 setButtonLoading('reinstallSLPBtn', false);
@@ -150,7 +120,7 @@ function updateSingleMod(workshopHandle, index) {
             setButtonLoading(btnId, false);
             if (data.success) {
                 showPopup('success', 'Workshop mod updated successfully!\n\nReloading mod list...');
-                loadInstalledMods();
+                loadInstalledMods(true);
             } else {
                 showPopup('error', 'Failed to update mod:\n\n' + (data.error || 'Unknown error'));
             }
@@ -170,16 +140,52 @@ function updateWorkshopMods() {
         .then(data => {
             setButtonLoading('updateWorkshopModsBtn', false);
             if (data.success) {
-                const logsText = data.logs && data.logs.length > 0 ? '\n\n' + data.logs.join('\n') : '';
-                showPopup('success', 'Workshop mods updated successfully!' + logsText);
+                showPopup('success', 'Workshop mods updated successfully.');
+                loadInstalledMods(true);
             } else {
-                const logsText = data.logs && data.logs.length > 0 ? '\n\n' + data.logs.join('\n') : '';
-                showPopup('error', 'Failed to update workshop mods:\n\n' + (data.error || 'Unknown error') + logsText);
+                showPopup('error', 'Failed to update workshop mods:\n\n' + (data.error || 'Unknown error'));
             }
         })
         .catch(error => {
             showPopup('error', 'Failed to update workshop mods:\n\n' + (error.message || 'Network error'));
             setButtonLoading('updateWorkshopModsBtn', false);
+        });
+}
+
+function installWorkshopMods() {
+    const input = document.getElementById('workshopModInput');
+    if (!input || !input.value.trim()) {
+        showPopup('error', 'Paste at least one Steam Workshop URL or ID.');
+        return;
+    }
+
+    const workshopHandles = input.value
+        .split(/[\s,;]+/)
+        .map(value => value.trim())
+        .filter(Boolean);
+
+    setButtonLoading('installWorkshopModsBtn', true);
+    showPopup('info', 'Downloading and installing ' + workshopHandles.length + ' workshop item(s)...\n\nThis can take a while.');
+
+    fetch('/api/v2/steamcmd/updatemod', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workshopHandles })
+    })
+        .then(response => response.json())
+        .then(data => {
+            setButtonLoading('installWorkshopModsBtn', false);
+            if (data.success) {
+                input.value = '';
+                showPopup('success', 'Workshop mods installed successfully.');
+                loadInstalledMods(true);
+            } else {
+                showPopup('error', 'Failed to install workshop mods:\n\n' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            setButtonLoading('installWorkshopModsBtn', false);
+            showPopup('error', 'Failed to install workshop mods:\n\n' + (error.message || 'Network error'));
         });
 }
 
@@ -277,6 +283,7 @@ function uploadModPackage() {
                 document.getElementById('modPackageUpload').value = '';
                 updateFileDisplay();
                 updateUploadProgress(100);
+                loadInstalledMods(true);
                 setTimeout(() => updateUploadProgress(0), 2000);
                 setButtonLoading('uploadModPackageBtn', false);
             } else {
@@ -368,7 +375,7 @@ if (document.readyState === 'loading') {
 // Mods List Management
 let modsData = [];
 
-function loadInstalledMods() {
+function loadInstalledMods(reloadOnFailure = false) {
     const container = document.getElementById('mods-list-container');
     const loader = document.getElementById('mods-loader');
     const modsList = document.getElementById('mods-list');
@@ -395,6 +402,9 @@ function loadInstalledMods() {
             if (loader) loader.style.display = 'none';
             console.error('Failed to load mods:', error);
             if (modsList) modsList.innerHTML = '<div class="mods-empty">Failed to load mods. Check console for details.</div>';
+            if (reloadOnFailure) {
+                reloadConfigTab('slp');
+            }
         });
 }
 
@@ -459,12 +469,25 @@ function createModCard(mod, index) {
     `;
 
     if (mod.WorkshopHandle) {
+        const actions = document.createElement('div');
+        actions.className = 'mod-card-actions';
+
+        const workshopLink = document.createElement('a');
+        workshopLink.className = 'mod-workshop-link';
+        workshopLink.href = 'https://steamcommunity.com/sharedfiles/filedetails/?id=' + encodeURIComponent(mod.WorkshopHandle);
+        workshopLink.target = '_blank';
+        workshopLink.rel = 'noopener noreferrer';
+        workshopLink.textContent = '↗ Workshop';
+
         const updateButton = document.createElement('button');
         updateButton.className = 'mod-update-button';
         updateButton.id = `update-mod-btn-${index}`;
         updateButton.textContent = '🔄 Update';
         updateButton.addEventListener('click', () => updateSingleMod(mod.WorkshopHandle, index));
-        card.appendChild(updateButton);
+
+        actions.appendChild(workshopLink);
+        actions.appendChild(updateButton);
+        card.appendChild(actions);
     }
     
     return card;
