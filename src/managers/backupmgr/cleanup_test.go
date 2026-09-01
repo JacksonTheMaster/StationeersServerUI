@@ -24,7 +24,14 @@ func writeBackupSave(t *testing.T, dir, name string, saveTime time.Time) string 
 		t.Fatal(err)
 	}
 	filetime := saveTime.UnixNano()/100 + filetimeEpochOffset
-	if _, err := fmt.Fprintf(meta, "<WorldMeta><DateTime>%d</DateTime></WorldMeta>", filetime); err != nil {
+	if _, err := fmt.Fprintf(meta, "<WorldMetaData><DateTime>%d</DateTime></WorldMetaData>", filetime); err != nil {
+		t.Fatal(err)
+	}
+	world, err := writer.Create(worldFilename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := world.Write([]byte("<WorldData />")); err != nil {
 		t.Fatal(err)
 	}
 	if err := writer.Close(); err != nil {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/gamemgr"
@@ -14,6 +15,13 @@ import (
 // HTTPHandler provides HTTP endpoints for backup operations
 type HTTPHandler struct {
 	manager *BackupManager
+}
+
+type backupListResponse struct {
+	Index    int
+	SaveFile string
+	SaveTime time.Time
+	Summary  *SaveSummary `json:",omitempty"`
 }
 
 // NewHTTPHandler creates a new HTTP handler for backups
@@ -25,6 +33,10 @@ func NewHTTPHandler(manager *BackupManager) *HTTPHandler {
 
 // ListBackupsHandler handles requests to list available backups
 func (h *HTTPHandler) ListBackupsHandler(w http.ResponseWriter, r *http.Request) {
+	if h.manager == nil {
+		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
+		return
+	}
 	limitStr := r.URL.Query().Get("limit")
 	var limit int
 	if limitStr != "" {
@@ -61,9 +73,54 @@ func (h *HTTPHandler) ListBackupsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Default JSON response
+	includeSummary := strings.EqualFold(r.URL.Query().Get("include"), "summary")
+	response := make([]backupListResponse, len(backups))
+	for i := range backups {
+		response[i] = backupListResponse{
+			Index:    backups[i].Index,
+			SaveFile: backups[i].SaveFile,
+			SaveTime: backups[i].SaveTime,
+		}
+		if includeSummary {
+			response[i].Summary = &backups[i].Summary
+		}
+	}
+
+	// Default JSON response. Summary remains opt-in for legacy API consumers.
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(backups)
+	json.NewEncoder(w).Encode(response)
+}
+
+// AnalyzeBackupHandler returns lazy, cached world.xml statistics for one backup.
+func (h *HTTPHandler) AnalyzeBackupHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed, use GET", http.StatusMethodNotAllowed)
+		return
+	}
+	if h.manager == nil {
+		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
+		return
+	}
+
+	index, err := strconv.Atoi(r.URL.Query().Get("index"))
+	if err != nil || index < 0 {
+		http.Error(w, "valid index parameter is required", http.StatusBadRequest)
+		return
+	}
+	analysis, err := h.manager.AnalyzeBackup(r.Context(), index)
+	if err != nil {
+		if strings.Contains(err.Error(), "out of range") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(analysis); err != nil {
+		logger.Web.Errorf("Failed to encode backup analysis: %s", err.Error())
+	}
 }
 
 // RestoreBackupHandler handles requests to restore a backup

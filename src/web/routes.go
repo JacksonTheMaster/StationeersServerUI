@@ -57,6 +57,7 @@ func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
 
 	backupHandler := backupmgr.NewHTTPHandler(backupmgr.GlobalBackupManager)
 	protectedMux.HandleFunc("/api/v2/backups", backupHandler.ListBackupsHandler)
+	protectedMux.HandleFunc("/api/v2/backups/analyze", backupHandler.AnalyzeBackupHandler)
 	protectedMux.HandleFunc("/api/v2/backups/restore", backupHandler.RestoreBackupHandler)
 	protectedMux.HandleFunc("/api/v2/backups/download", backupHandler.DownloadBackupHandler)
 

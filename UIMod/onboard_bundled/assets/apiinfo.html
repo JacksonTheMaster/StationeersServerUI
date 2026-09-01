@@ -85,7 +85,8 @@
                 <div class="endpoint">
                     <h3>Backups</h3>
                     <ul class="api-list">
-                        <li><div class="method get">GET</div><a href="/api/v2/backups" class="endpoint-link">/api/v2/backups</a><div class="endpoint-desc">List backups. Supports <code>?limit=N</code> and <code>?mode=classic</code>.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/backups" class="endpoint-link">/api/v2/backups</a><div class="endpoint-desc">List backups. Supports <code>?limit=N</code>, <code>?mode=classic</code>, and opt-in metadata via <code>?include=summary</code>.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/backups/analyze?index=N</span><div class="endpoint-desc">Lazily analyze player and structure statistics for one backup.</div></li>
                         <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/backups/restore?index=N</span><div class="endpoint-desc">Stop the server and restore a backup index.</div></li>
                         <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/backups/download</span><div class="endpoint-desc">Download a backup. JSON body: <code>{"index": N}</code>.</div></li>
                     </ul>
@@ -401,6 +402,18 @@ Content-Disposition: attachment; filename="backup.zip"
     "Index": 0,
     "SaveFile": "world_2026-08-31.zip",
     "SaveTime": "2026-08-31T10:00:00Z"
+  }
+]</code></pre></article>
+                <article><h4><span class="method get">GET</span> /api/v2/backups?include=summary</h4><pre><code>[
+  {
+    "Index": 0,
+    "SaveTime": "2026-08-31T10:00:00Z",
+    "Summary": {
+      "worldName": "Europa",
+      "daysPlayed": 67,
+      "things": 1290,
+      "atmospheres": 2330
+    }
   }
 ]</code></pre></article>
                 <article><h4><span class="method get">GET</span> /api/v2/slp/mods</h4><pre><code>{

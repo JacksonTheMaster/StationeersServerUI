@@ -1,19 +1,14 @@
 package backupmgr
 
 import (
-	"archive/zip"
-	"encoding/xml"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
-
-const filetimeEpochOffset = 116444736000000000 // difference between 1601 and 1970 in 100-ns units
 
 // getBackupSaveFiles retrieves all backup save files from the safe backup directory
 func (m *BackupManager) getBackupSaveFiles() ([]BackupSaveFile, error) {
@@ -35,39 +30,17 @@ func (m *BackupManager) getBackupSaveFiles() ([]BackupSaveFile, error) {
 			// Get the full path
 			fullPath := filepath.Join(m.config.SafeBackupDir, filename)
 
-			// Get the save time from the file
-			// Unzip the save file and open the world_meta.xml file inside
-			r, err := zip.OpenReader(fullPath)
+			summary, err := ReadSaveSummary(fullPath)
 			if err != nil {
-				logger.Backup.Warnf("Skipping corrupt/unreadable backup file %s: %s", fullPath, err.Error())
+				logger.Backup.Warnf("Skipping invalid backup file %s: %s", fullPath, err.Error())
 				return nil
 			}
-			defer r.Close()
-			worldMetadata, err := r.Open("world_meta.xml")
-			if err != nil {
-				logger.Backup.Warnf("Skipping backup file %s (missing world_meta.xml): %s", fullPath, err.Error())
-				return nil
-			}
-			defer worldMetadata.Close()
-			// Read the world_meta.xml file content using the XML library
-			type WorldMeta struct {
-				SaveTime int64 `xml:"DateTime"`
-			}
-			var meta WorldMeta
-			decoder := xml.NewDecoder(worldMetadata)
-			if err := decoder.Decode(&meta); err != nil {
-				logger.Backup.Warnf("Skipping backup file %s (invalid world_meta.xml): %s", fullPath, err.Error())
-				return nil
-			}
-
-			// Convert FILETIME (100-ns intervals) → Unix time (seconds + nanoseconds)
-			ns := (meta.SaveTime - filetimeEpochOffset) * 100
-			saveTime := time.Unix(0, ns)
 
 			// Add the backup save file info to the list
 			saves = append(saves, BackupSaveFile{
 				SaveFile: fullPath,
-				SaveTime: saveTime,
+				SaveTime: summary.SavedAt,
+				Summary:  summary,
 			})
 		}
 		return nil

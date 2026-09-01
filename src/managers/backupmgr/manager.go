@@ -223,6 +223,29 @@ func (m *BackupManager) ListBackups(limit int) ([]BackupSaveFile, error) {
 	return saves, nil
 }
 
+// AnalyzeBackup returns cached deep metadata for the backup index. Deep scans are
+// serialized by default so listing many saves cannot saturate the host.
+func (m *BackupManager) AnalyzeBackup(ctx context.Context, index int) (SaveAnalysis, error) {
+	m.mu.Lock()
+	saves, err := m.getBackupSaveFiles()
+	if err != nil {
+		m.mu.Unlock()
+		return SaveAnalysis{}, fmt.Errorf("failed to get backup files: %w", err)
+	}
+	if index < 0 || index >= len(saves) {
+		m.mu.Unlock()
+		return SaveAnalysis{}, fmt.Errorf("backup index %d out of range (0-%d)", index, len(saves)-1)
+	}
+	path := saves[index].SaveFile
+	analyzer := m.analyzer
+	m.mu.Unlock()
+
+	if analyzer == nil {
+		return SaveAnalysis{}, fmt.Errorf("backup analyzer is not initialized")
+	}
+	return analyzer.Analyze(ctx, path)
+}
+
 // GetBackupFileData retrieves backup file data by index for download/transfer
 func (m *BackupManager) GetBackupFileData(index int) (*BackupFileData, error) {
 	m.mu.Lock()
@@ -289,8 +312,9 @@ func NewBackupManager(cfg BackupConfig) *BackupManager {
 	}
 
 	return &BackupManager{
-		config: cfg,
-		ctx:    ctx,
-		cancel: cancel,
+		config:   cfg,
+		analyzer: NewSaveAnalyzer(defaultAnalysisConcurrency, defaultAnalysisCacheSize),
+		ctx:      ctx,
+		cancel:   cancel,
 	}
 }

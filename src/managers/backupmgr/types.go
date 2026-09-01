@@ -33,6 +33,7 @@ type BackupSaveFile struct {
 	Index    int
 	SaveFile string
 	SaveTime time.Time
+	Summary  SaveSummary `json:"-"`
 }
 
 // BackupFileData contains the backup file bytes and metadata for download/transfer
@@ -45,10 +46,11 @@ type BackupFileData struct {
 
 // BackupManager manages backup operations
 type BackupManager struct {
-	config  BackupConfig
-	mu      sync.Mutex
-	watcher *fsWatcher
-	ctx     context.Context
-	cancel  context.CancelFunc
-	wg      sync.WaitGroup // Added for tracking goroutines
+	config   BackupConfig
+	mu       sync.Mutex
+	watcher  *fsWatcher
+	analyzer *SaveAnalyzer
+	ctx      context.Context
+	cancel   context.CancelFunc
+	wg       sync.WaitGroup // Added for tracking goroutines
 }
