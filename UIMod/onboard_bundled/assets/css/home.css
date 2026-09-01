@@ -159,7 +159,8 @@
 
 button.panel-button,
 button.icon-button,
-button.panel-link-button {
+button.panel-link-button,
+a.panel-link-button {
   padding: 7px 11px;
   width: auto;
   font-family: 'Share Tech Mono', monospace;
@@ -174,7 +175,8 @@ button.panel-link-button {
 
 button.panel-button:hover,
 button.icon-button:hover,
-button.panel-link-button:hover {
+button.panel-link-button:hover,
+a.panel-link-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 0 10px var(--primary-glow);
 }
@@ -368,6 +370,10 @@ button.icon-button {
   transform: none;
 }
 
+.side-panel .backup-row-main {
+  display: block;
+}
+
 .side-panel .player-item:hover,
 .side-panel .backup-item:hover,
 .side-panel .player-item.animate-in:hover,
@@ -409,11 +415,6 @@ button.icon-button {
   font-size: 0.76rem;
 }
 
-.compact-backups .backup-type {
-  padding: 2px 5px;
-  font-size: 0.48rem;
-}
-
 .compact-backups .backup-actions {
   margin-top: 8px;
 }
@@ -429,104 +430,20 @@ button.icon-button {
   letter-spacing: 0.4px;
 }
 
+a.panel-link-button,
 button.panel-link-button {
   width: 100%;
   margin-top: 8px;
   background: transparent;
 }
 
-.backup-manager-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10020;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+a.panel-link-button {
+  display: block;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.76);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 180ms ease, visibility 180ms ease;
-}
-
-.backup-manager-modal.show {
-  opacity: 1;
-  visibility: visible;
-}
-
-.backup-manager-dialog {
-  width: min(900px, 100%);
-  max-height: min(820px, 90vh);
-  padding: 22px;
-  box-sizing: border-box;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: var(--panel-surface);
-  border: 2px solid var(--panel-frame);
-  border-radius: 12px;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.65), 0 0 28px var(--primary-glow);
-  transform: translateY(28px) scale(0.96);
-  transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
-}
-
-.backup-manager-modal.show .backup-manager-dialog {
-  transform: translateY(0) scale(1);
-}
-
-.backup-modal-header,
-.backup-modal-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.backup-modal-header h2 {
-  margin: 4px 0 0;
-}
-
-button.backup-modal-close {
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 1.7rem;
-  line-height: 1;
-}
-
-.backup-modal-controls {
-  justify-content: flex-end;
-  margin: 12px 0;
-}
-
-.backup-modal-controls select {
-  width: auto;
-  min-width: 150px;
-  margin: 0;
-}
-
-.backup-modal-list {
-  overflow-y: auto;
-  margin: 0;
-  padding-right: 5px;
-}
-
-.backup-modal-list .backup-item {
-  padding: 20px;
-  display: flex;
-}
-
-.backup-modal-list .restore-btn,
-.backup-modal-list .download-btn {
-  padding: 10px 18px;
-  font-family: 'Press Start 2P', cursive;
-  font-size: 0.7rem;
-}
-
-body.modal-open {
-  overflow: hidden;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  text-align: center;
+  text-decoration: none;
 }
 
 @media (max-width: 1050px) {
@@ -931,13 +848,18 @@ body.modal-open {
   padding: 20px;
   margin-bottom: 15px;
   border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: block;
   border: 2px solid var(--primary-glow);
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
+}
+
+.backup-row-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 
 .backup-item.animate-in {
@@ -953,45 +875,66 @@ body.modal-open {
 
 .backup-info {
   flex: 1;
+  min-width: 0;
 }
 
 .backup-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .backup-name {
   font-weight: bold;
   color: var(--text-bright);
-  font-size: 0.9rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.92rem;
+  letter-spacing: 0.25px;
 }
 
-.backup-type {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-
-.backup-type.preterrain-trio {
-  background-color: color-mix(in srgb, var(--warning) 20%, transparent);
-  color: var(--warning);
-  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
-}
-
-.backup-type.dotsave {
-  background-color: var(--primary-bg-medium);
-  color: var(--primary);
-  border: 1px solid var(--primary-glow-medium);
+.backup-index-label {
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.8px;
+  opacity: 0.65;
 }
 
 .backup-date {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 16px;
   color: var(--text-dim);
   font-size: 0.7rem;
   opacity: 0.8;
+}
+
+.backup-summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.backup-summary-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 7px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--config-border-soft);
+  border-radius: 999px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.backup-summary-value strong {
+  color: var(--primary);
+  font-size: 0.72rem;
+  text-shadow: 0 0 8px var(--primary-glow);
 }
 
 .backup-actions {
@@ -1133,6 +1076,7 @@ body.modal-open {
   width: 100%;
   height: 100%;
   background: var(--overlay-bg-heavy);
+  backdrop-filter: blur(5px);
   z-index: 10000;
   align-items: center;
   justify-content: center;
@@ -1143,13 +1087,14 @@ body.modal-open {
 }
 
 .update-modal-content {
-  background: linear-gradient(135deg, var(--surface-hover), var(--bg-dark));
-  border: 3px solid var(--danger);
-  border-radius: 16px;
-  padding: 40px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 5%, transparent), transparent 55%), var(--ui-surface);
+  border: 1px solid color-mix(in srgb, var(--danger) 70%, var(--ui-frame));
+  border-left: 3px solid var(--danger);
+  border-radius: var(--ui-radius-large);
+  padding: 32px;
   max-width: 500px;
   width: 90%;
-  box-shadow: 0 8px 40px color-mix(in srgb, var(--danger) 30%, transparent);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.65), 0 0 28px color-mix(in srgb, var(--danger) 25%, transparent);
   position: relative;
   animation: modalSlideIn 0.3s ease-out;
 }

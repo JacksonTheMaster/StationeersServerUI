@@ -62,19 +62,6 @@
       height: 320px;
     }
 
-    .backup-modal-list .backup-item {
-      display: block;
-    }
-
-    .backup-manager-modal {
-      padding: 10px;
-    }
-
-    .backup-manager-dialog {
-      max-height: 94vh;
-      padding: 14px;
-    }
-  
     button {
       width: 100%;
       font-size: 0.9rem;

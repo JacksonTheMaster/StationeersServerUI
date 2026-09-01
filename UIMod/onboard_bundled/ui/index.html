@@ -29,35 +29,6 @@
         </div>
     </div>
 
-    <div id="backup-manager-modal" class="backup-manager-modal" aria-hidden="true">
-        <div class="backup-manager-dialog" role="dialog" aria-modal="true" aria-labelledby="backup-manager-title">
-            <div class="backup-modal-header">
-                <div>
-                    <span class="panel-kicker">{{.UIText_BackupHistory}}</span>
-                    <h2 id="backup-manager-title">{{.UIText_Backup_Manager}}</h2>
-                </div>
-                <button class="backup-modal-close" onclick="closeBackupManager()" aria-label="{{.UIText_Close}}">×</button>
-            </div>
-            <div class="backup-modal-controls">
-                <select id="backupModalLimit" onchange="fetchModalBackups()">
-                    <option value="5">Last 5</option>
-                    <option value="10">Last 10</option>
-                    <option value="20">Last 20</option>
-                    <option value="30">Last 30</option>
-                    <option value="50">Last 50</option>
-                    <option value="100">Last 100</option>
-                    <option value="200">Last 200</option>
-                    <option value="1000">Last 1000</option>
-                    <option value="2000">Last 2000</option>
-                    <option value="">All backups</option>
-                </select>
-                <button class="icon-button" onclick="fetchModalBackups()" title="{{.UIText_Refresh}}">↻</button>
-            </div>
-            <ul id="backupModalList" class="backup-modal-list"></ul>
-        </div>
-    </div>
-    
-
     <!-- Update Modal -->
     <div id="update-modal">
         <div class="update-modal-content">
@@ -185,7 +156,13 @@
                 <ul id="playerList"></ul>
             </div>
 
-            <div id="backups" class="side-panel compact-backups">
+            <div id="backups" class="side-panel compact-backups"
+                data-backup-index="{{.UIText_BackupIndex}}"
+                data-created="{{.UIText_BackupCreated}}"
+                data-days-played="{{.UIText_BackupDaysPlayed}}"
+                data-things="{{.UIText_BackupThings}}"
+                data-atmospheres="{{.UIText_BackupAtmospheres}}"
+                data-game-version="{{.UIText_BackupGameVersion}}">
                 <div class="side-panel-header">
                     <div>
                         <span id="backup-panel-kicker" class="panel-kicker"
@@ -209,7 +186,7 @@
                     </select>
                 </div>
                 <ul id="backupList"></ul>
-                <button id="backup-view-toggle" class="panel-link-button" onclick="openBackupManager()">{{.UIText_ViewAllBackups}}</button>
+                <a id="backup-view-toggle" class="panel-link-button" href="/backups">{{.UIText_ViewAllBackups}}</a>
             </div>
         </section>
         <div class="info-notice" style="display: none;">

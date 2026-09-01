@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.UITextBackupManager}} · SSUI v{{.Version}}{{.SSUIIdentifier}}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/background.css">
+    <link rel="stylesheet" href="/static/css/backups.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+
+<body class="backup-page">
+    <div id="space-background"></div>
+    <div id="planet-container"></div>
+
+    <main id="backup-workspace" class="backup-workspace"
+        data-backup-index="{{.UITextBackupIndex}}"
+        data-created="{{.UITextBackupCreated}}"
+        data-days-played="{{.UITextBackupDaysPlayed}}"
+        data-things="{{.UITextBackupThings}}"
+        data-atmospheres="{{.UITextBackupAtmospheres}}"
+        data-rooms="{{.UITextBackupRooms}}"
+        data-pipe-networks="{{.UITextBackupPipeNetworks}}"
+        data-cable-networks="{{.UITextBackupCableNetworks}}"
+        data-players="{{.UITextBackupPlayers}}"
+        data-players-alive="{{.UITextBackupPlayersAlive}}"
+        data-players-unconscious="{{.UITextBackupPlayersUnconscious}}"
+        data-furnaces="{{.UITextBackupFurnaces}}"
+        data-destroyed-furnaces="{{.UITextBackupDestroyedFurnaces}}"
+        data-expand="{{.UITextBackupExpand}}"
+        data-collapse="{{.UITextBackupCollapse}}"
+        data-analysis-loading="{{.UITextBackupAnalysisLoading}}"
+        data-analysis-failed="{{.UITextBackupAnalysisFailed}}"
+        data-retry="{{.UITextBackupRetry}}"
+        data-game-version="{{.UITextBackupGameVersion}}"
+        data-archive-size="{{.UITextBackupArchiveSize}}"
+        data-download="{{.UITextBackupDownload}}"
+        data-restore="{{.UITextBackupRestore}}"
+        data-technical-details="{{.UITextBackupTechnicalDetails}}"
+        data-infrastructure="{{.UITextBackupInfrastructure}}"
+        data-loading="{{.UITextBackupLoading}}"
+        data-none="{{.UITextBackupNone}}"
+        data-download-failed="{{.UITextBackupDownloadFailed}}">
+
+        <section class="backup-workspace-intro" aria-labelledby="backup-page-title">
+            <div class="backup-workspace-title">
+                <h1 id="backup-page-title">{{.UITextBackupManager}}</h1>
+                <p>{{.UITextBackupManagerDescription}}</p>
+            </div>
+        </section>
+
+        <nav class="backup-workspace-toolbar" aria-label="{{.UITextBackupHistory}}">
+            <a class="backup-back-link" href="/">
+                <span aria-hidden="true">←</span>
+                <span>{{.UITextBackToDashboard}}</span>
+            </a>
+            <div class="backup-workspace-controls">
+                <select id="backupPageLimit" aria-label="{{.UITextBackupHistory}}">
+                    <option value="5">{{.UITextBackupLast}} 5</option>
+                    <option value="10">{{.UITextBackupLast}} 10</option>
+                    <option value="20" selected>{{.UITextBackupLast}} 20</option>
+                    <option value="50">{{.UITextBackupLast}} 50</option>
+                    <option value="100">{{.UITextBackupLast}} 100</option>
+                    <option value="200">{{.UITextBackupLast}} 200</option>
+                    <option value="1000">{{.UITextBackupLast}} 1000</option>
+                    <option value="">{{.UITextBackupAll}}</option>
+                </select>
+                <button id="backupPageRefresh" class="backup-refresh-button" type="button"
+                    title="{{.UITextRefresh}}"><span aria-hidden="true">↻</span>{{.UITextRefresh}}</button>
+            </div>
+        </nav>
+
+        <div id="backupPageNotice" class="backup-page-notice" role="status" aria-live="polite" hidden></div>
+        <ul id="backupPageList" class="backup-page-list" aria-live="polite"></ul>
+    </main>
+
+    <script src="/static/js/theme-engine.js"></script>
+    <script src="/static/js/backups-page.js"></script>
+</body>
+
+</html>

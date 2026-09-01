@@ -45,7 +45,7 @@ function triggerSteamCMD() {
 function fetchBackups() {
     const requestSequence = ++backupFetchSequence;
     const limit = '3';
-    const url = limit ? `/api/v2/backups?limit=${limit}` : '/api/v2/backups';
+    const url = `/api/v2/backups?limit=${limit}&include=summary`;
     
     return fetch(url)
         .then(response => {
@@ -78,7 +78,7 @@ function fetchBackups() {
             
             let animationCount = 0;
             data.forEach((backup) => {
-                const li = createBackupItem(backup, false);
+                const li = createBackupItem(backup);
                 backupList.appendChild(li);
                 
                 if (animationCount < 20) {
@@ -97,67 +97,87 @@ function fetchBackups() {
         });
 }
 
-function createBackupItem(backup, fullSize) {
+function createBackupItem(backup) {
     const li = document.createElement('li');
-    li.className = `backup-item${fullSize ? ' full-size-backup' : ''}`;
-    const backupType = 'Dotsave';
+    li.className = 'backup-item';
+    const text = getBackupUIText();
+    const summary = backup.Summary || {};
+    const backupIndex = Number(backup.Index);
+    const title = summary.worldName || `${text.backupIndex} ${backupIndex}`;
+    const gameVersion = summary.gameVersion
+        ? `<span>${escapeBackupHTML(text.gameVersion)}: ${escapeBackupHTML(summary.gameVersion)}</span>`
+        : '';
     li.innerHTML = `
-        <div class="backup-info">
-            <div class="backup-header">
-                <span class="backup-name">Backup Index: ${backup.Index}</span>
-                <span class="backup-type dotsave">${backupType}</span>
+        <div class="backup-row-main">
+            <div class="backup-info">
+                <div class="backup-header">
+                    <span class="backup-name">${escapeBackupHTML(title)}</span>
+                    <span class="backup-index-label">${escapeBackupHTML(text.backupIndex)} ${backupIndex}</span>
+                </div>
+                <div class="backup-date">
+                    <span>${escapeBackupHTML(text.created)}: ${new Date(backup.SaveTime).toLocaleString()}</span>
+                    ${gameVersion}
+                </div>
+                ${renderBackupSummaryStrip(summary)}
             </div>
-            <div class="backup-date">Created: ${new Date(backup.SaveTime).toLocaleString()}</div>
-        </div>
-        <div class="backup-actions">
-            <button class="download-btn" onclick="downloadBackup(${backup.Index})">Download</button>
-            <button class="restore-btn" onclick="restoreBackup(${backup.Index})">Restore</button>
+            <div class="backup-actions">
+                <button class="download-btn" onclick="downloadBackup(${backupIndex})">Download</button>
+                <button class="restore-btn" onclick="restoreBackup(${backupIndex})">Restore</button>
+            </div>
         </div>
     `;
     return li;
 }
 
-function openBackupManager() {
-    const modal = document.getElementById('backup-manager-modal');
-    modal.classList.add('show');
-    modal.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('modal-open');
-    fetchModalBackups();
+function getBackupUIText() {
+    const data = document.getElementById('backups')?.dataset || {};
+    return {
+        backupIndex: data.backupIndex || 'Backup',
+        created: data.created || 'Created',
+        daysPlayed: data.daysPlayed || 'Days played',
+        things: data.things || 'Things',
+        atmospheres: data.atmospheres || 'Atmospheres',
+        rooms: data.rooms || 'Rooms',
+        pipeNetworks: data.pipeNetworks || 'Pipe networks',
+        cableNetworks: data.cableNetworks || 'Cable networks',
+        players: data.players || 'Players',
+        playersAlive: data.playersAlive || 'Alive',
+        playersUnconscious: data.playersUnconscious || 'Unconscious',
+        furnaces: data.furnaces || 'Furnaces',
+        destroyedFurnaces: data.destroyedFurnaces || 'Destroyed furnaces',
+        expand: data.expand || 'Show details',
+        collapse: data.collapse || 'Hide details',
+        analysisLoading: data.analysisLoading || 'Analyzing save file...',
+        analysisFailed: data.analysisFailed || 'The save file could not be analyzed.',
+        retry: data.retry || 'Retry',
+        world: data.world || 'World',
+        gameVersion: data.gameVersion || 'Game version',
+        archiveSize: data.archiveSize || 'Archive size'
+    };
 }
 
-function closeBackupManager() {
-    const modal = document.getElementById('backup-manager-modal');
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('modal-open');
+function escapeBackupHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[character]);
 }
 
-function fetchModalBackups() {
-    const limit = document.getElementById('backupModalLimit').value;
-    const url = limit ? `/api/v2/backups?limit=${limit}` : '/api/v2/backups';
-    const list = document.getElementById('backupModalList');
-    list.innerHTML = '<li class="no-backups">Loading backups...</li>';
-
-    return fetch(url)
-        .then(response => {
-            if (!response.ok) return response.text().then(text => { throw new Error(text || 'Failed to load backups'); });
-            return response.json();
-        })
-        .then(backups => {
-            list.innerHTML = '';
-            if (!Array.isArray(backups) || backups.length === 0) {
-                list.innerHTML = '<li class="no-backups">No valid backup files found.</li>';
-                return;
-            }
-            backups.forEach(backup => list.appendChild(createBackupItem(backup, true)));
-        })
-        .catch(error => {
-            list.innerHTML = `<li class="backuperror">${error.message}</li>`;
-        });
+function formatBackupNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toLocaleString() : '—';
 }
 
-function getBackupType(backup) {
-    return "Dotsave";
+function renderBackupSummaryStrip(summary) {
+    if (!summary || Object.keys(summary).length === 0) return '';
+    const text = getBackupUIText();
+    const stats = [
+        [text.daysPlayed, summary.daysPlayed],
+        [text.things, summary.things],
+        [text.atmospheres, summary.atmospheres]
+    ];
+    return `<div class="backup-summary-strip">${stats.map(([label, value]) => `
+        <span class="backup-summary-value"><strong>${formatBackupNumber(value)}</strong>${escapeBackupHTML(label)}</span>
+    `).join('')}</div>`;
 }
 
 function fetchPlayers() {

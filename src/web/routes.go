@@ -29,6 +29,7 @@ func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
 	protectedMux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(legacyAssetsFS))))
 
 	protectedMux.HandleFunc("/config", ServeConfigPage)
+	protectedMux.HandleFunc("/backups", ServeBackupPage)
 	protectedMux.HandleFunc("/detectionmanager", ServeDetectionManager)
 	protectedMux.HandleFunc("/", ServeIndex)
 

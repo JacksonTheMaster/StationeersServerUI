@@ -1,16 +1,6 @@
 // /static/main.js
 document.addEventListener('DOMContentLoaded', () => {
 
-    const backupModal = document.getElementById('backup-manager-modal');
-    if (backupModal) {
-        backupModal.addEventListener('click', event => {
-            if (event.target === backupModal) closeBackupManager();
-        });
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && backupModal.classList.contains('show')) closeBackupManager();
-        });
-    }
-
     animationState = localStorage.getItem('animationState') || 'focus';
     if (animationState === 'disabled') {
         resourceSaver(true);
