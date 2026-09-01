@@ -282,10 +282,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.autoStartEnabled = msg.autoStartEnabled
 
 		// Backup info
-		m.backupKeepLastN = msg.backupKeepLastN
-		m.backupDailyFor = msg.backupDailyFor
-		m.backupWeeklyFor = msg.backupWeeklyFor
-		m.backupMonthlyFor = msg.backupMonthlyFor
+		m.backupKeepNewestCount = msg.backupKeepNewestCount
+		m.backupDailyRetentionDays = msg.backupDailyRetentionDays
+		m.backupWeeklyRetentionWeeks = msg.backupWeeklyRetentionWeeks
+		m.backupMonthlyRetentionMonths = msg.backupMonthlyRetentionMonths
 
 		m.lastRefresh = msg.startTime
 
@@ -360,10 +360,10 @@ func fetchStatusCmd() tea.Cmd {
 			autoStartEnabled:   config.GetAutoStartServerOnStartup(),
 
 			// Backup
-			backupKeepLastN:  config.GetBackupKeepLastN(),
-			backupDailyFor:   int(config.GetBackupKeepDailyFor().Hours() / 24),    // Convert duration to days
-			backupWeeklyFor:  int(config.GetBackupKeepWeeklyFor().Hours() / 168),  // Convert to weeks
-			backupMonthlyFor: int(config.GetBackupKeepMonthlyFor().Hours() / 720), // Convert to months (approx)
+			backupKeepNewestCount:        config.GetBackupKeepNewestCount(),
+			backupDailyRetentionDays:     config.GetBackupDailyRetentionDays(),
+			backupWeeklyRetentionWeeks:   config.GetBackupWeeklyRetentionWeeks(),
+			backupMonthlyRetentionMonths: config.GetBackupMonthlyRetentionMonths(),
 		}
 	}
 }

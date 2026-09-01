@@ -122,20 +122,47 @@ type ConfigTemplateData struct {
 	CreateGameServerLogFileTrueSelected     string
 	CreateGameServerLogFileFalseSelected    string
 
-	UIText_ConfigHeadline       string
-	UIText_ServerConfig         string
-	UIText_BackToDashboard      string
-	UIText_DiscordIntegration   string
-	UIText_SLPModIntegration    string
-	UIText_DetectionManager     string
-	UIText_ConfigurationWizard  string
-	UIText_PleaseSelectSection  string
-	UIText_UseWizardAlternative string
-	UIText_BasicSettings        string
-	UIText_NetworkSettings      string
-	UIText_AdvancedSettings     string
-	UIText_TerrainSettings      string
-	UIText_BasicServerSettings  string
+	UIText_ConfigHeadline            string
+	UIText_ServerConfig              string
+	UIText_BackToDashboard           string
+	UIText_DiscordIntegration        string
+	UIText_SLPModIntegration         string
+	UIText_DetectionManager          string
+	UIText_ConfigurationWizard       string
+	UIText_PleaseSelectSection       string
+	UIText_UseWizardAlternative      string
+	UIText_BasicSettings             string
+	UIText_NetworkSettings           string
+	UIText_AdvancedSettings          string
+	UIText_TerrainSettings           string
+	UIText_ConfigSaving              string
+	UIText_ConfigSaveSuccess         string
+	UIText_ConfigSaveFailed          string
+	UIText_SaveConfiguration         string
+	UIText_BackupRetention           string
+	UIText_BackupRetentionTitle      string
+	UIText_BackupRetentionIntro      string
+	UIText_BackupCleanupEnabled      string
+	UIText_BackupCleanupInfo         string
+	UIText_BackupKeepNewest          string
+	UIText_BackupKeepNewestInfo      string
+	UIText_BackupKeepDaily           string
+	UIText_BackupKeepDailyInfo       string
+	UIText_BackupKeepWeekly          string
+	UIText_BackupKeepWeeklyInfo      string
+	UIText_BackupKeepMonthly         string
+	UIText_BackupKeepMonthlyInfo     string
+	UIText_BackupCleanupInterval     string
+	UIText_BackupCleanupIntervalInfo string
+	UIText_BackupHours               string
+	UIText_BackupDays                string
+	UIText_BackupWeeks               string
+	UIText_BackupMonths              string
+	UIText_BackupFiles               string
+	UIText_BackupWarningTitle        string
+	UIText_BackupWarning             string
+	UIText_BackupCopyDelayInfo       string
+	UIText_BasicServerSettings       string
 
 	UIText_ServerName                     string
 	UIText_ServerNameInfo                 string
@@ -318,15 +345,14 @@ type ConfigTemplateData struct {
 	AuthEnabledFalseSelected                              string
 	AuthTokenLifetime                                     string
 	DiscordCharBufferSize                                 string
-	BackupKeepLastN                                       string
-	IsCleanupEnabled                                      string
-	IsCleanupEnabledTrueSelected                          string
-	IsCleanupEnabledFalseSelected                         string
-	BackupKeepDailyFor                                    string
-	BackupKeepWeeklyFor                                   string
-	BackupKeepMonthlyFor                                  string
-	BackupCleanupInterval                                 string
-	BackupWaitTime                                        string
+	BackupKeepNewestCount                                 string
+	BackupRetentionEnabled                                string
+	BackupRetentionEnabledTrueSelected                    string
+	BackupRetentionEnabledFalseSelected                   string
+	BackupDailyRetentionDays                              string
+	BackupWeeklyRetentionWeeks                            string
+	BackupMonthlyRetentionMonths                          string
+	BackupCleanupIntervalHours                            string
 	AdvertiserOverride                                    string
 	IsStationeersLaunchPadAutoUpdatesEnabled              string
 	IsStationeersLaunchPadAutoUpdatesEnabledTrueSelected  string

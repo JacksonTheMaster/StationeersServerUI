@@ -55,6 +55,24 @@ func getInt(jsonVal int, envKey string, defaultVal int) int {
 	return defaultVal
 }
 
+// getOptionalInt preserves an explicitly configured zero while still allowing
+// omitted values to fall back to the environment or the default.
+func getOptionalInt(jsonVal *int, envKey string, defaultVal int) int {
+	if jsonVal != nil {
+		return *jsonVal
+	}
+	if envVal := os.Getenv(envKey); envVal != "" {
+		if val, err := strconv.Atoi(envVal); err == nil {
+			return val
+		}
+	}
+	return defaultVal
+}
+
+func intPointer(value int) *int {
+	return &value
+}
+
 func getBool(jsonVal *bool, envKey string, defaultVal bool) bool {
 	if jsonVal != nil {
 		return *jsonVal

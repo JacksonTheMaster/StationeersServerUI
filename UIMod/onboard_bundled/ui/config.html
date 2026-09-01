@@ -21,6 +21,9 @@
 
 <body>
     <div id="space-background"></div>
+    <div id="config-save-notification" class="config-save-notification" role="status" aria-live="polite"
+        data-saving="{{.UIText_ConfigSaving}}" data-success="{{.UIText_ConfigSaveSuccess}}"
+        data-failed="{{.UIText_ConfigSaveFailed}}"></div>
     <div id="universalPopup" class="popup">
         <div class="popup-content">
             <h2 id="popupTitle"></h2>
@@ -164,10 +167,12 @@
                         <button class="section-nav-button"
                             data-section="network-settings">{{.UIText_NetworkSettings}}</button>
                         <button class="section-nav-button"
+                            data-section="backup-retention">{{.UIText_BackupRetention}}</button>
+                        <button class="section-nav-button"
                             data-section="advanced-settings">{{.UIText_AdvancedSettings}}</button>
                     </div>
 
-                    <form id="server-config-form" action="/saveconfigasjson" method="post">
+                    <div id="server-config-panel">
                         <div id="select-prompt" hidden
                             style="text-align: center; margin: 30px 0; color: var(--primary); font-family: 'Share Tech Mono', monospace;">
                             <h3>{{.UIText_PleaseSelectSection}}</h3>
@@ -175,7 +180,11 @@
                         </div>
 
                         <div id="basic-settings" class="config-section active">
-                            <h3 class="section-title">{{.UIText_BasicServerSettings}}</h3>
+                            <div class="config-section-heading">
+                                <h3 class="section-title">{{.UIText_BasicServerSettings}}</h3>
+                                <button type="button" class="save-button config-section-save"
+                                    aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
+                            </div>
                             <div class="channel-grid">
                                 <div class="form-group">
                                     <label for="ServerName">{{.UIText_ServerName}}:</label>
@@ -247,7 +256,11 @@
                         </div>
 
                         <div id="network-settings" class="config-section">
-                            <h3 class="section-title">{{.UIText_NetworkConfiguration}}</h3>
+                            <div class="config-section-heading">
+                                <h3 class="section-title">{{.UIText_NetworkConfiguration}}</h3>
+                                <button type="button" class="save-button config-section-save"
+                                    aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
+                            </div>
                             <div class="channel-grid">
                                 <div class="form-group">
                                     <label for="GamePort">{{.UIText_GamePort}}:</label>
@@ -326,7 +339,11 @@
                         </div>
 
                         <div id="advanced-settings" class="config-section">
-                            <h3 class="section-title">{{.UIText_AdvancedConfiguration}}</h3>
+                            <div class="config-section-heading">
+                                <h3 class="section-title">{{.UIText_AdvancedConfiguration}}</h3>
+                                <button type="button" class="save-button config-section-save"
+                                    aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
+                            </div>
                             <div class="channel-grid">
 
                                 <div class="form-group advertiser-setting-card">
@@ -532,8 +549,103 @@
                             {{end}}
                         </div>
 
+                        <div id="backup-retention" class="config-section backup-retention-section">
+                            <div class="retention-heading">
+                                <div>
+                                    <span class="panel-kicker">Safebackups</span>
+                                    <h3 class="section-title">{{.UIText_BackupRetentionTitle}}</h3>
+                                    <p>{{.UIText_BackupRetentionIntro}}</p>
+                                </div>
+                                <div class="retention-heading-actions">
+                                    <div class="retention-shield" aria-hidden="true">◆</div>
+                                    <button type="button" class="save-button config-section-save"
+                                        aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
+                                </div>
+                            </div>
+
+                            <div class="retention-master-control">
+                                <div>
+                                    <label for="backupRetentionEnabled">{{.UIText_BackupCleanupEnabled}}</label>
+                                    <div class="input-info">{{.UIText_BackupCleanupInfo}}</div>
+                                </div>
+                                <select id="backupRetentionEnabled" name="backupRetentionEnabled" required>
+                                    <option value="true" {{.BackupRetentionEnabledTrueSelected}}>ENABLED</option>
+                                    <option value="false" {{.BackupRetentionEnabledFalseSelected}}>DISABLED</option>
+                                </select>
+                            </div>
+
+                            <div class="retention-grid">
+                                <div class="retention-control-card">
+                                    <label for="backupKeepNewestCount">{{.UIText_BackupKeepNewest}}</label>
+                                    <div class="retention-value-row">
+                                        <input type="number" id="backupKeepNewestCount" name="backupKeepNewestCount"
+                                            value="{{.BackupKeepNewestCount}}" min="0" step="1" required>
+                                        <span class="retention-unit">{{.UIText_BackupFiles}}</span>
+                                    </div>
+                                    <div class="input-info">{{.UIText_BackupKeepNewestInfo}}</div>
+                                </div>
+
+                                <div class="retention-control-card">
+                                    <label for="backupDailyRetentionDays">{{.UIText_BackupKeepDaily}}</label>
+                                    <div class="retention-value-row">
+                                        <input type="number" id="backupDailyRetentionDays" name="backupDailyRetentionDays"
+                                            value="{{.BackupDailyRetentionDays}}" min="0" step="1" required>
+                                        <span class="retention-unit">{{.UIText_BackupDays}}</span>
+                                    </div>
+                                    <div class="input-info">{{.UIText_BackupKeepDailyInfo}}</div>
+                                </div>
+
+                                <div class="retention-control-card">
+                                    <label for="backupWeeklyRetentionWeeks">{{.UIText_BackupKeepWeekly}}</label>
+                                    <div class="retention-value-row">
+                                        <input type="number" id="backupWeeklyRetentionWeeks" name="backupWeeklyRetentionWeeks"
+                                            value="{{.BackupWeeklyRetentionWeeks}}" min="0" step="1" required>
+                                        <span class="retention-unit">{{.UIText_BackupWeeks}}</span>
+                                    </div>
+                                    <div class="input-info">{{.UIText_BackupKeepWeeklyInfo}}</div>
+                                </div>
+
+                                <div class="retention-control-card">
+                                    <label for="backupMonthlyRetentionMonths">{{.UIText_BackupKeepMonthly}}</label>
+                                    <div class="retention-value-row">
+                                        <input type="number" id="backupMonthlyRetentionMonths" name="backupMonthlyRetentionMonths"
+                                            value="{{.BackupMonthlyRetentionMonths}}" min="0" step="1" required>
+                                        <span class="retention-unit">{{.UIText_BackupMonths}}</span>
+                                    </div>
+                                    <div class="input-info">{{.UIText_BackupKeepMonthlyInfo}}</div>
+                                </div>
+
+                                <div class="retention-control-card">
+                                    <label for="backupCleanupIntervalHours">{{.UIText_BackupCleanupInterval}}</label>
+                                    <div class="retention-value-row">
+                                        <input type="number" id="backupCleanupIntervalHours" name="backupCleanupIntervalHours"
+                                            value="{{.BackupCleanupIntervalHours}}" min="1" step="1" required>
+                                        <span class="retention-unit">{{.UIText_BackupHours}}</span>
+                                    </div>
+                                    <div class="input-info">{{.UIText_BackupCleanupIntervalInfo}}</div>
+                                </div>
+                            </div>
+
+                            <div class="retention-delay-note">
+                                <span aria-hidden="true">⏱</span>
+                                <span>{{.UIText_BackupCopyDelayInfo}}</span>
+                            </div>
+
+                            <div class="retention-warning">
+                                <span class="retention-warning-icon" aria-hidden="true">!</span>
+                                <div>
+                                    <strong>{{.UIText_BackupWarningTitle}}</strong>
+                                    <p>{{.UIText_BackupWarning}}</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="terrain-settings" class="config-section">
-                            <h3 class="section-title">{{.UIText_TerrainSettingsHeader}}</h3>
+                            <div class="config-section-heading">
+                                <h3 class="section-title">{{.UIText_TerrainSettingsHeader}}</h3>
+                                <button type="button" class="save-button config-section-save"
+                                    aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
+                            </div>
                             <div class="beta-warning">{{.UIText_TerrainWarning}}</div>
                             <br>
                             <div class="channel-grid">
@@ -571,19 +683,13 @@
                             </div>
                         </div>
 
-
-                        <div class="form-actions">
-                            <button type="button" class="back-button" onclick="window.location.href = '/'"></button>
-                            <button type="button" class="save-button"
-                                onclick="document.getElementById('server-config-form').submit()"></button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="discord-config-tab" class="tab-content">
-            <form id="discord-config-form" action="/saveconfigasjson" method="post">
+            <div id="discord-config-panel" data-config-save-scope>
                 <div class="integration-status discord-integration-header">
                     <div class="discord-status-copy">
                         <span class="discord-mark" aria-hidden="true"></span>
@@ -604,7 +710,11 @@
 
                     <div class="discord-section-heading">
                         <span class="panel-kicker">Discord</span>
-                        <h2>{{.UIText_ChannelConfiguration}}</h2>
+                        <div class="discord-section-heading-row">
+                            <h2>{{.UIText_ChannelConfiguration}}</h2>
+                            <button type="button" class="save-button config-section-save"
+                                aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
+                        </div>
                     </div>
                     <div class="channel-grid discord-channel-grid">
                         <div class="form-group">
@@ -656,13 +766,8 @@
                             value="{{.BlackListFilePath}}">
                         <div class="input-info">{{.UIText_BannedPlayersListPathInfo}}</div>
                     </div>
-                    <div class="form-actions">
-                        <button type="button" class="back-button" onclick="window.location.href = '/'"></button>
-                        <button type="button" class="save-button"
-                            onclick="document.getElementById('discord-config-form').submit()"></button>
-                    </div>
                 </div>
-            </form>
+            </div>
             <div class="info-panel">
                 <h3>{{.UIText_DiscordIntegrationBenefits}}</h3>
                 <ul class="feature-list">
@@ -859,6 +964,93 @@
     </footer>
 
     <script>
+        let configNotificationTimer;
+
+        function showConfigNotification(message, type) {
+            const notification = document.getElementById('config-save-notification');
+            window.clearTimeout(configNotificationTimer);
+            notification.textContent = message;
+            notification.className = `config-save-notification ${type} show`;
+
+            const duration = type === 'error' ? 7000 : type === 'success' ? 4000 : 0;
+            if (duration > 0) {
+                configNotificationTimer = window.setTimeout(() => {
+                    notification.classList.remove('show');
+                }, duration);
+            }
+        }
+
+        function configScopePayload(scope) {
+            const payload = {};
+
+            scope.querySelectorAll('input[name], select[name], textarea[name]').forEach(control => {
+                if (control.disabled || ((control.type === 'checkbox' || control.type === 'radio') && !control.checked)) {
+                    return;
+                }
+
+                if (control?.type === 'number') {
+                    payload[control.name] = Number(control.value);
+                } else if (control?.tagName === 'SELECT' && (control.value === 'true' || control.value === 'false')) {
+                    payload[control.name] = control.value === 'true';
+                } else {
+                    payload[control.name] = control.value;
+                }
+            });
+
+            return payload;
+        }
+
+        function validateConfigScope(scope) {
+            const invalidControl = Array.from(scope.querySelectorAll('input, select, textarea'))
+                .find(control => !control.disabled && !control.checkValidity());
+
+            if (invalidControl) {
+                invalidControl.reportValidity();
+                return false;
+            }
+
+            return true;
+        }
+
+        async function saveConfigSection(event) {
+            const saveButton = event.currentTarget;
+            const scope = saveButton.closest('.config-section, [data-config-save-scope]');
+            const notification = document.getElementById('config-save-notification');
+
+            if (!scope || !validateConfigScope(scope)) {
+                return;
+            }
+
+            saveButton.disabled = true;
+            showConfigNotification(notification.dataset.saving, 'info');
+
+            try {
+                const response = await fetch('/api/v2/saveconfig', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(configScopePayload(scope))
+                });
+                const responseText = await response.text();
+
+                if (!response.ok) {
+                    let errorMessage = responseText;
+                    try {
+                        errorMessage = JSON.parse(responseText).error || responseText;
+                    } catch (_) {
+                        // The endpoint may return a plain-text HTTP error.
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                showConfigNotification(notification.dataset.success, 'success');
+            } catch (error) {
+                const detail = error.message ? ` ${error.message}` : '';
+                showConfigNotification(notification.dataset.failed + detail, 'error');
+            } finally {
+                saveButton.disabled = false;
+            }
+        }
+
         const configTabs = {
             settings: 'server-config-tab',
             discord: 'discord-config-tab',
@@ -898,6 +1090,31 @@
         function showConfigTabFromUrl() {
             const requestedTab = new URLSearchParams(window.location.search).get('tab') || 'settings';
             showConfigTab(configTabs[requestedTab] || configTabs.settings, false);
+            const requestedSection = new URLSearchParams(window.location.search).get('section') || 'basic-settings';
+            showConfigSection(requestedSection, false);
+        }
+
+        function showConfigSection(sectionId, updateUrl = true) {
+            const section = document.getElementById(sectionId) || document.getElementById('basic-settings');
+            const button = document.querySelector(`.section-nav-button[data-section="${section.id}"]`);
+
+            document.querySelectorAll('.server-settings-shell .config-section').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.server-settings-shell .section-nav-button').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            document.getElementById('select-prompt').style.display = 'none';
+            section.classList.add('active');
+            button?.classList.add('active');
+
+            if (updateUrl) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'settings');
+                url.searchParams.set('section', section.id);
+                window.history.replaceState({}, '', url);
+            }
         }
 
         document.getElementById('isDiscordEnabled').addEventListener('change', function () {
@@ -919,25 +1136,7 @@
         // Section navigation
         document.querySelectorAll('.section-nav-button').forEach(button => {
             button.addEventListener('click', function () {
-                // Hide all sections
-                document.querySelectorAll('.config-section').forEach(section => {
-                    section.classList.remove('active');
-                });
-
-                // Hide the prompt message when a section is selected
-                document.getElementById('select-prompt').style.display = 'none';
-
-                // Remove active class from all buttons
-                document.querySelectorAll('.section-nav-button').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-
-                // Show the selected section
-                const sectionId = this.getAttribute('data-section');
-                document.getElementById(sectionId).classList.add('active');
-
-                // Add active class to the clicked button
-                this.classList.add('active');
+                showConfigSection(this.getAttribute('data-section'));
             });
         });
         document.querySelectorAll('.sliding-tab-button[data-tab]').forEach(button => {
@@ -947,6 +1146,9 @@
             });
         });
         window.addEventListener('popstate', showConfigTabFromUrl);
+        document.querySelectorAll('.config-section-save').forEach(button => {
+            button.addEventListener('click', saveConfigSection);
+        });
         showConfigTabFromUrl();
     </script>
     <script src="/static/js/theme-engine.js"></script>

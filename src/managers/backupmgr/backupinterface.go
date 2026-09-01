@@ -3,7 +3,6 @@ package backupmgr
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
@@ -71,12 +70,12 @@ func GetBackupConfig() BackupConfig {
 		WorldName:     config.GetSaveName(),
 		BackupDir:     config.GetConfiguredBackupDir(),
 		SafeBackupDir: config.GetConfiguredSafeBackupDir(),
-		WaitTime:      30 * time.Second, // not sure why we are not using config.BackupWaitTime here, but ill not touch it in this commit (config rework)
+		WaitTime:      defaultWaitTime,
 		RetentionPolicy: RetentionPolicy{
-			KeepLastN:       config.GetBackupKeepLastN(),
-			KeepDailyFor:    config.GetBackupKeepDailyFor(),
-			KeepWeeklyFor:   config.GetBackupKeepWeeklyFor(),
-			KeepMonthlyFor:  config.GetBackupKeepMonthlyFor(),
+			KeepNewestCount: config.GetBackupKeepNewestCount(),
+			DailyDays:       config.GetBackupDailyRetentionDays(),
+			WeeklyWeeks:     config.GetBackupWeeklyRetentionWeeks(),
+			MonthlyMonths:   config.GetBackupMonthlyRetentionMonths(),
 			CleanupInterval: config.GetBackupCleanupInterval(),
 		},
 		Identifier: bmIdentifier,

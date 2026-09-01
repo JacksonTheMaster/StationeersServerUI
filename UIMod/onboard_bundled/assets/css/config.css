@@ -1,5 +1,51 @@
 @import '/static/css/variables.css';
 
+.config-save-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    z-index: 2000;
+    max-width: min(520px, calc(100vw - 32px));
+    padding: 14px 24px;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    background: var(--panel-bg, rgba(10, 10, 20, 0.96));
+    color: var(--text-bright);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 18px var(--primary-glow);
+    font-family: 'Share Tech Mono', monospace;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -12px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.config-save-notification.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.config-save-notification.success {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.config-save-notification.error {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.config-save-notification.info {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.save-button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+    transform: none;
+}
+
 /* Wizard Button */
 .wizard-button-container {
     display: flex;
@@ -495,7 +541,7 @@ select option {
     box-shadow: inset 0 0 12px var(--primary-glow-soft);
 }
 
-.server-settings-shell #server-config-form {
+.server-settings-shell #server-config-panel {
     grid-area: settings;
     min-width: 0;
 }
@@ -514,6 +560,264 @@ select option {
     font-family: 'Share Tech Mono', monospace;
     font-size: 1.05rem;
     text-transform: uppercase;
+}
+
+.config-section-heading,
+.discord-section-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 13px;
+    border-bottom: 2px solid var(--primary-dim);
+}
+
+.config-section-heading .section-title {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.config-section-save {
+    width: 48px;
+    height: 42px;
+    min-width: 48px;
+    padding: 0;
+    flex: 0 0 48px;
+}
+
+.discord-section-heading-row h2 {
+    margin: 0;
+}
+
+.backup-retention-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.backup-retention-section::before {
+    content: '';
+    position: absolute;
+    top: -90px;
+    right: -70px;
+    width: 220px;
+    height: 220px;
+    border: 1px solid var(--primary-glow-strong);
+    border-radius: 50%;
+    box-shadow: 0 0 60px var(--primary-glow-soft);
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.retention-heading {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.retention-heading-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.retention-heading .section-title {
+    margin: 4px 0 8px;
+    padding: 0;
+    border: 0;
+}
+
+.retention-heading p {
+    max-width: 720px;
+    margin: 0;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.retention-shield {
+    display: grid;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    place-items: center;
+    border: 1px solid var(--primary-glow-strong);
+    border-radius: 12px;
+    background: var(--primary-glow-soft);
+    color: var(--primary);
+    box-shadow: inset 0 0 18px var(--primary-glow-soft), 0 0 20px var(--primary-glow-soft);
+}
+
+.retention-master-control,
+.retention-control-card {
+    border: 1px solid var(--panel-frame);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--panel-inset) 88%, var(--primary) 12%);
+}
+
+.retention-master-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border-left: 4px solid var(--primary);
+}
+
+.retention-master-control label,
+.retention-control-card label {
+    color: var(--text-header);
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: 700;
+}
+
+.retention-master-control select {
+    width: min(210px, 100%);
+    height: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 38px 10px 12px;
+    flex: 0 0 210px;
+    align-self: center;
+}
+
+.retention-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.retention-control-card {
+    display: flex;
+    min-width: 0;
+    padding: 15px;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.retention-value-row {
+    display: flex;
+    align-items: stretch;
+}
+
+#backup-retention .retention-value-row input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+    width: 100%;
+    height: 44px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--primary-glow-strong);
+    border-radius: 4px 0 0 4px;
+    background-color: var(--input-bg);
+    color: var(--text-bright);
+    caret-color: var(--primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+#backup-retention .retention-value-row input[type="number"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--primary-glow);
+    outline: 0;
+}
+
+#backup-retention .retention-value-row input[type="number"]::-webkit-inner-spin-button,
+#backup-retention .retention-value-row input[type="number"]::-webkit-outer-spin-button {
+    margin: 0;
+    opacity: 0.65;
+}
+
+.retention-unit {
+    display: flex;
+    min-width: 82px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid var(--primary-glow-strong);
+    border-left: 0;
+    border-radius: 0 4px 4px 0;
+    background: var(--panel-inset);
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+}
+
+.retention-delay-note,
+.retention-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 13px 15px;
+    border-radius: 8px;
+    line-height: 1.45;
+}
+
+.retention-delay-note {
+    border: 1px solid var(--panel-frame);
+    background: var(--panel-inset);
+    color: var(--text-dim);
+}
+
+.retention-warning {
+    border: 1px solid color-mix(in srgb, var(--warning) 65%, transparent);
+    background: color-mix(in srgb, var(--warning) 9%, transparent);
+    color: var(--warning);
+}
+
+.retention-warning-icon {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    place-items: center;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-weight: 700;
+}
+
+.retention-warning strong {
+    display: block;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+}
+
+.retention-warning p {
+    margin: 0;
+    color: inherit;
+}
+
+@media (max-width: 760px) {
+    .retention-heading,
+    .retention-master-control {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .retention-master-control select {
+        width: 100%;
+        flex-basis: auto;
+    }
+
+    .retention-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .config-section-heading,
+    .discord-section-heading-row {
+        align-items: flex-start;
+    }
 }
 
 .server-settings-shell .channel-grid {

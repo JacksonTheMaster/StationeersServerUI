@@ -96,7 +96,7 @@ func (m *BackupManager) Start(identifier string) error {
 	m.watcher = watcher
 	go m.watchBackups(identifier)
 
-	if config.GetIsCleanupEnabled() {
+	if config.GetBackupRetentionEnabled() {
 		go m.startCleanupRoutine()
 	}
 

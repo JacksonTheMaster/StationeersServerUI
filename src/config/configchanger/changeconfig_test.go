@@ -1,0 +1,65 @@
+package configchanger
+
+import (
+	"testing"
+
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+)
+
+func configInt(value int) *int {
+	return &value
+}
+
+func validBackupConfig() *config.JsonConfig {
+	return &config.JsonConfig{
+		BackupKeepNewestCount:        configInt(2),
+		BackupDailyRetentionDays:     configInt(7),
+		BackupWeeklyRetentionWeeks:   configInt(4),
+		BackupMonthlyRetentionMonths: configInt(3),
+		BackupCleanupIntervalHours:   configInt(24),
+	}
+}
+
+func TestValidateBackupSettingsAllowsDisabledRetentionRules(t *testing.T) {
+	cfg := validBackupConfig()
+	cfg.BackupKeepNewestCount = configInt(0)
+	cfg.BackupDailyRetentionDays = configInt(0)
+	cfg.BackupWeeklyRetentionWeeks = configInt(0)
+	cfg.BackupMonthlyRetentionMonths = configInt(0)
+
+	if err := validateBackupSettings(cfg); err != nil {
+		t.Fatalf("validateBackupSettings() returned unexpected error: %v", err)
+	}
+}
+
+func TestValidateBackupSettingsRejectsUnsafeValues(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*config.JsonConfig)
+	}{
+		{name: "negative keep newest", mutate: func(cfg *config.JsonConfig) { cfg.BackupKeepNewestCount = configInt(-1) }},
+		{name: "negative daily", mutate: func(cfg *config.JsonConfig) { cfg.BackupDailyRetentionDays = configInt(-1) }},
+		{name: "negative weekly", mutate: func(cfg *config.JsonConfig) { cfg.BackupWeeklyRetentionWeeks = configInt(-1) }},
+		{name: "negative monthly", mutate: func(cfg *config.JsonConfig) { cfg.BackupMonthlyRetentionMonths = configInt(-1) }},
+		{name: "zero cleanup interval", mutate: func(cfg *config.JsonConfig) { cfg.BackupCleanupIntervalHours = configInt(0) }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := validBackupConfig()
+			tt.mutate(cfg)
+			if err := validateBackupSettings(cfg); err == nil {
+				t.Fatal("validateBackupSettings() returned nil, want validation error")
+			}
+		})
+	}
+}
+
+func TestJSONIntRejectsFractions(t *testing.T) {
+	if _, ok := jsonInt(1.5); ok {
+		t.Fatal("jsonInt() accepted a fractional value")
+	}
+	if got, ok := jsonInt(float64(12)); !ok || got != 12 {
+		t.Fatalf("jsonInt() = (%d, %t), want (12, true)", got, ok)
+	}
+}

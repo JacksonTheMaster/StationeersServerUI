@@ -122,10 +122,10 @@ type Model struct {
 
 	// Backup Info
 
-	backupKeepLastN  int
-	backupDailyFor   int
-	backupWeeklyFor  int
-	backupMonthlyFor int
+	backupKeepNewestCount        int
+	backupDailyRetentionDays     int
+	backupWeeklyRetentionWeeks   int
+	backupMonthlyRetentionMonths int
 
 	// Config Panel State
 
@@ -343,10 +343,10 @@ type statusUpdateMsg struct {
 	autoStartEnabled   bool
 
 	// Backup
-	backupKeepLastN  int
-	backupDailyFor   int
-	backupWeeklyFor  int
-	backupMonthlyFor int
+	backupKeepNewestCount        int
+	backupDailyRetentionDays     int
+	backupWeeklyRetentionWeeks   int
+	backupMonthlyRetentionMonths int
 }
 
 // logUpdateMsg is sent when new SSUI logs are available

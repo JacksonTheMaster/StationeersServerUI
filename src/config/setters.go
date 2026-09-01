@@ -430,63 +430,63 @@ func SetNextAutoRestartTime(value time.Time) error {
 }
 
 // Backup Settings
-func SetBackupKeepLastN(value int) error {
+func SetBackupKeepNewestCount(value int) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
 	if value < 0 {
-		return fmt.Errorf("backup keep last N cannot be negative")
+		return fmt.Errorf("backup keep newest count cannot be negative")
 	}
 
-	BackupKeepLastN = value
+	BackupKeepNewestCount = value
 	return safeSaveConfig()
 }
 
-func SetIsCleanupEnabled(value bool) error {
+func SetBackupRetentionEnabled(value bool) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
-	IsCleanupEnabled = value
+	BackupRetentionEnabled = value
 	return safeSaveConfig()
 }
 
-func SetBackupKeepDailyFor(value int) error {
-	ConfigMu.Lock()
-	defer ConfigMu.Unlock()
-
-	if value < 0 {
-		return fmt.Errorf("backup keep daily for cannot be negative")
-	}
-
-	BackupKeepDailyFor = time.Duration(value) * time.Hour
-	return safeSaveConfig()
-}
-
-func SetBackupKeepWeeklyFor(value int) error {
+func SetBackupDailyRetentionDays(value int) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
 	if value < 0 {
-		return fmt.Errorf("backup keep weekly for cannot be negative")
+		return fmt.Errorf("backup daily retention days cannot be negative")
 	}
 
-	BackupKeepWeeklyFor = time.Duration(value) * time.Hour
+	BackupDailyRetentionDays = value
 	return safeSaveConfig()
 }
 
-func SetBackupKeepMonthlyFor(value int) error {
+func SetBackupWeeklyRetentionWeeks(value int) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
 	if value < 0 {
-		return fmt.Errorf("backup keep monthly for cannot be negative")
+		return fmt.Errorf("backup weekly retention weeks cannot be negative")
 	}
 
-	BackupKeepMonthlyFor = time.Duration(value) * time.Hour
+	BackupWeeklyRetentionWeeks = value
 	return safeSaveConfig()
 }
 
-func SetBackupCleanupInterval(value int) error {
+func SetBackupMonthlyRetentionMonths(value int) error {
+	ConfigMu.Lock()
+	defer ConfigMu.Unlock()
+
+	if value < 0 {
+		return fmt.Errorf("backup monthly retention months cannot be negative")
+	}
+
+	BackupMonthlyRetentionMonths = value
+	return safeSaveConfig()
+}
+
+func SetBackupCleanupIntervalHours(value int) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
@@ -495,18 +495,6 @@ func SetBackupCleanupInterval(value int) error {
 	}
 
 	BackupCleanupInterval = time.Duration(value) * time.Hour
-	return safeSaveConfig()
-}
-
-func SetBackupWaitTime(value int) error {
-	ConfigMu.Lock()
-	defer ConfigMu.Unlock()
-
-	if value < 0 {
-		return fmt.Errorf("backup wait time cannot be negative")
-	}
-
-	BackupWaitTime = time.Duration(value) * time.Second
 	return safeSaveConfig()
 }
 

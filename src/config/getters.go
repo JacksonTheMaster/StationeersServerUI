@@ -64,36 +64,34 @@ func GetRotateServerPassword() bool {
 	return RotateServerPassword
 }
 
-func GetBackupKeepLastN() int {
+func GetBackupKeepNewestCount() int {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
-	return BackupKeepLastN
+	return BackupKeepNewestCount
 }
 
-func GetIsCleanupEnabled() bool {
+func GetBackupRetentionEnabled() bool {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
-	return IsCleanupEnabled
+	return BackupRetentionEnabled
 }
 
-// GetBackupKeepDailyFor returns the retention period for daily backups in hours.
-func GetBackupKeepDailyFor() time.Duration {
+func GetBackupDailyRetentionDays() int {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
-	return BackupKeepDailyFor
+	return BackupDailyRetentionDays
 }
 
-func GetBackupKeepWeeklyFor() time.Duration {
+func GetBackupWeeklyRetentionWeeks() int {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
-	return BackupKeepWeeklyFor
+	return BackupWeeklyRetentionWeeks
 }
 
-// GetBackupKeepMonthlyFor returns the retention period for monthly backups in hours.
-func GetBackupKeepMonthlyFor() time.Duration {
+func GetBackupMonthlyRetentionMonths() int {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
-	return BackupKeepMonthlyFor
+	return BackupMonthlyRetentionMonths
 }
 
 // GetBackupCleanupInterval returns the cleanup interval in hours.
@@ -101,13 +99,6 @@ func GetBackupCleanupInterval() time.Duration {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
 	return BackupCleanupInterval
-}
-
-// GetBackupWaitTime returns the backup wait time in seconds.
-func GetBackupWaitTime() time.Duration {
-	ConfigMu.RLock()
-	defer ConfigMu.RUnlock()
-	return BackupWaitTime
 }
 
 func GetIsNewTerrainAndSaveSystem() bool {

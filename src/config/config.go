@@ -104,14 +104,14 @@ type JsonConfig struct {
 	IsDiscordEnabled        *bool  `json:"isDiscordEnabled"`
 	RotateServerPassword    *bool  `json:"rotateServerPassword"`
 
-	//Backup Settings
-	BackupKeepLastN       int   `json:"backupKeepLastN"`       // Number of most recent backups to keep (default: 2000)
-	IsCleanupEnabled      *bool `json:"isCleanupEnabled"`      // Enable automatic cleanup of backups (default: false)
-	BackupKeepDailyFor    int   `json:"backupKeepDailyFor"`    // Retention period in hours for daily backups
-	BackupKeepWeeklyFor   int   `json:"backupKeepWeeklyFor"`   // Retention period in hours for weekly backups
-	BackupKeepMonthlyFor  int   `json:"backupKeepMonthlyFor"`  // Retention period in hours for monthly backups
-	BackupCleanupInterval int   `json:"backupCleanupInterval"` // Hours between backup cleanup operations
-	BackupWaitTime        int   `json:"backupWaitTime"`        // Seconds to wait before copying backups
+	// Backup retention settings. The former backupKeep* / isCleanupEnabled keys
+	// are intentionally not migrated so upgrades return to the safe disabled state.
+	BackupRetentionEnabled       *bool `json:"backupRetentionEnabled"`
+	BackupKeepNewestCount        *int  `json:"backupKeepNewestCount"`
+	BackupDailyRetentionDays     *int  `json:"backupDailyRetentionDays"`
+	BackupWeeklyRetentionWeeks   *int  `json:"backupWeeklyRetentionWeeks"`
+	BackupMonthlyRetentionMonths *int  `json:"backupMonthlyRetentionMonths"`
+	BackupCleanupIntervalHours   *int  `json:"backupCleanupIntervalHours"`
 }
 
 // LoadConfig loads and initializes the configuration
@@ -161,17 +161,29 @@ func applyConfig(cfg *JsonConfig) {
 	RotateServerPassword = rotateServerPasswordVal
 	cfg.RotateServerPassword = &rotateServerPasswordVal
 
-	BackupKeepLastN = getInt(cfg.BackupKeepLastN, "BACKUP_KEEP_LAST_N", 2000)
+	backupRetentionEnabledVal := getBool(cfg.BackupRetentionEnabled, "BACKUP_RETENTION_ENABLED", false)
+	BackupRetentionEnabled = backupRetentionEnabledVal
+	cfg.BackupRetentionEnabled = &backupRetentionEnabledVal
 
-	isCleanupEnabledVal := getBool(cfg.IsCleanupEnabled, "IS_CLEANUP_ENABLED", false)
-	IsCleanupEnabled = isCleanupEnabledVal
-	cfg.IsCleanupEnabled = &isCleanupEnabledVal
+	backupKeepNewestCountVal := getOptionalInt(cfg.BackupKeepNewestCount, "BACKUP_KEEP_NEWEST_COUNT", 2)
+	BackupKeepNewestCount = backupKeepNewestCountVal
+	cfg.BackupKeepNewestCount = &backupKeepNewestCountVal
 
-	BackupKeepDailyFor = time.Duration(getInt(cfg.BackupKeepDailyFor, "BACKUP_KEEP_DAILY_FOR", 24)) * time.Hour
-	BackupKeepWeeklyFor = time.Duration(getInt(cfg.BackupKeepWeeklyFor, "BACKUP_KEEP_WEEKLY_FOR", 168)) * time.Hour
-	BackupKeepMonthlyFor = time.Duration(getInt(cfg.BackupKeepMonthlyFor, "BACKUP_KEEP_MONTHLY_FOR", 730)) * time.Hour
-	BackupCleanupInterval = time.Duration(getInt(cfg.BackupCleanupInterval, "BACKUP_CLEANUP_INTERVAL", 730)) * time.Hour
-	BackupWaitTime = time.Duration(getInt(cfg.BackupWaitTime, "BACKUP_WAIT_TIME", 30)) * time.Second
+	backupDailyRetentionDaysVal := getOptionalInt(cfg.BackupDailyRetentionDays, "BACKUP_DAILY_RETENTION_DAYS", 7)
+	BackupDailyRetentionDays = backupDailyRetentionDaysVal
+	cfg.BackupDailyRetentionDays = &backupDailyRetentionDaysVal
+
+	backupWeeklyRetentionWeeksVal := getOptionalInt(cfg.BackupWeeklyRetentionWeeks, "BACKUP_WEEKLY_RETENTION_WEEKS", 4)
+	BackupWeeklyRetentionWeeks = backupWeeklyRetentionWeeksVal
+	cfg.BackupWeeklyRetentionWeeks = &backupWeeklyRetentionWeeksVal
+
+	backupMonthlyRetentionMonthsVal := getOptionalInt(cfg.BackupMonthlyRetentionMonths, "BACKUP_MONTHLY_RETENTION_MONTHS", 3)
+	BackupMonthlyRetentionMonths = backupMonthlyRetentionMonthsVal
+	cfg.BackupMonthlyRetentionMonths = &backupMonthlyRetentionMonthsVal
+
+	backupCleanupIntervalHoursVal := getOptionalInt(cfg.BackupCleanupIntervalHours, "BACKUP_CLEANUP_INTERVAL_HOURS", 24)
+	BackupCleanupInterval = time.Duration(backupCleanupIntervalHoursVal) * time.Hour
+	cfg.BackupCleanupIntervalHours = &backupCleanupIntervalHoursVal
 
 	isNewTerrainAndSaveSystemVal := getBool(cfg.IsNewTerrainAndSaveSystem, "ENABLE_DOT_SAVES", true)
 	IsNewTerrainAndSaveSystem = isNewTerrainAndSaveSystemVal
@@ -387,13 +399,12 @@ func safeSaveConfig() error {
 		BlackListFilePath:                        BlackListFilePath,
 		IsDiscordEnabled:                         &IsDiscordEnabled,
 		RotateServerPassword:                     &RotateServerPassword,
-		BackupKeepLastN:                          BackupKeepLastN,
-		IsCleanupEnabled:                         &IsCleanupEnabled,
-		BackupKeepDailyFor:                       int(BackupKeepDailyFor / time.Hour),    // Convert to hours
-		BackupKeepWeeklyFor:                      int(BackupKeepWeeklyFor / time.Hour),   // Convert to hours
-		BackupKeepMonthlyFor:                     int(BackupKeepMonthlyFor / time.Hour),  // Convert to hours
-		BackupCleanupInterval:                    int(BackupCleanupInterval / time.Hour), // Convert to hours
-		BackupWaitTime:                           int(BackupWaitTime / time.Second),      // Convert to seconds
+		BackupRetentionEnabled:                   &BackupRetentionEnabled,
+		BackupKeepNewestCount:                    intPointer(BackupKeepNewestCount),
+		BackupDailyRetentionDays:                 intPointer(BackupDailyRetentionDays),
+		BackupWeeklyRetentionWeeks:               intPointer(BackupWeeklyRetentionWeeks),
+		BackupMonthlyRetentionMonths:             intPointer(BackupMonthlyRetentionMonths),
+		BackupCleanupIntervalHours:               intPointer(int(BackupCleanupInterval / time.Hour)),
 		IsNewTerrainAndSaveSystem:                &IsNewTerrainAndSaveSystem,
 		GameBranch:                               GameBranch,
 		Difficulty:                               Difficulty,

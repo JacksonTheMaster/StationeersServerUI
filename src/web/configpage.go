@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"strconv"
 	"text/template"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
@@ -216,6 +217,14 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		isStationeersLaunchPadAutoUpdatesEnabledFalseSelected = "selected"
 	}
 
+	backupRetentionEnabledTrueSelected := ""
+	backupRetentionEnabledFalseSelected := ""
+	if config.GetBackupRetentionEnabled() {
+		backupRetentionEnabledTrueSelected = "selected"
+	} else {
+		backupRetentionEnabledFalseSelected = "selected"
+	}
+
 	data := ConfigTemplateData{
 		// Config values
 		DiscordToken:                            config.GetDiscordToken(),
@@ -282,22 +291,57 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		CreateGameServerLogFile:                 fmt.Sprintf("%v", config.GetCreateGameServerLogFile()),
 		CreateGameServerLogFileTrueSelected:     createGameServerLogFileTrueSelected,
 		CreateGameServerLogFileFalseSelected:    createGameServerLogFileFalseSelected,
+		BackupKeepNewestCount:                   strconv.Itoa(config.GetBackupKeepNewestCount()),
+		BackupRetentionEnabled:                  fmt.Sprintf("%v", config.GetBackupRetentionEnabled()),
+		BackupRetentionEnabledTrueSelected:      backupRetentionEnabledTrueSelected,
+		BackupRetentionEnabledFalseSelected:     backupRetentionEnabledFalseSelected,
+		BackupDailyRetentionDays:                strconv.Itoa(config.GetBackupDailyRetentionDays()),
+		BackupWeeklyRetentionWeeks:              strconv.Itoa(config.GetBackupWeeklyRetentionWeeks()),
+		BackupMonthlyRetentionMonths:            strconv.Itoa(config.GetBackupMonthlyRetentionMonths()),
+		BackupCleanupIntervalHours:              strconv.Itoa(int(config.GetBackupCleanupInterval().Hours())),
 
 		// Localized UI text
-		UIText_ConfigHeadline:       localization.GetString("UIText_ConfigHeadline"),
-		UIText_ServerConfig:         localization.GetString("UIText_ServerConfig"),
-		UIText_BackToDashboard:      localization.GetString("UIText_BackToDashboard"),
-		UIText_DiscordIntegration:   localization.GetString("UIText_DiscordIntegration"),
-		UIText_SLPModIntegration:    localization.GetString("UIText_SLPModIntegration"),
-		UIText_DetectionManager:     localization.GetString("UIText_DetectionManager"),
-		UIText_ConfigurationWizard:  localization.GetString("UIText_ConfigurationWizard"),
-		UIText_PleaseSelectSection:  localization.GetString("UIText_PleaseSelectSection"),
-		UIText_UseWizardAlternative: localization.GetString("UIText_UseWizardAlternative"),
-		UIText_BasicSettings:        localization.GetString("UIText_BasicSettings"),
-		UIText_NetworkSettings:      localization.GetString("UIText_NetworkSettings"),
-		UIText_AdvancedSettings:     localization.GetString("UIText_AdvancedSettings"),
-		UIText_TerrainSettings:      localization.GetString("UIText_TerrainSettings"),
-		UIText_BasicServerSettings:  localization.GetString("UIText_BasicServerSettings"),
+		UIText_ConfigHeadline:            localization.GetString("UIText_ConfigHeadline"),
+		UIText_ServerConfig:              localization.GetString("UIText_ServerConfig"),
+		UIText_BackToDashboard:           localization.GetString("UIText_BackToDashboard"),
+		UIText_DiscordIntegration:        localization.GetString("UIText_DiscordIntegration"),
+		UIText_SLPModIntegration:         localization.GetString("UIText_SLPModIntegration"),
+		UIText_DetectionManager:          localization.GetString("UIText_DetectionManager"),
+		UIText_ConfigurationWizard:       localization.GetString("UIText_ConfigurationWizard"),
+		UIText_PleaseSelectSection:       localization.GetString("UIText_PleaseSelectSection"),
+		UIText_UseWizardAlternative:      localization.GetString("UIText_UseWizardAlternative"),
+		UIText_BasicSettings:             localization.GetString("UIText_BasicSettings"),
+		UIText_NetworkSettings:           localization.GetString("UIText_NetworkSettings"),
+		UIText_AdvancedSettings:          localization.GetString("UIText_AdvancedSettings"),
+		UIText_TerrainSettings:           localization.GetString("UIText_TerrainSettings"),
+		UIText_ConfigSaving:              localization.GetString("UIText_ConfigSaving"),
+		UIText_ConfigSaveSuccess:         localization.GetString("UIText_ConfigSaveSuccess"),
+		UIText_ConfigSaveFailed:          localization.GetString("UIText_ConfigSaveFailed"),
+		UIText_SaveConfiguration:         localization.GetString("UIText_SaveConfiguration"),
+		UIText_BackupRetention:           localization.GetString("UIText_BackupRetention"),
+		UIText_BackupRetentionTitle:      localization.GetString("UIText_BackupRetentionTitle"),
+		UIText_BackupRetentionIntro:      localization.GetString("UIText_BackupRetentionIntro"),
+		UIText_BackupCleanupEnabled:      localization.GetString("UIText_BackupCleanupEnabled"),
+		UIText_BackupCleanupInfo:         localization.GetString("UIText_BackupCleanupInfo"),
+		UIText_BackupKeepNewest:          localization.GetString("UIText_BackupKeepNewest"),
+		UIText_BackupKeepNewestInfo:      localization.GetString("UIText_BackupKeepNewestInfo"),
+		UIText_BackupKeepDaily:           localization.GetString("UIText_BackupKeepDaily"),
+		UIText_BackupKeepDailyInfo:       localization.GetString("UIText_BackupKeepDailyInfo"),
+		UIText_BackupKeepWeekly:          localization.GetString("UIText_BackupKeepWeekly"),
+		UIText_BackupKeepWeeklyInfo:      localization.GetString("UIText_BackupKeepWeeklyInfo"),
+		UIText_BackupKeepMonthly:         localization.GetString("UIText_BackupKeepMonthly"),
+		UIText_BackupKeepMonthlyInfo:     localization.GetString("UIText_BackupKeepMonthlyInfo"),
+		UIText_BackupCleanupInterval:     localization.GetString("UIText_BackupCleanupInterval"),
+		UIText_BackupCleanupIntervalInfo: localization.GetString("UIText_BackupCleanupIntervalInfo"),
+		UIText_BackupHours:               localization.GetString("UIText_BackupHours"),
+		UIText_BackupDays:                localization.GetString("UIText_BackupDays"),
+		UIText_BackupWeeks:               localization.GetString("UIText_BackupWeeks"),
+		UIText_BackupMonths:              localization.GetString("UIText_BackupMonths"),
+		UIText_BackupFiles:               localization.GetString("UIText_BackupFiles"),
+		UIText_BackupWarningTitle:        localization.GetString("UIText_BackupWarningTitle"),
+		UIText_BackupWarning:             localization.GetString("UIText_BackupWarning"),
+		UIText_BackupCopyDelayInfo:       localization.GetString("UIText_BackupCopyDelayInfo"),
+		UIText_BasicServerSettings:       localization.GetString("UIText_BasicServerSettings"),
 
 		UIText_ServerName:                     localization.GetString("UIText_ServerName"),
 		UIText_ServerNameInfo:                 localization.GetString("UIText_ServerNameInfo"),

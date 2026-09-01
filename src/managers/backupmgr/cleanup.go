@@ -39,7 +39,7 @@ func (m *BackupManager) cleanBackupDir() error {
 	cutoff := now.Add(-24 * time.Hour) // Keep only files from last 24 hours
 
 	for _, file := range files {
-		if file.IsDir() {
+		if file.IsDir() || !isValidBackupFile(file.Name()) {
 			continue
 		}
 
@@ -62,6 +62,43 @@ func (m *BackupManager) cleanBackupDir() error {
 // sameCalendarDay returns true if two times fall on the same calendar day (year + day-of-year).
 func sameCalendarDay(a, b time.Time) bool {
 	return a.Year() == b.Year() && a.YearDay() == b.YearDay()
+}
+
+func startOfCalendarDay(value time.Time) time.Time {
+	year, month, day := value.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, value.Location())
+}
+
+func startOfISOWeek(value time.Time) time.Time {
+	day := int(value.Weekday())
+	if day == 0 {
+		day = 7
+	}
+	return startOfCalendarDay(value).AddDate(0, 0, -(day - 1))
+}
+
+func withinDailyWindow(saveTime, now time.Time, days int) bool {
+	if days <= 0 {
+		return false
+	}
+	cutoff := startOfCalendarDay(now).AddDate(0, 0, -(days - 1))
+	return !saveTime.Before(cutoff)
+}
+
+func withinWeeklyWindow(saveTime, now time.Time, weeks int) bool {
+	if weeks <= 0 {
+		return false
+	}
+	cutoff := startOfISOWeek(now).AddDate(0, 0, -7*(weeks-1))
+	return !saveTime.Before(cutoff)
+}
+
+func withinMonthlyWindow(saveTime, now time.Time, months int) bool {
+	if months <= 0 {
+		return false
+	}
+	cutoff := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -(months - 1), 0)
+	return !saveTime.Before(cutoff)
 }
 
 // updateRetentionTrackers updates the daily/weekly/monthly tracker timestamps for a kept backup.
@@ -102,28 +139,26 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 	)
 
 	for i, backup := range saves {
-		age := now.Sub(backup.SaveTime)
-
 		// Always keep the most recent N backups, but also update the retention
 		// trackers so the daily/weekly/monthly logic doesn't redundantly keep
-		// backups for days already covered by KeepLastN.
-		if i < m.config.RetentionPolicy.KeepLastN {
+		// backups for periods already covered by KeepNewestCount.
+		if i < m.config.RetentionPolicy.KeepNewestCount {
 			updateRetentionTrackers(backup.SaveTime, &lastKeptDaily, &lastKeptWeekly, &lastKeptMonthly)
 			continue
 		}
 
-		// Keep daily backups for specified duration
+		// Keep one backup per calendar day within the configured number of days.
 		// Compare full calendar day (year + day-of-year) instead of just day-of-month
 		// to avoid incorrectly treating e.g. Jan 15 and Feb 15 as the "same day".
-		if age < m.config.RetentionPolicy.KeepDailyFor {
+		if withinDailyWindow(backup.SaveTime, now, m.config.RetentionPolicy.DailyDays) {
 			if lastKeptDaily.IsZero() || !sameCalendarDay(backup.SaveTime, lastKeptDaily) {
 				lastKeptDaily = backup.SaveTime
 				continue
 			}
 		}
 
-		// Keep weekly backups for specified duration
-		if age < m.config.RetentionPolicy.KeepWeeklyFor {
+		// Keep one backup per ISO calendar week within the configured week window.
+		if withinWeeklyWindow(backup.SaveTime, now, m.config.RetentionPolicy.WeeklyWeeks) {
 			year1, week1 := backup.SaveTime.ISOWeek()
 			year2, week2 := lastKeptWeekly.ISOWeek()
 			if lastKeptWeekly.IsZero() || year1 != year2 || week1 != week2 {
@@ -132,8 +167,8 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 			}
 		}
 
-		// Keep monthly backups for specified duration
-		if age < m.config.RetentionPolicy.KeepMonthlyFor {
+		// Keep one backup per calendar month within the configured month window.
+		if withinMonthlyWindow(backup.SaveTime, now, m.config.RetentionPolicy.MonthlyMonths) {
 			if lastKeptMonthly.IsZero() ||
 				backup.SaveTime.Month() != lastKeptMonthly.Month() ||
 				backup.SaveTime.Year() != lastKeptMonthly.Year() {

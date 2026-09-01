@@ -100,16 +100,15 @@ var (
 
 // Backup and cleanup settings
 var (
-	IsCleanupEnabled          bool
-	BackupKeepLastN           int
-	BackupKeepDailyFor        time.Duration
-	BackupKeepWeeklyFor       time.Duration
-	BackupKeepMonthlyFor      time.Duration
-	BackupCleanupInterval     time.Duration
-	ConfiguredBackupDir       string
-	ConfiguredSafeBackupDir   string
-	BackupWaitTime            time.Duration
-	IsNewTerrainAndSaveSystem bool
+	BackupRetentionEnabled       bool
+	BackupKeepNewestCount        int
+	BackupDailyRetentionDays     int
+	BackupWeeklyRetentionWeeks   int
+	BackupMonthlyRetentionMonths int
+	BackupCleanupInterval        time.Duration
+	ConfiguredBackupDir          string
+	ConfiguredSafeBackupDir      string
+	IsNewTerrainAndSaveSystem    bool
 )
 
 // Authentication and security

@@ -120,10 +120,20 @@ func SaveConfigRestful(w http.ResponseWriter, r *http.Request) {
 				field.SetString(strValue)
 			}
 		case reflect.Pointer:
-			if fieldType.Elem().Kind() == reflect.Bool {
+			switch fieldType.Elem().Kind() {
+			case reflect.Bool:
 				if boolValue, ok := value.(bool); ok {
 					field.Set(reflect.ValueOf(&boolValue)) // Set the pointer to the new bool
 				}
+			case reflect.Int:
+				intValue, ok := jsonInt(value)
+				if !ok {
+					http.Error(w, fmt.Sprintf("%s must be an integer", fieldName), http.StatusBadRequest)
+					return
+				}
+				newValue := reflect.New(fieldType.Elem())
+				newValue.Elem().SetInt(intValue)
+				field.Set(newValue)
 			}
 		case reflect.Int:
 			switch v := value.(type) {
@@ -154,6 +164,11 @@ func SaveConfigRestful(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if err := validateBackupSettings(existingConfig); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// Save the updated config
 	if err := SaveConfig(existingConfig); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -164,4 +179,44 @@ func SaveConfigRestful(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Configuration updated successfully"})
+}
+
+func jsonInt(value interface{}) (int64, bool) {
+	switch value := value.(type) {
+	case float64:
+		return int64(value), value == float64(int64(value))
+	case int:
+		return int64(value), true
+	case int64:
+		return value, true
+	case string:
+		intValue, err := strconv.ParseInt(value, 10, 64)
+		return intValue, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func validateBackupSettings(cfg *config.JsonConfig) error {
+	settings := []struct {
+		name  string
+		value *int
+	}{
+		{name: "backupKeepNewestCount", value: cfg.BackupKeepNewestCount},
+		{name: "backupDailyRetentionDays", value: cfg.BackupDailyRetentionDays},
+		{name: "backupWeeklyRetentionWeeks", value: cfg.BackupWeeklyRetentionWeeks},
+		{name: "backupMonthlyRetentionMonths", value: cfg.BackupMonthlyRetentionMonths},
+	}
+
+	for _, setting := range settings {
+		if setting.value != nil && *setting.value < 0 {
+			return fmt.Errorf("%s cannot be negative", setting.name)
+		}
+	}
+
+	if cfg.BackupCleanupIntervalHours != nil && *cfg.BackupCleanupIntervalHours <= 0 {
+		return fmt.Errorf("backupCleanupIntervalHours must be greater than zero")
+	}
+
+	return nil
 }

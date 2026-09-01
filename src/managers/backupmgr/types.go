@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	defaultWaitTime = 30 * time.Second
+	defaultWaitTime = 45 * time.Second
 )
 
 // BackupConfig holds configuration for backup operations
@@ -22,10 +22,10 @@ type BackupConfig struct {
 
 // RetentionPolicy defines backup retention rules
 type RetentionPolicy struct {
-	KeepLastN       int           // Keep last N backups regardless of age
-	KeepDailyFor    time.Duration // Keep daily backups for this duration
-	KeepWeeklyFor   time.Duration // Keep weekly backups for this duration
-	KeepMonthlyFor  time.Duration // Keep monthly backups for this duration
+	KeepNewestCount int           // Keep newest backups regardless of age
+	DailyDays       int           // Keep one representative per calendar day
+	WeeklyWeeks     int           // Keep one representative per ISO calendar week
+	MonthlyMonths   int           // Keep one representative per calendar month
 	CleanupInterval time.Duration // How often to run cleanup
 }
 
