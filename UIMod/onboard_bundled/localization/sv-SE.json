@@ -143,7 +143,7 @@
                 "UIText_SaveName": "Sparfil namn",
                 "UIText_SaveNameInfo": "Namnet på den sparade mappen, till exempel 'MySave' eller 'Europa Brutal'. Detta är namnet på mappen som kommer att skapas i 'saves'-mappen. Att ändra detta värde till ett icke-existerande mappnamn kommer att skapa en ny sparfil.",
                 "UIText_WorldID": "Världs-ID",
-                "UIText_WorldIDInfo": "Världs-ID som används när du skapar en ny värld. För en lista över världs-ID:n, se Dedicated Server Wiki eller konfigurera det enkelt från installationsguiden."
+                "UIText_WorldIDInfo": "Välj en värld som hittats i de installerade spelfilerna eller ange ett exakt anpassat världs-ID."
             },
             "network": {
                 "UIText_NetworkConfiguration": "Nätverkskonfiguration",
@@ -214,11 +214,11 @@
             "terrain": {
                 "UIText_UseNewTerrainAndSave": "Använd nytt system",
                 "UIText_Difficulty": "Svårighetsgrad",
-                "UIText_DifficultyInfo": "Svårigheter att skapa världen med.",
+                "UIText_DifficultyInfo": "Valfritt. Lämna tomt för spelets standard eller välj en upptäckt svårighetsgrad.",
                 "UIText_StartCondition": "Startvillkor",
-                "UIText_StartConditionInfo": "Startvillkor för att skapa världen med.",
+                "UIText_StartConditionInfo": "Valfritt. Kräver svårighetsgrad eftersom Stationeers tolkar värdena i ordning.",
                 "UIText_StartLocation": "Startplats",
-                "UIText_StartLocationInfo": "Startplats för att skapa världen med.",
+                "UIText_StartLocationInfo": "Valfritt. Kräver svårighetsgrad och startvillkor; anpassade ID:n stöds fortfarande.",
                 "UIText_AutoStartServerOnStartup": "Starta servern automatiskt vid uppstart",
                 "UIText_AutoStartServerOnStartupInfo": "Starta spelservern automatiskt när SSUI startas. Standard är false.",
                 "UIText_TerrainSettingsHeader": "Valfria inställningar för världsgenerering",

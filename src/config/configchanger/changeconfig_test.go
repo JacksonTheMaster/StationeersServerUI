@@ -63,3 +63,30 @@ func TestJSONIntRejectsFractions(t *testing.T) {
 		t.Fatalf("jsonInt() = (%d, %t), want (12, true)", got, ok)
 	}
 }
+
+func TestValidateWorldGenerationSettingsAcceptsPositionalPrefixes(t *testing.T) {
+	tests := []config.JsonConfig{
+		{WorldID: "Mars2"},
+		{WorldID: "Mars2", Difficulty: "Normal"},
+		{WorldID: "Mars2", Difficulty: "Normal", StartCondition: "DefaultStart"},
+		{WorldID: "Mars2", Difficulty: "Normal", StartCondition: "DefaultStart", StartLocation: "MarsSpawnRoundRobin"},
+	}
+	for _, cfg := range tests {
+		if err := validateWorldGenerationSettings(&cfg); err != nil {
+			t.Errorf("validateWorldGenerationSettings(%+v) error = %v", cfg, err)
+		}
+	}
+}
+
+func TestValidateWorldGenerationSettingsRejectsGaps(t *testing.T) {
+	tests := []config.JsonConfig{
+		{WorldID: "Mars2", StartCondition: "DefaultStart"},
+		{WorldID: "Mars2", Difficulty: "Normal", StartLocation: "MarsSpawnRoundRobin"},
+		{WorldID: "Mars2", StartLocation: "MarsSpawnRoundRobin"},
+	}
+	for _, cfg := range tests {
+		if err := validateWorldGenerationSettings(&cfg); err == nil {
+			t.Errorf("validateWorldGenerationSettings(%+v) error = nil, want positional gap error", cfg)
+		}
+	}
+}

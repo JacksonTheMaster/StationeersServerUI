@@ -1,5 +1,10 @@
 @import '/static/css/variables.css';
 
+/* Config popovers may extend past the framed workspace. */
+body > main {
+    overflow: visible;
+}
+
 .config-save-notification {
     position: fixed;
     top: 20px;
@@ -296,16 +301,215 @@
 }
 
 .fill-hint-wraper {
-    background-color: var(--danger);
-    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+    background: color-mix(in srgb, var(--danger) 12%, var(--config-surface-inset));
+    border: 1px solid color-mix(in srgb, var(--danger) 58%, transparent);
+    border-radius: 6px;
+}
+
+.fill-hint-wraper[hidden] {
+    display: none;
 }
 
 .fill-hint {
-    font-size: 1rem;
-    color: var(--text-header);
-    padding: 2%;
-    font-style: italic;
+    padding: 11px 14px;
+    color: var(--text-bright);
+    font-size: 0.82rem;
+    line-height: 1.4;
     text-align: center;
+}
+
+#terrain-settings .worldgen-form-group {
+    position: relative;
+}
+
+#terrain-settings .worldgen-combobox {
+    position: relative;
+    z-index: 1;
+    margin: 6px 0;
+}
+
+#terrain-settings .worldgen-combobox:focus-within,
+#terrain-settings .worldgen-combobox.is-open {
+    z-index: 20;
+}
+
+#terrain-settings .worldgen-combobox input {
+    width: 100%;
+    margin: 0;
+    padding-right: 52px;
+}
+
+#terrain-settings .worldgen-combobox-toggle {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    width: 46px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+    border-radius: 0 3px 3px 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    cursor: pointer;
+}
+
+#terrain-settings .worldgen-combobox-toggle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--primary);
+    border-bottom: 2px solid var(--primary);
+    background: none;
+    transform: translate(-50%, -68%) rotate(45deg);
+    transition: transform 150ms ease;
+}
+
+#terrain-settings .worldgen-combobox.is-open .worldgen-combobox-toggle::before {
+    transform: translate(-50%, -32%) rotate(225deg);
+}
+
+#terrain-settings .worldgen-combobox-toggle:hover,
+#terrain-settings .worldgen-combobox-toggle:focus-visible {
+    background: linear-gradient(90deg,
+            transparent,
+            color-mix(in srgb, var(--primary) 10%, var(--config-surface-inset)));
+    box-shadow: none;
+    transform: none;
+    outline: none;
+}
+
+#terrain-settings .worldgen-combobox-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+#terrain-settings .worldgen-combobox-options {
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    left: 0;
+    max-height: 228px;
+    padding: 5px;
+    overflow-y: auto;
+    border: 1px solid color-mix(in srgb, var(--primary) 72%, transparent);
+    border-radius: 6px;
+    background-color: var(--surface-overlay);
+    background-image: linear-gradient(135deg,
+            color-mix(in srgb, var(--primary) 6%, transparent),
+            transparent 48%);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.72), 0 0 14px var(--primary-glow-soft);
+    scrollbar-color: color-mix(in srgb, var(--primary) 65%, var(--surface-dark)) var(--bg-dark);
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+}
+
+#terrain-settings .worldgen-combobox-options::-webkit-scrollbar {
+    width: 8px;
+}
+
+#terrain-settings .worldgen-combobox-options::-webkit-scrollbar-track {
+    border-radius: 0 5px 5px 0;
+    background: var(--bg-dark);
+}
+
+#terrain-settings .worldgen-combobox-options::-webkit-scrollbar-thumb {
+    border: 2px solid var(--bg-dark);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 68%, var(--surface-dark));
+}
+
+#terrain-settings .worldgen-combobox-options[hidden] {
+    display: none;
+}
+
+#terrain-settings .worldgen-combobox-option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 42px;
+    padding: 7px 11px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--bg-dark) 76%, var(--surface-overlay));
+    box-shadow: none;
+    color: var(--text-bright);
+    text-align: left;
+    cursor: pointer;
+}
+
+#terrain-settings .worldgen-combobox-option + .worldgen-combobox-option {
+    margin-top: 3px;
+}
+
+#terrain-settings .worldgen-combobox-option::before {
+    display: none;
+}
+
+#terrain-settings .worldgen-combobox-option:hover,
+#terrain-settings .worldgen-combobox-option.is-active {
+    border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+    background: color-mix(in srgb, var(--primary) 13%, var(--bg-dark));
+    box-shadow: none;
+    color: var(--primary);
+    transform: none;
+}
+
+#terrain-settings .worldgen-combobox-option.is-current {
+    border-left-color: var(--primary);
+}
+
+#terrain-settings .worldgen-combobox-option-label {
+    min-width: 0;
+    overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.96rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#terrain-settings .worldgen-combobox-option-value {
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.73rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+#terrain-settings .worldgen-combobox-option-value:empty {
+    display: none;
+}
+
+#terrain-settings .worldgen-form-group.worldgen-sequence-invalid {
+    border-color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 8%, var(--config-surface-inset));
+}
+
+#terrain-settings input:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+}
+
+@media (max-width: 620px) {
+    #terrain-settings .worldgen-combobox-option {
+        display: block;
+    }
+
+    #terrain-settings .worldgen-combobox-option-value {
+        display: block;
+        margin-top: 3px;
+    }
 }
 
 /* Select dropdown */

@@ -656,35 +656,69 @@
                             <br>
                             <div class="channel-grid">
 
-                                <div class="form-group">
+                                <div class="form-group worldgen-form-group">
                                     <label for="WorldID">{{.UIText_WorldID}}:</label>
-                                    <input type="text" id="WorldID" name="WorldID" value="{{.WorldID}}">
+                                    <div class="worldgen-combobox" data-worldgen-combobox="worlds">
+                                        <input type="text" id="WorldID" name="WorldID" value="{{.WorldID}}"
+                                            autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"
+                                            aria-haspopup="listbox" aria-expanded="false"
+                                            aria-controls="world-id-options">
+                                        <button type="button" class="worldgen-combobox-toggle"
+                                            aria-label="{{.UIText_WorldID}}" tabindex="-1"></button>
+                                        <div id="world-id-options" class="worldgen-combobox-options"
+                                            role="listbox" hidden></div>
+                                    </div>
                                     <div class="input-info">{{.UIText_WorldIDInfo}}</div>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group worldgen-form-group">
                                     <label for="Difficulty">{{.UIText_Difficulty}}:</label>
-                                    <input type="text" id="Difficulty" name="Difficulty" value="{{.Difficulty}}"
-                                        pattern="^\S*$" required>
-                                    <div class="input-info">✅{{.UIText_DifficultyInfo}}</div>
+                                    <div class="worldgen-combobox" data-worldgen-combobox="difficulties">
+                                        <input type="text" id="Difficulty" name="Difficulty" value="{{.Difficulty}}"
+                                            autocomplete="off" spellcheck="false" pattern="^\S*$" role="combobox"
+                                            aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false"
+                                            aria-controls="difficulty-options">
+                                        <button type="button" class="worldgen-combobox-toggle"
+                                            aria-label="{{.UIText_Difficulty}}" tabindex="-1"></button>
+                                        <div id="difficulty-options" class="worldgen-combobox-options"
+                                            role="listbox" hidden></div>
+                                    </div>
+                                    <div class="input-info">{{.UIText_DifficultyInfo}}</div>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group worldgen-form-group">
                                     <label for="StartCondition">{{.UIText_StartCondition}}:</label>
-                                    <input type="text" id="StartCondition" name="StartCondition"
-                                        value="{{.StartCondition}}" pattern="^\S*$" required>
-                                    <div class="input-info">✅{{.UIText_StartConditionInfo}}</div>
+                                    <div class="worldgen-combobox" data-worldgen-combobox="conditions">
+                                        <input type="text" id="StartCondition" name="StartCondition"
+                                            value="{{.StartCondition}}" autocomplete="off" spellcheck="false" pattern="^\S*$"
+                                            data-config-include-disabled role="combobox" aria-autocomplete="list"
+                                            aria-haspopup="listbox" aria-expanded="false"
+                                            aria-controls="start-condition-options">
+                                        <button type="button" class="worldgen-combobox-toggle"
+                                            aria-label="{{.UIText_StartCondition}}" tabindex="-1"></button>
+                                        <div id="start-condition-options" class="worldgen-combobox-options"
+                                            role="listbox" hidden></div>
+                                    </div>
+                                    <div class="input-info">{{.UIText_StartConditionInfo}}</div>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group worldgen-form-group">
                                     <label for="StartLocation">{{.UIText_StartLocation}}:</label>
-                                    <input type="text" id="StartLocation" name="StartLocation"
-                                        value="{{.StartLocation}}" pattern="^\S*$" required>
-                                    <div class="input-info">✅{{.UIText_StartLocationInfo}}</div>
+                                    <div class="worldgen-combobox" data-worldgen-combobox="locations">
+                                        <input type="text" id="StartLocation" name="StartLocation"
+                                            value="{{.StartLocation}}" autocomplete="off" spellcheck="false" pattern="^\S*$"
+                                            data-config-include-disabled role="combobox" aria-autocomplete="list"
+                                            aria-haspopup="listbox" aria-expanded="false"
+                                            aria-controls="start-location-options">
+                                        <button type="button" class="worldgen-combobox-toggle"
+                                            aria-label="{{.UIText_StartLocation}}" tabindex="-1"></button>
+                                        <div id="start-location-options" class="worldgen-combobox-options"
+                                            role="listbox" hidden></div>
+                                    </div>
+                                    <div class="input-info">{{.UIText_StartLocationInfo}}</div>
                                 </div>
                             </div>
-                            <div class="fill-hint-wraper" id="fill-hint-wraper"
-                                style="display: none; justify-content: center;">
+                            <div class="fill-hint-wraper" id="fill-hint-wraper" role="alert" hidden>
                                 <div class="fill-hint" id="fill-hint">{{.UIText_TerrainSettingsFillHint}}</div>
                             </div>
                         </div>
@@ -1000,7 +1034,8 @@
             const payload = {};
 
             scope.querySelectorAll('input[name], select[name], textarea[name]').forEach(control => {
-                if (control.disabled || ((control.type === 'checkbox' || control.type === 'radio') && !control.checked)) {
+                if ((control.disabled && !control.hasAttribute('data-config-include-disabled')) ||
+                    ((control.type === 'checkbox' || control.type === 'radio') && !control.checked)) {
                     return;
                 }
 

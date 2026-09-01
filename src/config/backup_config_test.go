@@ -54,7 +54,7 @@ func TestBackupConfigDropsLegacyRetentionKeys(t *testing.T) {
 		"backupCleanupInterval",
 		"backupWaitTime",
 	} {
-		if bytes.Contains(output, []byte(legacyKey)) {
+		if bytes.Contains(output, []byte(`"`+legacyKey+`"`)) {
 			t.Fatalf("legacy key %q was written back: %s", legacyKey, output)
 		}
 	}

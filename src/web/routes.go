@@ -65,6 +65,7 @@ func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
 	// Configuration
 	protectedMux.HandleFunc("/saveconfigasjson", configchanger.SaveConfigForm)     // legacy, used on config page
 	protectedMux.HandleFunc("/api/v2/saveconfig", configchanger.SaveConfigRestful) // used on twoboxform
+	protectedMux.HandleFunc("/api/v2/worldgen/catalog", HandleWorldGenerationCatalog)
 	protectedMux.HandleFunc("/api/v2/advertiser/override", SaveAdvertiserOverrideHandler)
 	protectedMux.HandleFunc("/api/v2/tls/certificate", SaveTLSCertificateHandler)
 	protectedMux.HandleFunc("/api/v2/SSCM/run", HandleCommand)           // Command execution via SSCM (needs to be enable, config.IsSSCMEnabled)

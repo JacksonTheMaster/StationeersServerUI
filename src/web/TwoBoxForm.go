@@ -97,13 +97,14 @@ func ServeTwoBoxFormTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if config.GetIsNewTerrainAndSaveSystem() {
-		worldOptions = []struct{ Display, Value string }{
-			{Display: "Lunar", Value: "Lunar"},
-			{Display: "Vulcan", Value: "Vulcan2"},
-			{Display: "Venus", Value: "Venus"},
-			{Display: "Mars", Value: "Mars2"},
-			{Display: "Europa", Value: "Europa3"},
-			{Display: "Mimas Herschel", Value: "MimasHerschel"}}
+		catalog := loadWorldGenerationCatalog()
+		worldOptions = make([]struct{ Display, Value string }, 0, len(catalog.Worlds))
+		for _, world := range catalog.Worlds {
+			worldOptions = append(worldOptions, struct{ Display, Value string }{
+				Display: world.Label,
+				Value:   world.ID,
+			})
+		}
 	}
 
 	// Define all steps in a map for easy access and modification

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 )
@@ -168,6 +169,12 @@ func SaveConfigRestful(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if requestContainsWorldGenerationSettings(requestData) {
+		if err := validateWorldGenerationSettings(existingConfig); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 
 	// Save the updated config
 	if err := SaveConfig(existingConfig); err != nil {
@@ -218,5 +225,28 @@ func validateBackupSettings(cfg *config.JsonConfig) error {
 		return fmt.Errorf("backupCleanupIntervalHours must be greater than zero")
 	}
 
+	return nil
+}
+
+func requestContainsWorldGenerationSettings(requestData map[string]interface{}) bool {
+	for _, field := range []string{"WorldID", "Difficulty", "StartCondition", "StartLocation"} {
+		if _, exists := requestData[field]; exists {
+			return true
+		}
+	}
+	return false
+}
+
+func validateWorldGenerationSettings(cfg *config.JsonConfig) error {
+	difficulty := strings.TrimSpace(cfg.Difficulty)
+	startCondition := strings.TrimSpace(cfg.StartCondition)
+	startLocation := strings.TrimSpace(cfg.StartLocation)
+
+	if startCondition != "" && difficulty == "" {
+		return fmt.Errorf("Difficulty is required when StartCondition is set because Stationeers parses world-generation values positionally")
+	}
+	if startLocation != "" && startCondition == "" {
+		return fmt.Errorf("StartCondition is required when StartLocation is set because Stationeers parses world-generation values positionally")
+	}
 	return nil
 }

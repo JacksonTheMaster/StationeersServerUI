@@ -148,7 +148,7 @@
                 "UIText_SaveName": "Save Name",
                 "UIText_SaveNameInfo": "Name of the save folder, like 'MySave' or 'Europa Brutal'. This is the name of the folder that will be created in the 'saves' folder. Changing this value to a non-existent folder name will create a new save.",
                 "UIText_WorldID": "World ID",
-                "UIText_WorldIDInfo": "World ID used when creating a new world. For a list of world IDs, see the Dedicated Server Wiki or configure them easily from the setup wizard. For more options, see the World generation tab."
+                "UIText_WorldIDInfo": "Choose a world discovered in the installed game files, or enter an exact custom world ID."
             },
             "network": {
                 "UIText_NetworkConfiguration": "Network Configuration",
@@ -225,11 +225,11 @@
                 "UIText_TerrainSettingsHeader": "Optional world generation settings",
                 "UIText_TerrainWarning": "You can leave these settings blank to default to the defaults of the selected world type. Once a World is created, these settings no longer have an effect.",
                 "UIText_Difficulty": "Difficulty",
-                "UIText_DifficultyInfo": "Difficulty to create the world with.",
+                "UIText_DifficultyInfo": "Optional. Leave blank for the game's default, or choose a discovered difficulty.",
                 "UIText_StartCondition": "Start Condition",
-                "UIText_StartConditionInfo": "Start condition to create the world with.",
+                "UIText_StartConditionInfo": "Optional. Requires Difficulty because Stationeers parses these values in order.",
                 "UIText_StartLocation": "Start Location",
-                "UIText_StartLocationInfo": "Start location to create the world with.",
+                "UIText_StartLocationInfo": "Optional. Requires Difficulty and Start Condition; custom IDs remain supported.",
                 "UIText_TerrainSettingsFillHint": "Please fill out the fields before the one you filled with a value, else Stationeers will have parsing issues."
             },
             "discord": {

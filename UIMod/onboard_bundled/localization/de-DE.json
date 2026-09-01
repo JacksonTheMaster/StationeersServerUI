@@ -143,7 +143,7 @@
                 "UIText_SaveName": "Name der Speicherdatei",
                 "UIText_SaveNameInfo": "Name des Speicherordners, z. B. 'MySave' oder 'Europa Brutal'. Dies ist der Name des Ordners, der im 'saves'-Ordner erstellt wird. Das Ändern dieses Werts auf einen nicht existierenden Ordnernamen erstellt einen neuen Speicherstand.",
                 "UIText_WorldID": "Welt-ID",
-                "UIText_WorldIDInfo": "Die Welt-ID, die beim Erstellen einer neuen Welt benutzt wird. Eine Liste der Welt-IDs findest du im Dedicated Server Wiki oder kannst du ganz einfach über den Einrichtungsassistenten konfigurieren."
+                "UIText_WorldIDInfo": "Wähle eine in den installierten Spieldateien gefundene Welt oder gib eine exakte benutzerdefinierte Welt-ID ein."
             },
             "network": {
                 "UIText_NetworkConfiguration": "Netzwerk Konfiguration",
@@ -213,11 +213,11 @@
             },
             "terrain": {
                 "UIText_Difficulty": "Schwierigkeit",
-                "UIText_DifficultyInfo": "Schwierigkeitseinstellung für Welterstellung.",
+                "UIText_DifficultyInfo": "Optional. Leer lassen für den Spielstandard oder eine gefundene Schwierigkeit wählen.",
                 "UIText_StartCondition": "Startbedingung",
-                "UIText_StartConditionInfo": "Startbedingung für Welterstellung.",
+                "UIText_StartConditionInfo": "Optional. Benötigt Schwierigkeit, da Stationeers diese Werte der Reihe nach verarbeitet.",
                 "UIText_StartLocation": "Startort",
-                "UIText_StartLocationInfo": "Startpunkt, um die Welt zu erstellen.",
+                "UIText_StartLocationInfo": "Optional. Benötigt Schwierigkeit und Startbedingung; eigene IDs bleiben möglich.",
                 "UIText_AutoStartServerOnStartup": "Server Auto-Start beim Hochfahren",
                 "UIText_AutoStartServerOnStartupInfo": "Gameserver automatisch starten wenn SSUI gestartet wird. Standard false.",
                 "UIText_AllowAutoGameServerUpdates": "Automatische Spielserver-Updates aktivieren",
