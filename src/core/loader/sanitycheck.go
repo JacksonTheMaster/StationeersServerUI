@@ -47,7 +47,7 @@ func runSanityCheck() error {
 		return err
 	}
 
-	if cwd != dirPath && !strings.Contains(dirPath, "/tmp") {
+	if cwd != dirPath && !isGoRunBuildDir(dirPath) {
 		err = os.Chdir(dirPath)
 		if err != nil {
 			return err
@@ -78,4 +78,14 @@ func runSanityCheck() error {
 	//}
 
 	return nil
+}
+
+// isGoRunBuildDir reports whether executableDir belongs to a temporary or
+// cached go run build. Go 1.24 began caching go run executables in the Go
+// build cache, so they are no longer guaranteed to live below /tmp.
+func isGoRunBuildDir(executableDir string) bool {
+	cleanDir := filepath.ToSlash(filepath.Clean(executableDir))
+	return strings.Contains(cleanDir, "/tmp") ||
+		strings.Contains(cleanDir, "/go-build/") ||
+		strings.HasSuffix(cleanDir, "/go-build")
 }
