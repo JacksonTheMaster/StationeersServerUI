@@ -254,6 +254,8 @@ type ConfigTemplateData struct {
 	UIText_AdditionalParamsInfo           string
 	UIText_ShowExpertSettings             string
 	UIText_ShowExpertSettingsInfo         string
+	UIText_ExpertSettings                 string
+	UIText_ExpertSettingsWarning          string
 	UIText_AutoRestartServerTimer         string
 	UIText_AutoRestartServerTimerInfo     string
 	UIText_AutoRestartCountdown           string

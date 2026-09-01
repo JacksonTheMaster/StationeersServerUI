@@ -170,6 +170,8 @@
                             data-section="backup-retention">{{.UIText_BackupRetention}}</button>
                         <button class="section-nav-button"
                             data-section="advanced-settings">{{.UIText_AdvancedSettings}}</button>
+                        <button class="section-nav-button" data-section="expert-settings"
+                            {{if ne .ShowExpertSettingsTrueSelected "selected"}}hidden{{end}}>{{.UIText_ExpertSettings}}</button>
                     </div>
 
                     <div id="server-config-panel">
@@ -442,10 +444,17 @@
                                     <div class="input-info">{{.UIText_ShowExpertSettingsInfo}}</div>
                                 </div>
                             </div>
+                        </div>
 
-                            {{if eq .ShowExpertSettingsTrueSelected "selected"}}
-                            <h3 class="section-title">Expert Settings below - only change if you know what you are doing</h3>
-                                <div class="channel-grid">
+                        <div id="expert-settings" class="config-section"
+                            {{if ne .ShowExpertSettingsTrueSelected "selected"}}hidden{{end}}>
+                            <div class="config-section-heading">
+                                <h3 class="section-title">{{.UIText_ExpertSettings}}</h3>
+                                <button type="button" class="save-button config-section-save"
+                                    aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
+                            </div>
+                            <div class="expert-settings-notice">{{.UIText_ExpertSettingsWarning}}</div>
+                            <div class="channel-grid">
                             
                                     <div class="form-group">
                                         <label for="Debug">Debug Mode:</label>
@@ -545,19 +554,16 @@
                                         <input type="number" id="AuthTokenLifetime" name="AuthTokenLifetime" value="{{.AuthTokenLifetime}}" min="1">
                                         <div class="input-info">JWT token lifetime in minutes (default: 1440 = 24 hours)</div>
                                     </div>
-                                </div>
-                            {{end}}
+                            </div>
                         </div>
 
                         <div id="backup-retention" class="config-section backup-retention-section">
                             <div class="retention-heading">
                                 <div>
-                                    <span class="panel-kicker">Safebackups</span>
                                     <h3 class="section-title">{{.UIText_BackupRetentionTitle}}</h3>
                                     <p>{{.UIText_BackupRetentionIntro}}</p>
                                 </div>
                                 <div class="retention-heading-actions">
-                                    <div class="retention-shield" aria-hidden="true">◆</div>
                                     <button type="button" class="save-button config-section-save"
                                         aria-label="{{.UIText_SaveConfiguration}}" title="{{.UIText_SaveConfiguration}}"></button>
                                 </div>
@@ -1061,6 +1067,59 @@
             }
         }
 
+        function setExpertSettingsVisibility(enabled, openWhenEnabled = false) {
+            const section = document.getElementById('expert-settings');
+            const button = document.querySelector('.section-nav-button[data-section="expert-settings"]');
+
+            section.hidden = !enabled;
+            button.hidden = !enabled;
+
+            if (!enabled && section.classList.contains('active')) {
+                showConfigSection('advanced-settings');
+            } else if (enabled && openWhenEnabled) {
+                showConfigSection('expert-settings');
+            }
+        }
+
+        async function saveExpertSettingsVisibility(event) {
+            const select = event.currentTarget;
+            const notification = document.getElementById('config-save-notification');
+            const previousValue = select.dataset.persistedValue || (select.value === 'true' ? 'false' : 'true');
+            const enabled = select.value === 'true';
+
+            select.disabled = true;
+            showConfigNotification(notification.dataset.saving, 'info');
+
+            try {
+                const response = await fetch('/api/v2/saveconfig', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ShowExpertSettings: enabled })
+                });
+                const responseText = await response.text();
+
+                if (!response.ok) {
+                    let errorMessage = responseText;
+                    try {
+                        errorMessage = JSON.parse(responseText).error || responseText;
+                    } catch (_) {
+                        // The endpoint may return a plain-text HTTP error.
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                select.dataset.persistedValue = select.value;
+                setExpertSettingsVisibility(enabled, enabled);
+                showConfigNotification(notification.dataset.success, 'success');
+            } catch (error) {
+                select.value = previousValue;
+                const detail = error.message ? ` ${error.message}` : '';
+                showConfigNotification(notification.dataset.failed + detail, 'error');
+            } finally {
+                select.disabled = false;
+            }
+        }
+
         const configTabs = {
             settings: 'server-config-tab',
             discord: 'discord-config-tab',
@@ -1105,7 +1164,10 @@
         }
 
         function showConfigSection(sectionId, updateUrl = true) {
-            const section = document.getElementById(sectionId) || document.getElementById('basic-settings');
+            let section = document.getElementById(sectionId);
+            if (!section || section.hidden) {
+                section = document.getElementById(sectionId === 'expert-settings' ? 'advanced-settings' : 'basic-settings');
+            }
             const button = document.querySelector(`.section-nav-button[data-section="${section.id}"]`);
 
             document.querySelectorAll('.server-settings-shell .config-section').forEach(item => {
@@ -1159,6 +1221,9 @@
         document.querySelectorAll('.config-section-save').forEach(button => {
             button.addEventListener('click', saveConfigSection);
         });
+        const expertSettingsToggle = document.getElementById('ShowExpertSettings');
+        expertSettingsToggle.dataset.persistedValue = expertSettingsToggle.value;
+        expertSettingsToggle.addEventListener('change', saveExpertSettingsVisibility);
         showConfigTabFromUrl();
     </script>
     <script src="/static/js/theme-engine.js"></script>

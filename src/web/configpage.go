@@ -412,6 +412,8 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		UIText_AdditionalParamsInfo:           localization.GetString("UIText_AdditionalParamsInfo"),
 		UIText_ShowExpertSettings:             localization.GetString("UIText_ShowExpertSettings"),
 		UIText_ShowExpertSettingsInfo:         localization.GetString("UIText_ShowExpertSettingsInfo"),
+		UIText_ExpertSettings:                 localization.GetString("UIText_ExpertSettings"),
+		UIText_ExpertSettingsWarning:          localization.GetString("UIText_ExpertSettingsWarning"),
 		UIText_AutoRestartServerTimer:         localization.GetString("UIText_AutoRestartServerTimer"),
 		UIText_AutoRestartServerTimerInfo:     localization.GetString("UIText_AutoRestartServerTimerInfo"),
 		UIText_AutoRestartCountdown:           localization.GetString("UIText_AutoRestartCountdown"),

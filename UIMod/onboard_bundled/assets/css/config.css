@@ -599,17 +599,7 @@ select option {
 }
 
 .backup-retention-section::before {
-    content: '';
-    position: absolute;
-    top: -90px;
-    right: -70px;
-    width: 220px;
-    height: 220px;
-    border: 1px solid var(--primary-glow-strong);
-    border-radius: 50%;
-    box-shadow: 0 0 60px var(--primary-glow-soft);
-    opacity: 0.45;
-    pointer-events: none;
+    display: none;
 }
 
 .retention-heading {
@@ -643,24 +633,11 @@ select option {
     line-height: 1.5;
 }
 
-.retention-shield {
-    display: grid;
-    width: 46px;
-    height: 46px;
-    flex: 0 0 46px;
-    place-items: center;
-    border: 1px solid var(--primary-glow-strong);
-    border-radius: 12px;
-    background: var(--primary-glow-soft);
-    color: var(--primary);
-    box-shadow: inset 0 0 18px var(--primary-glow-soft), 0 0 20px var(--primary-glow-soft);
-}
-
 .retention-master-control,
 .retention-control-card {
-    border: 1px solid var(--panel-frame);
+    border: 1px solid var(--config-border-soft);
     border-radius: 8px;
-    background: color-mix(in srgb, var(--panel-inset) 88%, var(--primary) 12%);
+    background: var(--config-surface-inset);
 }
 
 .retention-master-control {
@@ -670,7 +647,6 @@ select option {
     gap: 24px;
     margin-bottom: 12px;
     padding: 16px;
-    border-left: 4px solid var(--primary);
 }
 
 .retention-master-control label,
@@ -716,7 +692,7 @@ select option {
     height: 44px;
     min-width: 0;
     padding: 12px;
-    border: 1px solid var(--primary-glow-strong);
+    border: 1px solid var(--config-border-soft);
     border-radius: 4px 0 0 4px;
     background-color: var(--input-bg);
     color: var(--text-bright);
@@ -744,10 +720,10 @@ select option {
     align-items: center;
     justify-content: center;
     padding: 0 12px;
-    border: 1px solid var(--primary-glow-strong);
+    border: 1px solid var(--config-border-soft);
     border-left: 0;
     border-radius: 0 4px 4px 0;
-    background: var(--panel-inset);
+    background: var(--config-surface-inset);
     color: var(--text-dim);
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.78rem;
@@ -766,8 +742,8 @@ select option {
 }
 
 .retention-delay-note {
-    border: 1px solid var(--panel-frame);
-    background: var(--panel-inset);
+    border: 1px solid var(--config-border-soft);
+    background: var(--config-surface-inset);
     color: var(--text-dim);
 }
 
@@ -786,6 +762,16 @@ select option {
     border: 1px solid currentColor;
     border-radius: 50%;
     font-weight: 700;
+}
+
+.expert-settings-notice {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--warning) 6%, var(--config-surface-inset));
+    color: var(--text-dim);
+    font: 0.8rem/1.45 'Share Tech Mono', monospace;
 }
 
 .retention-warning strong {
