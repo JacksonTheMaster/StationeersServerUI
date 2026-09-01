@@ -23,8 +23,37 @@ func (m *BackupManager) RestoreBackup(index int) error {
 	if err != nil {
 		return fmt.Errorf("failed to get backup groups: %w", err)
 	}
+	if len(saves) == 0 {
+		return fmt.Errorf("no backups are available")
+	}
+	if index < 0 || index >= len(saves) {
+		return fmt.Errorf("backup index %d out of range (0-%d)", index, len(saves)-1)
+	}
 
 	var targetSave = saves[index]
+	return m.restoreBackupSave(targetSave)
+}
+
+// RestoreBackupFile restores a backup selected by its stable safe-backup path.
+// The path must still be present in the manager's current backup inventory.
+func (m *BackupManager) RestoreBackupFile(saveFile string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	saves, err := m.getBackupSaveFiles()
+	if err != nil {
+		return fmt.Errorf("failed to get backup groups: %w", err)
+	}
+	for _, save := range saves {
+		if save.SaveFile == saveFile {
+			logger.Backup.Infof("Restoring backup file %s", saveFile)
+			return m.restoreBackupSave(save)
+		}
+	}
+	return fmt.Errorf("selected backup is no longer available")
+}
+
+func (m *BackupManager) restoreBackupSave(targetSave BackupSaveFile) error {
 
 	restoredFiles := make(map[string]string)
 

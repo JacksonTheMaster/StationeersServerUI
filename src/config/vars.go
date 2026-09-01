@@ -84,18 +84,27 @@ var (
 
 // Discord integration
 var (
-	DiscordToken          string
-	DiscordSession        *discordgo.Session
-	IsDiscordEnabled      bool
-	RotateServerPassword  bool
-	ControlChannelID      string
-	EventLogChannelID     string
-	LogChannelID          string
-	StatusPanelChannelID  string
-	ControlPanelChannelID string
-	DiscordCharBufferSize int
-	ExceptionMessageID    string
-	BlackListFilePath     string
+	DiscordToken                      string
+	DiscordSession                    *discordgo.Session
+	IsDiscordEnabled                  bool
+	RotateServerPassword              bool
+	DiscordRestartVoteEnabled         bool
+	DiscordRestoreVoteEnabled         bool
+	DiscordVoteDurationMinutes        int
+	DiscordRestartVoteThreshold       int
+	DiscordRestartVoteMinimum         int
+	DiscordRestartVoteCooldownMinutes int
+	DiscordRestoreVoteThreshold       int
+	DiscordRestoreVoteMinimum         int
+	DiscordRestoreVoteCooldownMinutes int
+	ControlChannelID                  string
+	EventLogChannelID                 string
+	LogChannelID                      string
+	StatusPanelChannelID              string
+	ControlPanelChannelID             string
+	DiscordCharBufferSize             int
+	ExceptionMessageID                string
+	BlackListFilePath                 string
 )
 
 // Backup and cleanup settings

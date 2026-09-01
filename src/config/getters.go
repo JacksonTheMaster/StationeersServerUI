@@ -64,6 +64,52 @@ func GetRotateServerPassword() bool {
 	return RotateServerPassword
 }
 
+func GetDiscordRestartVoteEnabled() bool {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestartVoteEnabled
+}
+func GetDiscordRestoreVoteEnabled() bool {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestoreVoteEnabled
+}
+func GetDiscordVoteDurationMinutes() int {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordVoteDurationMinutes
+}
+func GetDiscordRestartVoteThreshold() int {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestartVoteThreshold
+}
+func GetDiscordRestartVoteMinimum() int {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestartVoteMinimum
+}
+func GetDiscordRestartVoteCooldownMinutes() int {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestartVoteCooldownMinutes
+}
+func GetDiscordRestoreVoteThreshold() int {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestoreVoteThreshold
+}
+func GetDiscordRestoreVoteMinimum() int {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestoreVoteMinimum
+}
+func GetDiscordRestoreVoteCooldownMinutes() int {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordRestoreVoteCooldownMinutes
+}
+
 func GetBackupKeepNewestCount() int {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()

@@ -253,7 +253,15 @@
                 "UIText_DiscordBenefit3": "Spielerverbindungen verfolgen",
                 "UIText_DiscordBenefit4": "Community-Management Optionen",
                 "UIText_DiscordBenefit5": "Echtzeit Fehlerbenachrichtigungen",
-                "UIText_DiscordSetupInstructions": "Für Setup-Anweisungen besuche die"
+                "UIText_DiscordSetupInstructions": "Für Setup-Anweisungen besuche die",
+                "UIText_DiscordVotingTitle": "Community-Abstimmungen",
+                "UIText_DiscordVotingInfo": "Discord-Benutzer können über das Serverstatus-Panel Abstimmungen starten und daran teilnehmen. Die benötigte Stimmenzahl wird beim Start anhand der verbundenen Spieler berechnet.",
+                "UIText_DiscordRestartVoteEnabled": "Abstimmung über Neustart",
+                "UIText_DiscordRestoreVoteEnabled": "Abstimmung über Wiederherstellung",
+                "UIText_DiscordVoteDuration": "Abstimmungsdauer (Minuten)",
+                "UIText_DiscordVoteThreshold": "Erforderlicher Prozentsatz",
+                "UIText_DiscordVoteMinimum": "Mindeststimmen",
+                "UIText_DiscordVoteCooldown": "Wartezeit (Minuten)"
             },
             "slp": {
                 "UIText_SLP_Title": "Stationeers Launch Pad",

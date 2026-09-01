@@ -90,6 +90,17 @@ type ConfigTemplateData struct {
 	RotateServerPassword                    string
 	RotateServerPasswordTrueSelected        string
 	RotateServerPasswordFalseSelected       string
+	DiscordRestartVoteEnabledTrueSelected   string
+	DiscordRestartVoteEnabledFalseSelected  string
+	DiscordRestoreVoteEnabledTrueSelected   string
+	DiscordRestoreVoteEnabledFalseSelected  string
+	DiscordVoteDurationMinutes              string
+	DiscordRestartVoteThreshold             string
+	DiscordRestartVoteMinimum               string
+	DiscordRestartVoteCooldownMinutes       string
+	DiscordRestoreVoteThreshold             string
+	DiscordRestoreVoteMinimum               string
+	DiscordRestoreVoteCooldownMinutes       string
 	GameBranch                              string
 	Difficulty                              string
 	StartCondition                          string
@@ -307,6 +318,14 @@ type ConfigTemplateData struct {
 	UIText_DiscordBenefit4            string
 	UIText_DiscordBenefit5            string
 	UIText_DiscordSetupInstructions   string
+	UIText_DiscordVotingTitle         string
+	UIText_DiscordVotingInfo          string
+	UIText_DiscordRestartVoteEnabled  string
+	UIText_DiscordRestoreVoteEnabled  string
+	UIText_DiscordVoteDuration        string
+	UIText_DiscordVoteThreshold       string
+	UIText_DiscordVoteMinimum         string
+	UIText_DiscordVoteCooldown        string
 
 	UIText_Copyright        string
 	UIText_CopyrightConfig1 string

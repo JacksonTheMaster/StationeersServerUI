@@ -90,19 +90,28 @@ type JsonConfig struct {
 	IsStationeersLaunchPadAutoUpdatesEnabled *bool `json:"IsStationeersLaunchPadAutoUpdatesEnabled"`
 
 	// Discord Settings
-	DiscordToken            string `json:"discordToken"`
-	ControlChannelID        string `json:"controlChannelID"`
-	EventLogChannelID       string `json:"eventLogChannelID"`
-	StatusChannelID         string `json:"statusChannelID,omitempty"`         // deprecated, migrated to EventLogChannelID
-	ConnectionListChannelID string `json:"connectionListChannelID,omitempty"` // deprecated, migrated to StatusPanelChannelID
-	StatusPanelChannelID    string `json:"statusPanelChannelID"`              // replaces ConnectionListChannelID and ServerInfoPanelChannelID
-	LogChannelID            string `json:"logChannelID"`
-	SaveChannelID           string `json:"saveChannelID,omitempty"` // deprecated, merged into EventLogChannelID
-	ControlPanelChannelID   string `json:"controlPanelChannelID"`
-	DiscordCharBufferSize   int    `json:"DiscordCharBufferSize"`
-	BlackListFilePath       string `json:"blackListFilePath"`
-	IsDiscordEnabled        *bool  `json:"isDiscordEnabled"`
-	RotateServerPassword    *bool  `json:"rotateServerPassword"`
+	DiscordToken                      string `json:"discordToken"`
+	ControlChannelID                  string `json:"controlChannelID"`
+	EventLogChannelID                 string `json:"eventLogChannelID"`
+	StatusChannelID                   string `json:"statusChannelID,omitempty"`         // deprecated, migrated to EventLogChannelID
+	ConnectionListChannelID           string `json:"connectionListChannelID,omitempty"` // deprecated, migrated to StatusPanelChannelID
+	StatusPanelChannelID              string `json:"statusPanelChannelID"`              // replaces ConnectionListChannelID and ServerInfoPanelChannelID
+	LogChannelID                      string `json:"logChannelID"`
+	SaveChannelID                     string `json:"saveChannelID,omitempty"` // deprecated, merged into EventLogChannelID
+	ControlPanelChannelID             string `json:"controlPanelChannelID"`
+	DiscordCharBufferSize             int    `json:"DiscordCharBufferSize"`
+	BlackListFilePath                 string `json:"blackListFilePath"`
+	IsDiscordEnabled                  *bool  `json:"isDiscordEnabled"`
+	RotateServerPassword              *bool  `json:"rotateServerPassword"`
+	DiscordRestartVoteEnabled         *bool  `json:"discordRestartVoteEnabled"`
+	DiscordRestoreVoteEnabled         *bool  `json:"discordRestoreVoteEnabled"`
+	DiscordVoteDurationMinutes        *int   `json:"discordVoteDurationMinutes"`
+	DiscordRestartVoteThreshold       *int   `json:"discordRestartVoteThreshold"`
+	DiscordRestartVoteMinimum         *int   `json:"discordRestartVoteMinimum"`
+	DiscordRestartVoteCooldownMinutes *int   `json:"discordRestartVoteCooldownMinutes"`
+	DiscordRestoreVoteThreshold       *int   `json:"discordRestoreVoteThreshold"`
+	DiscordRestoreVoteMinimum         *int   `json:"discordRestoreVoteMinimum"`
+	DiscordRestoreVoteCooldownMinutes *int   `json:"discordRestoreVoteCooldownMinutes"`
 
 	// Backup retention settings. The former backupKeep* / isCleanupEnabled keys
 	// are intentionally not migrated so upgrades return to the safe disabled state.
@@ -160,6 +169,27 @@ func applyConfig(cfg *JsonConfig) {
 	rotateServerPasswordVal := getBool(cfg.RotateServerPassword, "ROTATE_SERVER_PASSWORD", false)
 	RotateServerPassword = rotateServerPasswordVal
 	cfg.RotateServerPassword = &rotateServerPasswordVal
+
+	discordRestartVoteEnabledVal := getBool(cfg.DiscordRestartVoteEnabled, "DISCORD_RESTART_VOTE_ENABLED", false)
+	DiscordRestartVoteEnabled = discordRestartVoteEnabledVal
+	cfg.DiscordRestartVoteEnabled = &discordRestartVoteEnabledVal
+	discordRestoreVoteEnabledVal := getBool(cfg.DiscordRestoreVoteEnabled, "DISCORD_RESTORE_VOTE_ENABLED", false)
+	DiscordRestoreVoteEnabled = discordRestoreVoteEnabledVal
+	cfg.DiscordRestoreVoteEnabled = &discordRestoreVoteEnabledVal
+	DiscordVoteDurationMinutes = getOptionalInt(cfg.DiscordVoteDurationMinutes, "DISCORD_VOTE_DURATION_MINUTES", 5)
+	cfg.DiscordVoteDurationMinutes = intPointer(DiscordVoteDurationMinutes)
+	DiscordRestartVoteThreshold = getOptionalInt(cfg.DiscordRestartVoteThreshold, "DISCORD_RESTART_VOTE_THRESHOLD", 60)
+	cfg.DiscordRestartVoteThreshold = intPointer(DiscordRestartVoteThreshold)
+	DiscordRestartVoteMinimum = getOptionalInt(cfg.DiscordRestartVoteMinimum, "DISCORD_RESTART_VOTE_MINIMUM", 1)
+	cfg.DiscordRestartVoteMinimum = intPointer(DiscordRestartVoteMinimum)
+	DiscordRestartVoteCooldownMinutes = getOptionalInt(cfg.DiscordRestartVoteCooldownMinutes, "DISCORD_RESTART_VOTE_COOLDOWN_MINUTES", 30)
+	cfg.DiscordRestartVoteCooldownMinutes = intPointer(DiscordRestartVoteCooldownMinutes)
+	DiscordRestoreVoteThreshold = getOptionalInt(cfg.DiscordRestoreVoteThreshold, "DISCORD_RESTORE_VOTE_THRESHOLD", 100)
+	cfg.DiscordRestoreVoteThreshold = intPointer(DiscordRestoreVoteThreshold)
+	DiscordRestoreVoteMinimum = getOptionalInt(cfg.DiscordRestoreVoteMinimum, "DISCORD_RESTORE_VOTE_MINIMUM", 2)
+	cfg.DiscordRestoreVoteMinimum = intPointer(DiscordRestoreVoteMinimum)
+	DiscordRestoreVoteCooldownMinutes = getOptionalInt(cfg.DiscordRestoreVoteCooldownMinutes, "DISCORD_RESTORE_VOTE_COOLDOWN_MINUTES", 60)
+	cfg.DiscordRestoreVoteCooldownMinutes = intPointer(DiscordRestoreVoteCooldownMinutes)
 
 	backupRetentionEnabledVal := getBool(cfg.BackupRetentionEnabled, "BACKUP_RETENTION_ENABLED", false)
 	BackupRetentionEnabled = backupRetentionEnabledVal
@@ -399,6 +429,15 @@ func safeSaveConfig() error {
 		BlackListFilePath:                        BlackListFilePath,
 		IsDiscordEnabled:                         &IsDiscordEnabled,
 		RotateServerPassword:                     &RotateServerPassword,
+		DiscordRestartVoteEnabled:                &DiscordRestartVoteEnabled,
+		DiscordRestoreVoteEnabled:                &DiscordRestoreVoteEnabled,
+		DiscordVoteDurationMinutes:               intPointer(DiscordVoteDurationMinutes),
+		DiscordRestartVoteThreshold:              intPointer(DiscordRestartVoteThreshold),
+		DiscordRestartVoteMinimum:                intPointer(DiscordRestartVoteMinimum),
+		DiscordRestartVoteCooldownMinutes:        intPointer(DiscordRestartVoteCooldownMinutes),
+		DiscordRestoreVoteThreshold:              intPointer(DiscordRestoreVoteThreshold),
+		DiscordRestoreVoteMinimum:                intPointer(DiscordRestoreVoteMinimum),
+		DiscordRestoreVoteCooldownMinutes:        intPointer(DiscordRestoreVoteCooldownMinutes),
 		BackupRetentionEnabled:                   &BackupRetentionEnabled,
 		BackupKeepNewestCount:                    intPointer(BackupKeepNewestCount),
 		BackupDailyRetentionDays:                 intPointer(BackupDailyRetentionDays),

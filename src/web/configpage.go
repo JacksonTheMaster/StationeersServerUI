@@ -134,6 +134,18 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 	} else {
 		rotateServerPasswordFalseSelected = "selected"
 	}
+	discordRestartVoteEnabledTrueSelected, discordRestartVoteEnabledFalseSelected := "", ""
+	if config.GetDiscordRestartVoteEnabled() {
+		discordRestartVoteEnabledTrueSelected = "selected"
+	} else {
+		discordRestartVoteEnabledFalseSelected = "selected"
+	}
+	discordRestoreVoteEnabledTrueSelected, discordRestoreVoteEnabledFalseSelected := "", ""
+	if config.GetDiscordRestoreVoteEnabled() {
+		discordRestoreVoteEnabledTrueSelected = "selected"
+	} else {
+		discordRestoreVoteEnabledFalseSelected = "selected"
+	}
 
 	// Expert Settings toggle
 	showExpertSettingsTrueSelected := ""
@@ -240,6 +252,17 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		RotateServerPassword:                    fmt.Sprintf("%v", config.GetRotateServerPassword()),
 		RotateServerPasswordTrueSelected:        rotateServerPasswordTrueSelected,
 		RotateServerPasswordFalseSelected:       rotateServerPasswordFalseSelected,
+		DiscordRestartVoteEnabledTrueSelected:   discordRestartVoteEnabledTrueSelected,
+		DiscordRestartVoteEnabledFalseSelected:  discordRestartVoteEnabledFalseSelected,
+		DiscordRestoreVoteEnabledTrueSelected:   discordRestoreVoteEnabledTrueSelected,
+		DiscordRestoreVoteEnabledFalseSelected:  discordRestoreVoteEnabledFalseSelected,
+		DiscordVoteDurationMinutes:              strconv.Itoa(config.GetDiscordVoteDurationMinutes()),
+		DiscordRestartVoteThreshold:             strconv.Itoa(config.GetDiscordRestartVoteThreshold()),
+		DiscordRestartVoteMinimum:               strconv.Itoa(config.GetDiscordRestartVoteMinimum()),
+		DiscordRestartVoteCooldownMinutes:       strconv.Itoa(config.GetDiscordRestartVoteCooldownMinutes()),
+		DiscordRestoreVoteThreshold:             strconv.Itoa(config.GetDiscordRestoreVoteThreshold()),
+		DiscordRestoreVoteMinimum:               strconv.Itoa(config.GetDiscordRestoreVoteMinimum()),
+		DiscordRestoreVoteCooldownMinutes:       strconv.Itoa(config.GetDiscordRestoreVoteCooldownMinutes()),
 		GameBranch:                              config.GetGameBranch(),
 		Difficulty:                              config.GetDifficulty(),
 		StartCondition:                          config.GetStartCondition(),
@@ -463,6 +486,14 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		UIText_DiscordBenefit4:            localization.GetString("UIText_DiscordBenefit4"),
 		UIText_DiscordBenefit5:            localization.GetString("UIText_DiscordBenefit5"),
 		UIText_DiscordSetupInstructions:   localization.GetString("UIText_DiscordSetupInstructions"),
+		UIText_DiscordVotingTitle:         localization.GetString("UIText_DiscordVotingTitle"),
+		UIText_DiscordVotingInfo:          localization.GetString("UIText_DiscordVotingInfo"),
+		UIText_DiscordRestartVoteEnabled:  localization.GetString("UIText_DiscordRestartVoteEnabled"),
+		UIText_DiscordRestoreVoteEnabled:  localization.GetString("UIText_DiscordRestoreVoteEnabled"),
+		UIText_DiscordVoteDuration:        localization.GetString("UIText_DiscordVoteDuration"),
+		UIText_DiscordVoteThreshold:       localization.GetString("UIText_DiscordVoteThreshold"),
+		UIText_DiscordVoteMinimum:         localization.GetString("UIText_DiscordVoteMinimum"),
+		UIText_DiscordVoteCooldown:        localization.GetString("UIText_DiscordVoteCooldown"),
 
 		UIText_CopyrightConfig1: localization.GetString("UIText_Copyright1"),
 		UIText_CopyrightConfig2: localization.GetString("UIText_Copyright2"),

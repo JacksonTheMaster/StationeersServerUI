@@ -169,6 +169,10 @@ func SaveConfigRestful(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if err := validateDiscordVoteSettings(existingConfig); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	if requestContainsWorldGenerationSettings(requestData) {
 		if err := validateWorldGenerationSettings(existingConfig); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -225,6 +229,48 @@ func validateBackupSettings(cfg *config.JsonConfig) error {
 		return fmt.Errorf("backupCleanupIntervalHours must be greater than zero")
 	}
 
+	return nil
+}
+
+func validateDiscordVoteSettings(cfg *config.JsonConfig) error {
+	percentageSettings := []struct {
+		name  string
+		value *int
+	}{
+		{name: "discordRestartVoteThreshold", value: cfg.DiscordRestartVoteThreshold},
+		{name: "discordRestoreVoteThreshold", value: cfg.DiscordRestoreVoteThreshold},
+	}
+	for _, setting := range percentageSettings {
+		if setting.value != nil && (*setting.value < 1 || *setting.value > 100) {
+			return fmt.Errorf("%s must be between 1 and 100", setting.name)
+		}
+	}
+
+	positiveSettings := []struct {
+		name  string
+		value *int
+	}{
+		{name: "discordVoteDurationMinutes", value: cfg.DiscordVoteDurationMinutes},
+		{name: "discordRestartVoteMinimum", value: cfg.DiscordRestartVoteMinimum},
+		{name: "discordRestoreVoteMinimum", value: cfg.DiscordRestoreVoteMinimum},
+	}
+	for _, setting := range positiveSettings {
+		if setting.value != nil && *setting.value < 1 {
+			return fmt.Errorf("%s must be greater than zero", setting.name)
+		}
+	}
+
+	for _, setting := range []struct {
+		name  string
+		value *int
+	}{
+		{name: "discordRestartVoteCooldownMinutes", value: cfg.DiscordRestartVoteCooldownMinutes},
+		{name: "discordRestoreVoteCooldownMinutes", value: cfg.DiscordRestoreVoteCooldownMinutes},
+	} {
+		if setting.value != nil && *setting.value < 0 {
+			return fmt.Errorf("%s cannot be negative", setting.name)
+		}
+	}
 	return nil
 }
 

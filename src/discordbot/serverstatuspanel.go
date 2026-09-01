@@ -17,6 +17,7 @@ const (
 	ButtonGetPassword       = "ssui_get_password"
 	ButtonGetGameVersion    = "ssui_get_game_version"
 	ButtonGetNextRestart    = "ssui_get_next_restart"
+	ButtonVoteMenu          = "ssui_vote_menu"
 	ButtonDownloadBackupPfx = "ssui_download_backup_" // Prefix for download backup button
 )
 
@@ -123,6 +124,9 @@ func buildStatusPanelEmbed(players map[string]string, summary *backupmgr.SaveSum
 			&discordgo.MessageEmbedField{Name: backupStatEmoji("cable_networks", "⚡") + " Cable Networks", Value: fmt.Sprintf("**%d**", summary.CableNetworks), Inline: true},
 		)
 	}
+	if voteField := activeVotesField(); voteField != nil {
+		embed.Fields = append(embed.Fields, voteField)
+	}
 
 	return embed
 }
@@ -162,6 +166,13 @@ func buildPanelComponents() []discordgo.MessageComponent {
 			Label:    "🔄 Next Auto Restart",
 			Style:    discordgo.SecondaryButton,
 			CustomID: ButtonGetNextRestart,
+		})
+	}
+	if config.GetDiscordRestartVoteEnabled() || config.GetDiscordRestoreVoteEnabled() {
+		buttons = append(buttons, discordgo.Button{
+			Label:    "🗳️ Vote Menu",
+			Style:    discordgo.SuccessButton,
+			CustomID: ButtonVoteMenu,
 		})
 	}
 
@@ -235,6 +246,10 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 		handleGetGameVersionButton(s, i)
 	case ButtonGetNextRestart:
 		handleGetNextRestartButton(s, i)
+	case ButtonVoteMenu:
+		handleVoteMenuButton(s, i)
+	case voteSelectCustomID:
+		handleVoteSelection(s, i)
 	default:
 		return
 	}

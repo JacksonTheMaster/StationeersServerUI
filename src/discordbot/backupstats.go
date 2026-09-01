@@ -43,6 +43,7 @@ func disableDiscordRuntimeState() {
 
 func prepareDiscordRuntimeState() {
 	backupmgr.SetBackupCopiedHandler(nil)
+	resetDiscordVotes()
 	statusPanelData.Lock()
 	statusPanelData.summary = nil
 	statusPanelData.Unlock()

@@ -257,7 +257,15 @@
                 "UIText_DiscordBenefit3": "Track player connections",
                 "UIText_DiscordBenefit4": "Community management options",
                 "UIText_DiscordBenefit5": "Real-time error notifications",
-                "UIText_DiscordSetupInstructions": "For setup instructions, visit the"
+                "UIText_DiscordSetupInstructions": "For setup instructions, visit the",
+                "UIText_DiscordVotingTitle": "Community Voting",
+                "UIText_DiscordVotingInfo": "Allow Discord users to start and join votes from the server status panel. Required votes are calculated from the connected-player count when a vote starts.",
+                "UIText_DiscordRestartVoteEnabled": "Restart Voting",
+                "UIText_DiscordRestoreVoteEnabled": "Restore Voting",
+                "UIText_DiscordVoteDuration": "Vote Duration (minutes)",
+                "UIText_DiscordVoteThreshold": "Required Percentage",
+                "UIText_DiscordVoteMinimum": "Minimum Votes",
+                "UIText_DiscordVoteCooldown": "Cooldown (minutes)"
             },
             "slp": {
                 "UIText_SLP_Title": "Stationeers Launch Pad",

@@ -251,7 +251,15 @@
                 "UIText_DiscordBenefit3": "Spåra spelaranslutningar",
                 "UIText_DiscordBenefit4": "Alternativ för community-hantering",
                 "UIText_DiscordBenefit5": "Felnotiser i realtid",
-                "UIText_DiscordSetupInstructions": "För installationsinstruktioner, besök"
+                "UIText_DiscordSetupInstructions": "För installationsinstruktioner, besök",
+                "UIText_DiscordVotingTitle": "Community-omröstningar",
+                "UIText_DiscordVotingInfo": "Tillåt Discord-användare att starta och delta i omröstningar från serverstatuspanelen. Antalet röster som krävs beräknas från antalet anslutna spelare när omröstningen startar.",
+                "UIText_DiscordRestartVoteEnabled": "Omröstning om omstart",
+                "UIText_DiscordRestoreVoteEnabled": "Omröstning om återställning",
+                "UIText_DiscordVoteDuration": "Omröstningstid (minuter)",
+                "UIText_DiscordVoteThreshold": "Procent som krävs",
+                "UIText_DiscordVoteMinimum": "Minsta antal röster",
+                "UIText_DiscordVoteCooldown": "Väntetid (minuter)"
             },
             "slp": {
                 "UIText_SLP_Title": "Stationeers Launch Pad",
