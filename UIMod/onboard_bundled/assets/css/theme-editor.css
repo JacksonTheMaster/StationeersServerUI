@@ -2,25 +2,27 @@
 
 
 .theme-editor {
-    padding: 20px;
+    padding: 0;
 }
 
 .theme-editor-section {
-    margin-bottom: 30px;
+    margin-bottom: 16px;
     padding: 20px;
-    background: var(--form-bg);
-    border-radius: 8px;
-    border: 1px solid var(--primary-dim);
+    background: var(--config-surface);
+    border-radius: var(--ui-radius-large);
+    border: 1px solid var(--config-border);
+    box-shadow: var(--config-shadow);
 }
 
 .theme-editor-section h3 {
     margin: 0 0 15px 0;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--primary-dim);
+    border-bottom: 1px solid var(--config-border);
     color: var(--text-bright);
-    font-family: 'Press Start 2P', cursive;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.75px;
+    text-transform: uppercase;
 }
 
 .theme-color-grid {
@@ -56,7 +58,7 @@
     appearance: none;
     width: 42px;
     height: 42px;
-    border: 2px solid var(--primary-dim);
+    border: 1px solid var(--config-border);
     border-radius: 6px;
     cursor: pointer;
     background: transparent;
@@ -87,9 +89,9 @@
     padding: 8px 10px;
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.85rem;
-    background: var(--input-bg);
+    background: var(--config-surface-inset);
     color: var(--primary);
-    border: 2px solid var(--primary-dim);
+    border: 1px solid var(--config-border-soft);
     border-radius: 4px;
     text-transform: uppercase;
     margin: 0;
@@ -120,9 +122,9 @@
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    background: var(--tab-bg);
-    border: 2px solid var(--primary-dim);
-    border-radius: 8px;
+    background: var(--config-surface-inset);
+    border: 1px solid var(--config-border);
+    border-radius: var(--ui-radius);
     color: var(--text-bright);
     cursor: pointer;
     font-family: 'Share Tech Mono', monospace;
@@ -137,7 +139,7 @@
 }
 
 .theme-preset-btn.active {
-    background: var(--primary-bg-medium);
+    background: var(--config-surface-raised);
     border-color: var(--primary);
     box-shadow: 0 0 15px var(--primary-glow);
 }
@@ -172,9 +174,9 @@
     display: flex;
     gap: 8px;
     padding: 12px;
-    background: var(--bg-dark);
-    border-radius: 8px;
-    border: 1px solid var(--primary-dim);
+    background: var(--config-surface-inset);
+    border-radius: var(--ui-radius);
+    border: 1px solid var(--config-border-soft);
     margin-top: 15px;
     flex-wrap: wrap;
     align-items: center;
@@ -222,9 +224,9 @@
     padding: 10px;
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.8rem;
-    background: var(--input-bg);
+    background: var(--config-surface-inset);
     color: var(--primary);
-    border: 2px solid var(--primary-dim);
+    border: 1px solid var(--config-border-soft);
     border-radius: 6px;
     resize: vertical;
 }

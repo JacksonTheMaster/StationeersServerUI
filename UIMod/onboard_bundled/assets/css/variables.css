@@ -31,6 +31,25 @@
     --panel-inset: color-mix(in srgb, var(--bg-dark) 88%, black);
     --panel-lamp: var(--success);
 
+    /* Shared application surfaces */
+    --ui-frame: var(--panel-frame);
+    --ui-surface: color-mix(in srgb, var(--panel-surface) 94%, var(--bg-dark));
+    --ui-surface-raised: color-mix(in srgb, var(--surface-dark) 58%, var(--bg-dark));
+    --ui-surface-inset: var(--panel-inset);
+    --ui-radius: 8px;
+    --ui-radius-large: 10px;
+    --ui-gap: 16px;
+    --ui-shadow: inset 0 0 22px var(--primary-glow-soft), 0 12px 30px rgba(0, 0, 0, 0.22);
+    --ui-divider: 1px solid var(--primary-glow-strong);
+
+    /* Configuration workspace palette: one hierarchy shared by every tab. */
+    --config-surface: color-mix(in srgb, var(--bg-panel) 72%, var(--bg-dark));
+    --config-surface-raised: color-mix(in srgb, var(--bg-panel) 84%, var(--primary) 16%);
+    --config-surface-inset: color-mix(in srgb, var(--bg-dark) 92%, var(--bg-panel) 8%);
+    --config-border: color-mix(in srgb, var(--primary) 38%, transparent);
+    --config-border-soft: color-mix(in srgb, var(--primary) 22%, transparent);
+    --config-shadow: inset 0 0 26px color-mix(in srgb, var(--primary) 5%, transparent), 0 10px 28px rgba(0, 0, 0, 0.2);
+
     /* ── Discord (brand, not themeable) ── */
     --discord-accent: #7289da;
 

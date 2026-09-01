@@ -468,14 +468,15 @@ select option {
         "navigation settings";
     gap: 18px 24px;
     padding: 22px;
-    background: var(--panel-surface);
-    border-color: var(--panel-frame);
-    box-shadow: inset 0 0 24px var(--primary-glow-soft), 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: var(--ui-surface);
+    border-color: var(--ui-frame);
+    border-radius: var(--ui-radius-large);
+    box-shadow: var(--ui-shadow);
 }
 
 .server-settings-shell:hover {
     transform: none;
-    box-shadow: inset 0 0 24px var(--primary-glow-soft), 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--ui-shadow);
 }
 
 .server-settings-shell .wizard-button-container {
@@ -513,9 +514,9 @@ select option {
     gap: 7px;
     margin: 0;
     padding: 12px;
-    background: var(--panel-inset);
-    border: 1px solid var(--panel-frame);
-    border-radius: 8px;
+    background: var(--ui-surface-inset);
+    border: 1px solid var(--ui-frame);
+    border-radius: var(--ui-radius);
 }
 
 .server-settings-shell .section-nav-button {
@@ -548,9 +549,9 @@ select option {
 
 .server-settings-shell .config-section {
     padding: 18px;
-    background: var(--panel-inset);
-    border: 1px solid var(--panel-frame);
-    border-radius: 8px;
+    background: var(--ui-surface-inset);
+    border: 1px solid var(--ui-frame);
+    border-radius: var(--ui-radius);
 }
 
 .server-settings-shell .section-title {
@@ -905,6 +906,7 @@ button.advertiser-configure-button {
     padding: 24px;
     box-sizing: border-box;
     background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(5px);
     opacity: 0;
     visibility: hidden;
     transition: opacity 180ms ease, visibility 180ms ease;
@@ -921,9 +923,10 @@ button.advertiser-configure-button {
     overflow-y: auto;
     padding: 24px;
     box-sizing: border-box;
-    background: var(--panel-surface);
-    border: 2px solid var(--panel-frame);
-    border-radius: 12px;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-frame);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--ui-radius-large);
     box-shadow: 0 20px 80px rgba(0, 0, 0, 0.7), 0 0 30px var(--primary-glow);
     transform: translateY(28px) scale(0.96);
     transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
@@ -1711,6 +1714,259 @@ body.modal-open {
     transform: translateY(-2px);
 }
 
+/* Shared configuration UI identity */
+.config-tab-stack.active {
+    width: 100%;
+    max-width: 1380px;
+    margin-inline: auto;
+    display: grid;
+    gap: var(--ui-gap);
+}
+
+.config-tab-intro,
+.config-surface,
+.config-tab-stack > .slp-section,
+.config-tab-stack .discord-container,
+.config-tab-stack > .info-panel {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 20px;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-frame);
+    border-radius: var(--ui-radius-large);
+    box-shadow: var(--ui-shadow);
+}
+
+.config-tab-intro {
+    padding: 18px 20px;
+    border-left: 3px solid var(--primary);
+}
+
+.config-tab-intro h2 {
+    margin: 4px 0 8px;
+    color: var(--text-bright);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.15rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.config-tab-intro p {
+    max-width: 1080px;
+    margin: 4px 0;
+    color: var(--text-dim);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
+.config-tab-stack > .slp-section:hover,
+.config-tab-stack .discord-container:hover,
+.config-tab-stack > .info-panel:hover,
+.config-surface:hover {
+    transform: none;
+    border-color: var(--primary-glow-strong);
+    box-shadow: var(--ui-shadow);
+}
+
+.config-tab-stack > .slp-section h3,
+.config-tab-stack > .info-panel h3 {
+    margin: 0 0 14px;
+    padding: 0 0 11px;
+    color: var(--text-bright);
+    border-bottom: var(--ui-divider);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.75px;
+    text-transform: uppercase;
+}
+
+.config-tab-stack .form-group,
+.config-tab-stack .manage-left,
+.config-tab-stack .manage-center,
+.config-tab-stack .manage-right {
+    background: var(--ui-surface-inset);
+    border: 1px solid var(--primary-glow);
+    border-radius: var(--ui-radius);
+}
+
+.config-tab-stack .form-group {
+    margin-bottom: 12px;
+    padding: 14px;
+}
+
+.config-tab-stack input[type="text"],
+.config-tab-stack input[type="password"],
+.config-tab-stack textarea,
+.config-tab-stack select {
+    border-width: 1px;
+    border-radius: 6px;
+    box-shadow: none;
+}
+
+#discord-config-tab {
+    max-width: 1380px;
+}
+
+#discord-config-panel {
+    display: grid;
+    gap: var(--ui-gap);
+}
+
+#discord-config-tab .discord-integration-header {
+    margin: 0;
+    border-radius: var(--ui-radius-large);
+}
+
+#discord-config-tab .discord-container,
+#discord-config-tab .info-panel {
+    border-color: var(--ui-frame);
+    box-shadow: var(--ui-shadow);
+}
+
+#discord-config-tab .discord-section-heading {
+    border-bottom-color: var(--primary-glow-strong);
+}
+
+#discord-config-tab .discord-channel-grid .form-group,
+#discord-config-tab .discord-container > .form-group {
+    margin: 0;
+}
+
+#slp-config-tab .workshop-add-section {
+    background: linear-gradient(135deg, var(--primary-glow-soft), transparent 48%), var(--ui-surface);
+    border-color: var(--primary-glow-strong);
+}
+
+#slp-config-tab .slp-install-section {
+    border-width: 1px;
+}
+
+#detectionmanager-config-tab #detection-list-container {
+    background: var(--ui-surface);
+}
+
+#detectionmanager-config-tab .detection-list {
+    margin: 0;
+    border-color: var(--primary-glow-strong);
+    border-radius: var(--ui-radius);
+}
+
+#detectionmanager-config-tab .detection-list-header {
+    color: var(--primary);
+    background: var(--ui-surface-raised);
+    border-bottom-color: var(--primary-glow-strong);
+}
+
+#detectionmanager-config-tab #add-detection-container {
+    margin: 0;
+}
+
+#detectionmanager-config-tab .grid-container,
+#detectionmanager-config-tab .info-panel {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .config-tab-stack.active {
+        gap: 12px;
+    }
+
+    .config-tab-intro,
+    .config-surface,
+    .config-tab-stack > .slp-section,
+    .config-tab-stack .discord-container,
+    .config-tab-stack > .info-panel {
+        padding: 14px;
+    }
+}
+
+/* Keep every config tab on the same flat, task-oriented panel model as SLP. */
+.server-settings-shell {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+.server-settings-shell:hover {
+    box-shadow: none;
+}
+
+#discord-config-tab .discord-integration-header {
+    min-height: 82px;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, var(--primary-glow-soft), transparent 48%), var(--ui-surface);
+    border: 1px solid var(--primary-glow-strong);
+    border-left: 1px solid var(--primary-glow-strong);
+    box-shadow: var(--ui-shadow);
+}
+
+#discord-config-tab .discord-integration-header:hover,
+#discord-config-tab .discord-integration-header.is-disabled {
+    border-color: var(--primary-glow-strong);
+    filter: none;
+    box-shadow: var(--ui-shadow);
+}
+
+#discord-config-tab .discord-mark {
+    width: 34px;
+    height: 34px;
+    filter: drop-shadow(0 0 7px var(--discord-glow));
+}
+
+#discord-config-tab .discord-integration-header .highlight-label {
+    color: var(--text-bright);
+    font-size: 1.05rem;
+}
+
+#discord-config-tab .discord-integration-header select {
+    border-color: var(--primary-glow-strong);
+}
+
+#discord-config-tab .feature-badge {
+    background: var(--primary-bg-light);
+    color: var(--primary);
+    border: 1px solid var(--primary-glow-strong);
+}
+
+.discord-token-section h3 {
+    margin: 4px 0 14px;
+    padding: 0 0 11px;
+    color: var(--text-bright);
+    border-bottom: var(--ui-divider);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.75px;
+    text-transform: uppercase;
+}
+
+#discord-config-tab .discord-token-panel {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+}
+
+#discord-config-tab .discord-container {
+    background: var(--ui-surface);
+}
+
+#discord-config-tab .discord-channel-grid .form-group,
+#discord-config-tab .discord-container > .form-group {
+    background: color-mix(in srgb, var(--ui-surface-inset) 80%, transparent);
+    border-color: var(--primary-glow);
+}
+
+@media (max-width: 768px) {
+    .server-settings-shell {
+        padding: 0;
+    }
+
+    #discord-config-tab .discord-integration-header {
+        min-height: 0;
+    }
+}
+
 #modPackageUploadZone.highlight {
     border-color: var(--primary);
     border-style: solid;
@@ -2032,4 +2288,115 @@ body.modal-open {
     .mod-image-container {
         height: 200px;
     }
+}
+
+/* Final config color contract. Layouts may differ; depth and color do not. */
+#server-config-tab,
+#theme-config-tab.active {
+    width: 100%;
+    max-width: 1380px;
+    margin-inline: auto;
+}
+
+.config-tab-stack .config-surface,
+.config-tab-stack > .slp-section,
+.config-tab-stack .discord-container,
+.config-tab-stack > .info-panel,
+.server-settings-shell .section-navigation,
+.server-settings-shell .config-section {
+    background: var(--config-surface);
+    border-color: var(--config-border);
+    box-shadow: var(--config-shadow);
+}
+
+.server-settings-shell .form-group,
+.server-settings-shell .advertiser-setting-card,
+.config-tab-stack .form-group,
+.config-tab-stack .manage-left,
+.config-tab-stack .manage-center,
+.config-tab-stack .manage-right,
+#detectionmanager-config-tab .detection-list,
+#detectionmanager-config-tab .detection-item {
+    background: var(--config-surface-inset);
+    border-color: var(--config-border-soft);
+}
+
+.server-settings-shell .section-nav-button {
+    background: var(--config-surface-inset);
+    border-color: transparent;
+    border-left-color: var(--config-border);
+}
+
+.server-settings-shell .section-nav-button.active {
+    background: var(--config-surface-raised);
+    border-color: var(--config-border);
+    border-left-color: var(--primary);
+}
+
+#discord-config-tab .discord-integration-header,
+#slp-config-tab .workshop-add-section,
+#slp-config-tab .slp-install-section {
+    background: linear-gradient(135deg, var(--primary-glow-soft), transparent 46%), var(--config-surface);
+    border-color: var(--config-border);
+}
+
+#discord-config-tab .discord-container,
+#discord-config-tab .discord-token-section,
+#discord-config-tab .info-panel,
+#slp-config-tab > .slp-section,
+#detectionmanager-config-tab > .config-tab-intro,
+#detectionmanager-config-tab > .config-surface,
+#detectionmanager-config-tab .grid-container,
+#detectionmanager-config-tab .info-panel {
+    background-color: var(--config-surface);
+    border-color: var(--config-border);
+}
+
+#discord-config-tab .discord-channel-grid .form-group,
+#discord-config-tab .discord-container > .form-group,
+#detectionmanager-config-tab .form-group {
+    background: var(--config-surface-inset);
+    border-color: var(--config-border-soft);
+}
+
+#detectionmanager-config-tab #detection-list-container,
+#detectionmanager-config-tab .detection-list-header {
+    background: var(--config-surface);
+    border-color: var(--config-border);
+}
+
+#detectionmanager-config-tab .config-tab-intro {
+    border-left-width: 1px;
+}
+
+#slp-config-tab #modPackageUploadZone,
+#slp-config-tab .mod-card,
+#slp-config-tab .mods-empty {
+    background: var(--config-surface-inset);
+    border-color: var(--config-border);
+}
+
+.server-settings-shell input,
+.server-settings-shell textarea,
+.server-settings-shell select,
+.config-tab-stack input,
+.config-tab-stack textarea,
+.config-tab-stack select {
+    background-color: var(--config-surface-inset);
+    border-color: var(--config-border-soft);
+}
+
+#detectionmanager-config-tab .form-group input,
+#detectionmanager-config-tab .form-group textarea {
+    background: var(--config-surface-inset);
+    border-color: var(--config-border-soft);
+}
+
+.server-settings-shell input:focus,
+.server-settings-shell textarea:focus,
+.server-settings-shell select:focus,
+.config-tab-stack input:focus,
+.config-tab-stack textarea:focus,
+.config-tab-stack select:focus {
+    border-color: var(--primary);
 }

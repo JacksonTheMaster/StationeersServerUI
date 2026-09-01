@@ -15,14 +15,15 @@
 }
 
 .popup-content {
-    background-color: var(--bg-dark);
+    background: var(--ui-surface);
     padding: 20px;
-    border-radius: 10px;
+    border: 1px solid var(--ui-frame);
+    border-radius: var(--ui-radius-large);
     text-align: center;
     max-width: 60vw;
     max-height: 60vh;
     overflow-y: auto;
-    box-shadow: 0 5px 30px var(--primary-glow);
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.65), 0 0 24px var(--primary-glow);
 }
 .popup-content h2 {
     margin: 10px 0;
