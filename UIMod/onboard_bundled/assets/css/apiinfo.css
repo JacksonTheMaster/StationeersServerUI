@@ -1,5 +1,45 @@
 @import '/static/css/variables.css';
 
+.docs-callout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 0 24px;
+    padding: 24px;
+    color: var(--text-bright);
+    text-decoration: none;
+    text-align: center;
+    background: linear-gradient(135deg, var(--nav-bg), var(--form-bg));
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    box-shadow: 0 0 18px var(--primary-bg-medium);
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.docs-callout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 28px var(--primary-glow);
+}
+
+.docs-callout-kicker,
+.docs-callout span:last-child {
+    color: var(--text-dim);
+}
+
+.docs-callout strong {
+    color: var(--primary);
+    font-size: clamp(1.3rem, 3vw, 2rem);
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.api-overview code,
+.endpoint-desc code {
+    color: var(--text-bright);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-wrap: anywhere;
+}
+
 .version-badge {
     display: flex;
     gap: 10px;
@@ -30,6 +70,17 @@
     padding: 20px;
     border-radius: 8px;
     border-left: 4px solid var(--accent);
+}
+
+.api-jump-links {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.api-jump-links a {
+    color: var(--primary);
 }
 
 .highlight-text {
@@ -95,10 +146,20 @@
     background-color: var(--success);
 }
 
+.method.delete {
+    background-color: var(--danger);
+}
+
+.method.both {
+    background-color: var(--warning);
+    color: var(--bg-dark);
+}
+
 .endpoint-link {
     color: var(--primary);
     text-decoration: none;
     font-family: 'Share Tech Mono', monospace;
+    overflow-wrap: anywhere;
 }
 
 a.endpoint-link:hover {
@@ -127,4 +188,194 @@ a.endpoint-link:hover {
 .hint {
     color: var(--text-dim);
     font-style: italic;
+}
+
+.api-examples {
+    margin: 46px 0 30px;
+    scroll-margin-top: 20px;
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 30px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--primary-glow);
+}
+
+.section-heading h2,
+.section-heading p {
+    margin: 0;
+}
+
+.section-heading p {
+    max-width: 620px;
+    color: var(--text-dim);
+}
+
+.section-eyebrow {
+    color: var(--primary);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+}
+
+.example-group-title {
+    margin: 32px 0 12px;
+    color: var(--text-bright);
+}
+
+.api-example {
+    margin-bottom: 10px;
+    overflow: hidden;
+    background: var(--form-bg);
+    border: 1px solid var(--primary-glow);
+    border-radius: 8px;
+}
+
+.api-example[open] {
+    border-color: var(--primary-glow-strong);
+    box-shadow: 0 5px 18px color-mix(in srgb, var(--bg-dark) 55%, transparent);
+}
+
+.api-example summary {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    list-style: none;
+    background: var(--nav-bg);
+}
+
+.api-example summary::-webkit-details-marker {
+    display: none;
+}
+
+.api-example summary::after {
+    content: '+';
+    margin-left: auto;
+    color: var(--primary);
+    font-size: 1.3rem;
+}
+
+.api-example[open] summary::after {
+    content: '−';
+}
+
+.api-example summary code {
+    color: var(--primary);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-wrap: anywhere;
+}
+
+.summary-text {
+    color: var(--text-dim);
+}
+
+.example-body {
+    padding: 18px;
+}
+
+.example-grid,
+.read-examples {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.example-grid.single-response {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.example-body h4,
+.read-examples h4 {
+    margin: 0 0 8px;
+    color: var(--text-bright);
+    font-size: 0.85rem;
+}
+
+.example-body pre,
+.read-examples pre {
+    margin: 0;
+    padding: 14px;
+    overflow-x: auto;
+    color: var(--text-bright);
+    background: color-mix(in srgb, var(--bg-dark) 82%, black);
+    border: 1px solid var(--primary-glow-soft);
+    border-radius: 6px;
+    font: 0.82rem/1.5 'Share Tech Mono', monospace;
+    white-space: pre;
+}
+
+.example-body .curl {
+    margin-top: 16px;
+    border-left: 3px solid var(--accent);
+}
+
+.example-note {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    color: var(--text-bright);
+    background: var(--primary-glow-soft);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+}
+
+.example-note.subtle {
+    margin: 16px 0 0;
+    color: var(--text-dim);
+    border-left-color: var(--accent);
+}
+
+.read-examples {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.read-examples article {
+    min-width: 0;
+    padding: 14px;
+    background: var(--form-bg);
+    border: 1px solid var(--primary-glow);
+    border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+    .docs-callout {
+        padding: 18px 14px;
+    }
+
+    .endpoint-container {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .section-heading,
+    .api-example summary {
+        align-items: flex-start;
+    }
+
+    .section-heading {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .api-example summary {
+        flex-wrap: wrap;
+    }
+
+    .summary-text {
+        width: 100%;
+        order: 3;
+    }
+
+    .api-example summary::after {
+        position: absolute;
+        right: 18px;
+    }
+
+    .example-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }

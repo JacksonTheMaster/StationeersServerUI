@@ -19,188 +19,402 @@
         <img src="/static/stationeers.webp" alt="Stationeers Banner" id="banner">
     </header>
     <main>
-        <h1>About the Server API (Incomplete)</h1>
-            
-        <div class="api-overview">
-            <p>This server provides a complete REST API alongside the HTML interface. All UI actions map to API endpoints, allowing full programmatic control.</p>
-            <p class="highlight-text">Check out the Github Wiki for more information about the API and how to use it.</p>
-        </div>
-        
-        <div class="api-section">
-            <h2>Available Endpoints</h2>
-            <div class="endpoint-container">
+        <h1>SSUI HTTP API Reference</h1>
 
+        <a class="docs-callout" href="https://github.com/SteamServerUI/StationeersServerUI/wiki"
+            target="_blank" rel="noopener noreferrer">
+            <span class="docs-callout-kicker">Need explanations, examples, and setup guides?</span>
+            <strong>READ THE ACTUAL DOCUMENTATION HERE</strong>
+            <span>Yes, this is the big “read the docs, you magnificent server gremlin” button.</span>
+        </a>
+
+        <div class="api-overview">
+            <p>This page is the quick route index for the HTTP interface exposed by SSUI v5. It reflects the routes
+                registered by the current backend; request and response details belong in the wiki.</p>
+            <p><strong>Authentication:</strong> when authentication is enabled, protected routes require the
+                <code>AuthToken</code> JWT cookie returned by <code>POST /auth/login</code>. Routes below are protected
+                unless explicitly described as public.</p>
+            <div class="api-jump-links">
+                <a href="#endpoint-index">Endpoint index</a>
+                <span aria-hidden="true">|</span>
+                <a href="#examples">Request &amp; response examples</a>
+            </div>
+        </div>
+
+        <div class="api-section" id="endpoint-index">
+            <h2>Current Endpoints</h2>
+            <div class="endpoint-container">
                 <div class="endpoint">
                     <h3>UI Pages</h3>
                     <ul class="api-list">
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/" class="endpoint-link">/</a>
-                            <div class="endpoint-desc">Main dashboard</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/config" class="endpoint-link">/config</a>
-                            <div class="endpoint-desc">Configuration page</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/setup" class="endpoint-link">/setup</a>
-                            <div class="endpoint-desc">Configuration Wizzard</div>
-                        </li>
-                    </ul>
-                </div>
-                
-
-                <div class="endpoint">
-                    <h3>More UI Pages</h3>
-                    <ul class="api-list">
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/detectionmanager" class="endpoint-link">/detectionmanager</a>
-                            <div class="endpoint-desc">Detection rules manager</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/login" class="endpoint-link">/login</a>
-                            <div class="endpoint-desc">Login page</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/changeuser" class="endpoint-link">/changeuser</a>
-                            <div class="endpoint-desc">Add user / Change Password page</div>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="endpoint">
-                    <h3>Save Management</h3>
-                    <ul class="api-list">
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/api/v2/backups" class="endpoint-link">/api/v2/backups</a>
-                            <div class="endpoint-desc">List available save files</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/api/v2/backups?limit=5" class="endpoint-link">/api/v2/backups?limit=5</a>
-                            <div class="endpoint-desc">List limited number of save files</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/api/v2/backups?mode=classic" class="endpoint-link">/api/v2/backups?mode=classic</a>
-                            <div class="endpoint-desc">List saves in classic format for UI</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <span class="endpoint-link">/api/v2/backups/restore?index=123</span>
-                            <div class="endpoint-desc">Restore from specified save index</div>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="endpoint">
-                    <h3>Server Control</h3>
-                    <ul class="api-list">
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/start" class="endpoint-link">/start</a>
-                            <div class="endpoint-desc">Start the game server</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/stop" class="endpoint-link">/stop</a>
-                            <div class="endpoint-desc">Stop the game server</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/api/v2/server/start" class="endpoint-link">/api/v2/server/start</a>
-                            <div class="endpoint-desc">The same as /start</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/api/v2/server/stop" class="endpoint-link">/api/v2/server/stop</a>
-                            <div class="endpoint-desc">The same as /stop</div>
-                        </li>
+                        <li><div class="method get">GET</div><a href="/" class="endpoint-link">/</a><div class="endpoint-desc">Main dashboard.</div></li>
+                        <li><div class="method get">GET</div><a href="/config" class="endpoint-link">/config</a><div class="endpoint-desc">Configuration page.</div></li>
+                        <li><div class="method get">GET</div><a href="/detectionmanager" class="endpoint-link">/detectionmanager</a><div class="endpoint-desc">Custom detection manager.</div></li>
+                        <li><div class="method get">GET</div><a href="/v2" class="endpoint-link">/v2</a><div class="endpoint-desc">Bundled Svelte UI.</div></li>
+                        <li><div class="method get">GET</div><a href="/setup" class="endpoint-link">/setup</a><div class="endpoint-desc">First-time setup wizard.</div></li>
+                        <li><div class="method get">GET</div><a href="/changeuser" class="endpoint-link">/changeuser</a><div class="endpoint-desc">Add a user or change a password.</div></li>
                     </ul>
                 </div>
 
                 <div class="endpoint">
                     <h3>Authentication</h3>
                     <ul class="api-list">
-                        <li>
-                            <div class="method post">POST</div>
-                            <a href="/auth/login" class="endpoint-link">/auth/login</a>
-                            <div class="endpoint-desc">Get authentication token (JSON body with username/password)</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/auth/logout" class="endpoint-link">/auth/logout</a>
-                            <div class="endpoint-desc">Logout and invalidate token</div>
-                        </li>
-                        <li>
-                            <div class="method post">POST</div>
-                            <span class="endpoint-link">/api/v2/auth/adduser</span>
-                            <div class="endpoint-desc">Add a new user or change password (JSON body)</div>
-                        </li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/auth/login</span><div class="endpoint-desc">Public. Authenticate with username and password and receive an AuthToken cookie.</div></li>
+                        <li><div class="method get">GET</div><a href="/auth/logout" class="endpoint-link">/auth/logout</a><div class="endpoint-desc">Public. Clear the authentication cookie.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/auth/adduser</span><div class="endpoint-desc">Add a user or update a password.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/auth/whoami" class="endpoint-link">/api/v2/auth/whoami</a><div class="endpoint-desc">Return the current authenticated identity.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/auth/setup/register</span><div class="endpoint-desc">Register the initial setup user.</div></li>
+                        <li><div class="method both">GET/POST</div><span class="endpoint-link">/api/v2/auth/setup/apikey</span><div class="endpoint-desc">Create a temporary API identity and token.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/auth/setup/finalize</span><div class="endpoint-desc">Finalize first-time setup.</div></li>
+                    </ul>
+                </div>
+
+                <div class="endpoint">
+                    <h3>Server Control &amp; Status</h3>
+                    <ul class="api-list">
+                        <li><div class="method get">GET</div><a href="/start" class="endpoint-link">/start</a><div class="endpoint-desc">Start the game server.</div></li>
+                        <li><div class="method get">GET</div><a href="/stop" class="endpoint-link">/stop</a><div class="endpoint-desc">Stop the game server.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/server/start" class="endpoint-link">/api/v2/server/start</a><div class="endpoint-desc">Versioned alias for /start.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/server/stop" class="endpoint-link">/api/v2/server/stop</a><div class="endpoint-desc">Versioned alias for /stop.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/server/status" class="endpoint-link">/api/v2/server/status</a><div class="endpoint-desc">Run state, lifecycle state, uptime, and server UUID.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/server/status/connectedplayers" class="endpoint-link">/api/v2/server/status/connectedplayers</a><div class="endpoint-desc">Connected players tracked from the server log.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/monitor/gameserver/status" class="endpoint-link">/api/v2/monitor/gameserver/status</a><div class="endpoint-desc">Minimal monitoring health response.</div></li>
+                    </ul>
+                </div>
+
+                <div class="endpoint">
+                    <h3>Backups</h3>
+                    <ul class="api-list">
+                        <li><div class="method get">GET</div><a href="/api/v2/backups" class="endpoint-link">/api/v2/backups</a><div class="endpoint-desc">List backups. Supports <code>?limit=N</code> and <code>?mode=classic</code>.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/backups/restore?index=N</span><div class="endpoint-desc">Stop the server and restore a backup index.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/backups/download</span><div class="endpoint-desc">Download a backup. JSON body: <code>{"index": N}</code>.</div></li>
+                    </ul>
+                </div>
+
+                <div class="endpoint">
+                    <h3>Configuration &amp; Administration</h3>
+                    <ul class="api-list">
+                        <li><div class="method post">POST</div><span class="endpoint-link">/saveconfigasjson</span><div class="endpoint-desc">Legacy form-based configuration save.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/saveconfig</span><div class="endpoint-desc">JSON configuration save.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/advertiser/override</span><div class="endpoint-desc">Save advertiser override settings and restart SSUI.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/tls/certificate</span><div class="endpoint-desc">Upload and validate a TLS certificate/private-key pair.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/loader/reloadbackend" class="endpoint-link">/api/v2/loader/reloadbackend</a><div class="endpoint-desc">Reload backend-managed components.</div></li>
+                    </ul>
+                </div>
+
+                <div class="endpoint">
+                    <h3>Updates, SSCM &amp; SteamCMD</h3>
+                    <ul class="api-list">
+                        <li><div class="method get">GET</div><a href="/api/v2/update/check" class="endpoint-link">/api/v2/update/check</a><div class="endpoint-desc">Read cached SSUI update availability.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/update/trigger</span><div class="endpoint-desc">Check for or apply an SSUI update.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/SSCM/enabled" class="endpoint-link">/api/v2/SSCM/enabled</a><div class="endpoint-desc">Check whether SSCM command execution is enabled.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/SSCM/run</span><div class="endpoint-desc">Run an SSCM command from a JSON body.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/steamcmd/run</span><div class="endpoint-desc">Run SteamCMD and update the game-server installation.</div></li>
+                    </ul>
+                </div>
+
+                <div class="endpoint">
+                    <h3>SLP &amp; Workshop Mods</h3>
+                    <ul class="api-list">
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/slp/install</span><div class="endpoint-desc">Install StationeersLaunchPad.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/slp/uninstall</span><div class="endpoint-desc">Uninstall SLP and its managed mods.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/slp/reinstall</span><div class="endpoint-desc">Reinstall SLP while preserving mods.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/slp/upload</span><div class="endpoint-desc">Upload a modpkg ZIP as <code>application/zip</code>.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/slp/mods" class="endpoint-link">/api/v2/slp/mods</a><div class="endpoint-desc">List installed SLP mods.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/steamcmd/updatemods</span><div class="endpoint-desc">Update all installed Workshop mods.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/steamcmd/updatemod</span><div class="endpoint-desc">Install or update one or more Workshop IDs/URLs.</div></li>
                     </ul>
                 </div>
 
                 <div class="endpoint">
                     <h3>Custom Detection Rules</h3>
                     <ul class="api-list">
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/api/v2/custom-detections" class="endpoint-link">/api/v2/custom-detections</a>
-                            <div class="endpoint-desc">Get all custom detection rules</div>
-                        </li>
-                        <li>
-                            <div class="method post">POST</div>
-                            <span class="endpoint-link">/api/v2/custom-detections</span>
-                            <div class="endpoint-desc">Create new detection rule (keyword or regex)</div>
-                        </li>
-                        <li>
-                            <div class="method delete">DELETE</div>
-                            <span class="endpoint-link">/api/v2/custom-detections/delete/?id=uuid</span>
-                            <div class="endpoint-desc">Delete a detection rule by ID</div>
-                        </li>
+                        <li><div class="method get">GET</div><a href="/api/v2/custom-detections" class="endpoint-link">/api/v2/custom-detections</a><div class="endpoint-desc">List custom keyword and regex detections.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/custom-detections</span><div class="endpoint-desc">Create a custom detection.</div></li>
+                        <li><div class="method delete">DELETE</div><span class="endpoint-link">/api/v2/custom-detections/delete/?id=UUID</span><div class="endpoint-desc">Delete a custom detection by ID.</div></li>
                     </ul>
                 </div>
 
                 <div class="endpoint">
-                    <h3>Configuration</h3>
+                    <h3>Server-Sent Event Streams</h3>
                     <ul class="api-list">
-                        <li>
-                            <div class="method post">POST</div>
-                            <span class="endpoint-link">/saveconfigasjson</span>
-                            <div class="endpoint-desc">Save server configuration (Form data, legacy)</div>
-                        </li>
-                        <li>
-                            <div class="method post">POST</div>
-                            <span class="endpoint-link">/api/v2/saveconfig</span>
-                            <div class="endpoint-desc">Save server configuration (JSON body)</div>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="endpoint">
-                    <h3>Information Streams</h3>
-                    <ul class="api-list">
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/console" class="endpoint-link">/console</a>
-                            <div class="endpoint-desc">Server console output stream (SSE)</div>
-                        </li>
-                        <li>
-                            <div class="method get">GET</div>
-                            <a href="/events" class="endpoint-link">/events</a>
-                            <div class="endpoint-desc">Server events stream (SSE)</div>
-                        </li>
+                        <li><div class="method get">GET</div><a href="/console" class="endpoint-link">/console</a><div class="endpoint-desc">Game-server console stream.</div></li>
+                        <li><div class="method get">GET</div><a href="/events" class="endpoint-link">/events</a><div class="endpoint-desc">Detection event stream.</div></li>
+                        <li><div class="method get">GET</div><a href="/logs/backend" class="endpoint-link">/logs/backend</a><div class="endpoint-desc">Combined backend log stream.</div></li>
+                        <li><div class="method get">GET</div><a href="/logs/debug" class="endpoint-link">/logs/debug</a><div class="endpoint-desc">Debug log stream.</div></li>
+                        <li><div class="method get">GET</div><a href="/logs/info" class="endpoint-link">/logs/info</a><div class="endpoint-desc">Info log stream.</div></li>
+                        <li><div class="method get">GET</div><a href="/logs/warn" class="endpoint-link">/logs/warn</a><div class="endpoint-desc">Warning log stream.</div></li>
+                        <li><div class="method get">GET</div><a href="/logs/error" class="endpoint-link">/logs/error</a><div class="endpoint-desc">Error log stream.</div></li>
                     </ul>
                 </div>
             </div>
         </div>
-        
+
+        <section class="api-examples" id="examples">
+            <div class="section-heading">
+                <div>
+                    <span class="section-eyebrow">COPY, PASTE, ADAPT</span>
+                    <h2>Request &amp; Response Examples</h2>
+                </div>
+                <p>Examples show successful responses. Error responses generally use an <code>error</code> or
+                    <code>status/message</code> object with an appropriate HTTP status.</p>
+            </div>
+
+            <h3 class="example-group-title">Authentication</h3>
+            <details class="api-example" open>
+                <summary><span class="method post">POST</span><code>/auth/login</code><span class="summary-text">Create an AuthToken cookie</span></summary>
+                <div class="example-body">
+                    <div class="example-note">Public endpoint. Save the response cookie and send it with protected requests.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "username": "admin",
+  "password": "change-me"
+}</code></pre></div>
+                        <div><h4>200 Response</h4><pre><code>Set-Cookie: AuthToken=&lt;jwt&gt;; Path=/; Secure; HttpOnly
+
+{
+  "token": "&lt;jwt&gt;"
+}</code></pre></div>
+                    </div>
+                    <pre class="curl"><code>curl -k -c cookies.txt -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"change-me"}' https://localhost:8443/auth/login</code></pre>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/auth/adduser</code><span class="summary-text">Add or update a user</span></summary>
+                <div class="example-body">
+                    <div class="example-note">The setup registration endpoint <code>/api/v2/auth/setup/register</code> uses the same payload and response.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "username": "operator",
+  "password": "another-good-password"
+}</code></pre></div>
+                        <div><h4>201 Response</h4><pre><code>{
+  "message": "User registered successfully",
+  "username": "operator"
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method both">GET/POST</span><code>/api/v2/auth/setup/apikey</code><span class="summary-text">Create an API identity</span></summary>
+                <div class="example-body">
+                    <div class="example-note">GET creates a one-month key. POST requires a positive <code>durationMonths</code>. SSUI currently reads JWTs from the <code>AuthToken</code> cookie.</div>
+                    <div class="example-grid">
+                        <div><h4>POST Request JSON</h4><pre><code>{
+  "durationMonths": 6
+}</code></pre></div>
+                        <div><h4>201 Response</h4><pre><code>{
+  "message": "APIKey registered successfully",
+  "apikey": "&lt;jwt&gt;",
+  "expires": "2027-02-28T12:00:00Z"
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/auth/setup/finalize</code><span class="summary-text">Finish first-time setup</span></summary>
+                <div class="example-body">
+                    <div class="example-note">No request body. At least one user must already exist. The backend reloads after responding.</div>
+                    <div class="example-grid single-response">
+                        <div><h4>200 Response</h4><pre><code>{
+  "message": "Setup finalized successfully",
+  "restart_hint": "You will be redirected to the login page..."
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <h3 class="example-group-title">Configuration &amp; Administration</h3>
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/saveconfig</code><span class="summary-text">Partially update configuration</span></summary>
+                <div class="example-body">
+                    <div class="example-note">Only supplied fields are changed. Field names and casing match <code>config.json</code>; never send stored password hashes unless you intentionally mean to replace them.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "ServerName": "Europa Research Base",
+  "ServerMaxPlayers": "10",
+  "AutoSave": true,
+  "SaveInterval": "300",
+  "IsStationeersLaunchPadEnabled": true
+}</code></pre></div>
+                        <div><h4>200 Response</h4><pre><code>{
+  "status": "success",
+  "message": "Configuration updated successfully"
+}</code></pre></div>
+                    </div>
+                    <div class="example-note subtle"><code>/saveconfigasjson</code> is the legacy form equivalent. Send the same field names as <code>application/x-www-form-urlencoded</code>; success redirects to <code>/config</code> with HTTP 303.</div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/advertiser/override</code><span class="summary-text">Change the advertised address</span></summary>
+                <div class="example-body">
+                    <div class="example-note"><code>mode</code> is <code>disabled</code>, <code>auto</code>, <code>ipv4</code>, or <code>dns</code>. <code>value</code> is required for IPv4/DNS. SSUI restarts after accepting the change.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "mode": "dns",
+  "value": "stationeers.example.com"
+}</code></pre></div>
+                        <div><h4>202 Response</h4><pre><code>{
+  "status": "restarting",
+  "message": "Advertiser configuration saved. SSUI is restarting."
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/tls/certificate</code><span class="summary-text">Upload a certificate and private key</span></summary>
+                <div class="example-body">
+                    <div class="example-note">Multipart fields are named <code>certificate</code> and <code>privateKey</code>. The pair must match; encrypted keys are unsupported. Maximum request size is 4 MiB.</div>
+                    <pre class="curl"><code>curl -k -b cookies.txt \
+  -F "certificate=@fullchain.pem" \
+  -F "privateKey=@privkey.pem" \
+  https://localhost:8443/api/v2/tls/certificate</code></pre>
+                    <div class="example-grid single-response"><div><h4>202 Response</h4><pre><code>{
+  "status": "restarting",
+  "message": "TLS certificate saved. SSUI is restarting."
+}</code></pre></div></div>
+                </div>
+            </details>
+
+            <h3 class="example-group-title">Backups, Commands &amp; Updates</h3>
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/backups/download</code><span class="summary-text">Download one backup</span></summary>
+                <div class="example-body">
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "index": 3
+}</code></pre></div>
+                        <div><h4>200 Response</h4><pre><code>Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="backup.zip"
+
+&lt;binary backup data&gt;</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/SSCM/run</code><span class="summary-text">Send a command to the game server</span></summary>
+                <div class="example-body">
+                    <div class="example-note">Requires SSCM to be enabled.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "command": "status"
+}</code></pre></div>
+                        <div><h4>200 Response</h4><pre><code>{
+  "status": "success",
+  "message": "Command passed to server"
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/update/trigger</code><span class="summary-text">Check for or apply an SSUI update</span></summary>
+                <div class="example-body">
+                    <div class="example-note">Use <code>false</code> for a synchronous check and <code>true</code> to apply an available update in the background.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "allowUpdate": false
+}</code></pre></div>
+                        <div><h4>200 Response</h4><pre><code>{
+  "status": "success",
+  "updateAvailable": "true",
+  "version": "5.x.x",
+  "message": "Update to 5.x.x available"
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <h3 class="example-group-title">SLP &amp; Workshop Mods</h3>
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/slp/upload</code><span class="summary-text">Upload a modpkg ZIP</span></summary>
+                <div class="example-body">
+                    <div class="example-note">The body is the ZIP itself, not multipart form data.</div>
+                    <pre class="curl"><code>curl -k -b cookies.txt -H "Content-Type: application/zip" \
+  --data-binary @MyModPackage.zip https://localhost:8443/api/v2/slp/upload</code></pre>
+                    <div class="example-grid single-response"><div><h4>200 Response</h4><pre><code>{
+  "success": true,
+  "message": "Mod package uploaded and extracted successfully"
+}</code></pre></div></div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/steamcmd/updatemod</code><span class="summary-text">Install or update Workshop items</span></summary>
+                <div class="example-body">
+                    <div class="example-note">Accepts numeric Workshop IDs or full Workshop URLs. Use <code>workshopHandle</code> for one item or <code>workshopHandles</code> for a batch.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "workshopHandles": [
+    "3755414853",
+    "https://steamcommunity.com/sharedfiles/filedetails/?id=1234567890"
+  ]
+}</code></pre></div>
+                        <div><h4>200 Response</h4><pre><code>{
+  "success": true,
+  "message": "Workshop mods downloaded successfully",
+  "logs": ["..."]
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <h3 class="example-group-title">Custom Detections</h3>
+            <details class="api-example">
+                <summary><span class="method post">POST</span><code>/api/v2/custom-detections</code><span class="summary-text">Create a detection rule</span></summary>
+                <div class="example-body">
+                    <div class="example-note"><code>type</code> must be <code>keyword</code> or <code>regex</code>. The server generates <code>id</code> and defaults <code>eventType</code> to <code>CUSTOM_DETECTION</code> when omitted.</div>
+                    <div class="example-grid">
+                        <div><h4>Request JSON</h4><pre><code>{
+  "type": "keyword",
+  "pattern": "Pressure Critical",
+  "eventType": "BASE_ALERT",
+  "message": "A pressure alarm was detected"
+}</code></pre></div>
+                        <div><h4>201 Response</h4><pre><code>{
+  "id": "9e59cfa7-4ccb-4f2e-8af0-59a38bb7e294",
+  "type": "keyword",
+  "pattern": "Pressure Critical",
+  "eventType": "BASE_ALERT",
+  "message": "A pressure alarm was detected"
+}</code></pre></div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="api-example">
+                <summary><span class="method delete">DELETE</span><code>/api/v2/custom-detections/delete/?id=UUID</code><span class="summary-text">Delete a detection rule</span></summary>
+                <div class="example-body"><div class="example-note">No request body. A successful deletion returns HTTP <strong>204 No Content</strong>.</div></div>
+            </details>
+
+            <h3 class="example-group-title">Useful Read Responses</h3>
+            <div class="read-examples">
+                <article><h4><span class="method get">GET</span> /api/v2/backups</h4><pre><code>[
+  {
+    "Index": 0,
+    "SaveFile": "world_2026-08-31.zip",
+    "SaveTime": "2026-08-31T10:00:00Z"
+  }
+]</code></pre></article>
+                <article><h4><span class="method get">GET</span> /api/v2/slp/mods</h4><pre><code>{
+  "success": true,
+  "mods": [ ... ]
+}</code></pre></article>
+                <article><h4><span class="method get">GET</span> /api/v2/update/check</h4><pre><code>{
+  "status": "success",
+  "updateAvailable": "false",
+  "message": "No update available"
+}</code></pre></article>
+            </div>
+        </section>
+
         <div class="form-actions">
             <button onclick="window.location.href = '/'">Back to Dashboard</button>
         </div>
