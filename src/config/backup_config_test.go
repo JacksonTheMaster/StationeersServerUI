@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+	"time"
 )
 
 func TestBackupConfigPreservesExplicitZeroValues(t *testing.T) {
@@ -57,5 +58,28 @@ func TestBackupConfigDropsLegacyRetentionKeys(t *testing.T) {
 		if bytes.Contains(output, []byte(`"`+legacyKey+`"`)) {
 			t.Fatalf("legacy key %q was written back: %s", legacyKey, output)
 		}
+	}
+}
+
+func TestApplyConfigDisablesUnsafeBackupRetention(t *testing.T) {
+	enabled := true
+	negative := -1
+	zero := 0
+	cfg := JsonConfig{
+		BackupRetentionEnabled:     &enabled,
+		BackupKeepNewestCount:      &negative,
+		BackupCleanupIntervalHours: &zero,
+	}
+
+	applyConfig(&cfg)
+
+	if BackupRetentionEnabled || *cfg.BackupRetentionEnabled {
+		t.Fatal("unsafe backup settings did not disable automatic cleanup")
+	}
+	if BackupKeepNewestCount != 2 || *cfg.BackupKeepNewestCount != 2 {
+		t.Fatalf("BackupKeepNewestCount = %d, want safe default 2", BackupKeepNewestCount)
+	}
+	if BackupCleanupInterval != 24*time.Hour || *cfg.BackupCleanupIntervalHours != 24 {
+		t.Fatalf("BackupCleanupInterval = %s, want safe default 24h", BackupCleanupInterval)
 	}
 }

@@ -15,14 +15,16 @@ func (m *BackupManager) Cleanup() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// Verify and clean the safe backup directory first. If it is unavailable,
+	// leave the original autosaves untouched so cleanup cannot remove the only
+	// remaining copy.
+	if err := m.cleanSafeBackupDir(); err != nil {
+		return fmt.Errorf("safe backup dir cleanup failed: %w", err)
+	}
+
 	// Clean regular backup dir (keep only recent)
 	if err := m.cleanBackupDir(); err != nil {
 		return fmt.Errorf("backup dir cleanup failed: %w", err)
-	}
-
-	// Clean safe backup dir with retention policy
-	if err := m.cleanSafeBackupDir(); err != nil {
-		return fmt.Errorf("safe backup dir cleanup failed: %w", err)
 	}
 
 	return nil
@@ -157,7 +159,7 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 		// to avoid incorrectly treating e.g. Jan 15 and Feb 15 as the "same day".
 		if withinDailyWindow(saveTime, now, m.config.RetentionPolicy.DailyDays) {
 			if lastKeptDaily.IsZero() || !sameCalendarDay(saveTime, lastKeptDaily) {
-				lastKeptDaily = saveTime
+				updateRetentionTrackers(saveTime, &lastKeptDaily, &lastKeptWeekly, &lastKeptMonthly)
 				continue
 			}
 		}
@@ -167,7 +169,7 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 			year1, week1 := saveTime.ISOWeek()
 			year2, week2 := lastKeptWeekly.ISOWeek()
 			if lastKeptWeekly.IsZero() || year1 != year2 || week1 != week2 {
-				lastKeptWeekly = saveTime
+				updateRetentionTrackers(saveTime, &lastKeptDaily, &lastKeptWeekly, &lastKeptMonthly)
 				continue
 			}
 		}
@@ -177,7 +179,7 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 			if lastKeptMonthly.IsZero() ||
 				saveTime.Month() != lastKeptMonthly.Month() ||
 				saveTime.Year() != lastKeptMonthly.Year() {
-				lastKeptMonthly = saveTime
+				updateRetentionTrackers(saveTime, &lastKeptDaily, &lastKeptWeekly, &lastKeptMonthly)
 				continue
 			}
 		}

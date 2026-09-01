@@ -42,6 +42,7 @@ func TestValidateBackupSettingsRejectsUnsafeValues(t *testing.T) {
 		{name: "negative weekly", mutate: func(cfg *config.JsonConfig) { cfg.BackupWeeklyRetentionWeeks = configInt(-1) }},
 		{name: "negative monthly", mutate: func(cfg *config.JsonConfig) { cfg.BackupMonthlyRetentionMonths = configInt(-1) }},
 		{name: "zero cleanup interval", mutate: func(cfg *config.JsonConfig) { cfg.BackupCleanupIntervalHours = configInt(0) }},
+		{name: "overflowing cleanup interval", mutate: func(cfg *config.JsonConfig) { cfg.BackupCleanupIntervalHours = configInt(2562048) }},
 	}
 
 	for _, tt := range tests {

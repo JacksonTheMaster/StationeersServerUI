@@ -196,24 +196,53 @@ func applyConfig(cfg *JsonConfig) {
 	cfg.BackupRetentionEnabled = &backupRetentionEnabledVal
 
 	backupKeepNewestCountVal := getOptionalInt(cfg.BackupKeepNewestCount, "BACKUP_KEEP_NEWEST_COUNT", 2)
+	unsafeBackupRetentionConfig := false
+	if backupKeepNewestCountVal < 0 {
+		backupKeepNewestCountVal = 2
+		unsafeBackupRetentionConfig = true
+	}
 	BackupKeepNewestCount = backupKeepNewestCountVal
 	cfg.BackupKeepNewestCount = &backupKeepNewestCountVal
 
 	backupDailyRetentionDaysVal := getOptionalInt(cfg.BackupDailyRetentionDays, "BACKUP_DAILY_RETENTION_DAYS", 7)
+	if backupDailyRetentionDaysVal < 0 {
+		backupDailyRetentionDaysVal = 7
+		unsafeBackupRetentionConfig = true
+	}
 	BackupDailyRetentionDays = backupDailyRetentionDaysVal
 	cfg.BackupDailyRetentionDays = &backupDailyRetentionDaysVal
 
 	backupWeeklyRetentionWeeksVal := getOptionalInt(cfg.BackupWeeklyRetentionWeeks, "BACKUP_WEEKLY_RETENTION_WEEKS", 4)
+	if backupWeeklyRetentionWeeksVal < 0 {
+		backupWeeklyRetentionWeeksVal = 4
+		unsafeBackupRetentionConfig = true
+	}
 	BackupWeeklyRetentionWeeks = backupWeeklyRetentionWeeksVal
 	cfg.BackupWeeklyRetentionWeeks = &backupWeeklyRetentionWeeksVal
 
 	backupMonthlyRetentionMonthsVal := getOptionalInt(cfg.BackupMonthlyRetentionMonths, "BACKUP_MONTHLY_RETENTION_MONTHS", 3)
+	if backupMonthlyRetentionMonthsVal < 0 {
+		backupMonthlyRetentionMonthsVal = 3
+		unsafeBackupRetentionConfig = true
+	}
 	BackupMonthlyRetentionMonths = backupMonthlyRetentionMonthsVal
 	cfg.BackupMonthlyRetentionMonths = &backupMonthlyRetentionMonthsVal
 
 	backupCleanupIntervalHoursVal := getOptionalInt(cfg.BackupCleanupIntervalHours, "BACKUP_CLEANUP_INTERVAL_HOURS", 24)
+	maxCleanupIntervalHours := int64((1<<63 - 1) / int64(time.Hour))
+	if backupCleanupIntervalHoursVal <= 0 || int64(backupCleanupIntervalHoursVal) > maxCleanupIntervalHours {
+		backupCleanupIntervalHoursVal = 24
+		unsafeBackupRetentionConfig = true
+	}
 	BackupCleanupInterval = time.Duration(backupCleanupIntervalHoursVal) * time.Hour
 	cfg.BackupCleanupIntervalHours = &backupCleanupIntervalHoursVal
+
+	if unsafeBackupRetentionConfig {
+		backupRetentionEnabledVal = false
+		BackupRetentionEnabled = backupRetentionEnabledVal
+		cfg.BackupRetentionEnabled = &backupRetentionEnabledVal
+		fmt.Println("WARNING: Invalid backup retention settings were replaced with safe defaults; automatic backup cleanup has been disabled.")
+	}
 
 	isNewTerrainAndSaveSystemVal := getBool(cfg.IsNewTerrainAndSaveSystem, "ENABLE_DOT_SAVES", true)
 	IsNewTerrainAndSaveSystem = isNewTerrainAndSaveSystemVal

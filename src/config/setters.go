@@ -490,8 +490,9 @@ func SetBackupCleanupIntervalHours(value int) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
-	if value <= 0 {
-		return fmt.Errorf("backup cleanup interval must be positive")
+	maxCleanupIntervalHours := int64((1<<63 - 1) / int64(time.Hour))
+	if value <= 0 || int64(value) > maxCleanupIntervalHours {
+		return fmt.Errorf("backup cleanup interval must produce a positive valid duration")
 	}
 
 	BackupCleanupInterval = time.Duration(value) * time.Hour

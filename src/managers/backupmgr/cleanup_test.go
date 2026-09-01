@@ -101,6 +101,33 @@ func TestCleanSafeBackupDirKeepsConfiguredRestorePoints(t *testing.T) {
 	assertFileExists(t, expired, false)
 }
 
+func TestCleanSafeBackupDirDoesNotKeepDuplicateRestorePoints(t *testing.T) {
+	dir := t.TempDir()
+	anchor := startOfCalendarDay(time.Now()).Add(12 * time.Hour)
+	for i := 0; i < 4; i++ {
+		writeBackupSave(t, dir, fmt.Sprintf("same-day-%d.save", i), anchor.Add(-time.Duration(i)*time.Minute))
+	}
+	m := NewBackupManager(BackupConfig{
+		SafeBackupDir: dir,
+		RetentionPolicy: RetentionPolicy{
+			DailyDays:     1,
+			WeeklyWeeks:   1,
+			MonthlyMonths: 1,
+		},
+	})
+
+	if err := m.cleanSafeBackupDir(); err != nil {
+		t.Fatal(err)
+	}
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("kept %d backups for one covered day, want 1", len(files))
+	}
+}
+
 func TestCleanupUsesLocalCalendarForUTCMetadata(t *testing.T) {
 	location := time.FixedZone("UTC+2", 2*60*60)
 	now := time.Date(2026, time.September, 2, 0, 30, 0, 0, location)
@@ -164,6 +191,27 @@ func TestCleanBackupDirOnlyRemovesOldSaveFiles(t *testing.T) {
 	assertFileExists(t, oldSave, false)
 	assertFileExists(t, oldOther, true)
 	assertFileExists(t, recentSave, true)
+}
+
+func TestCleanupKeepsAutosavesWhenSafeBackupDirIsUnavailable(t *testing.T) {
+	backupDir := t.TempDir()
+	oldSave := filepath.Join(backupDir, "old.save")
+	if err := os.WriteFile(oldSave, []byte("test"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	oldTime := time.Now().Add(-48 * time.Hour)
+	if err := os.Chtimes(oldSave, oldTime, oldTime); err != nil {
+		t.Fatal(err)
+	}
+
+	m := NewBackupManager(BackupConfig{
+		BackupDir:     backupDir,
+		SafeBackupDir: filepath.Join(t.TempDir(), "missing"),
+	})
+	if err := m.Cleanup(); err == nil {
+		t.Fatal("Cleanup() returned nil with an unavailable safe backup directory")
+	}
+	assertFileExists(t, oldSave, true)
 }
 
 func TestNewBackupManagerUsesFixedCopyDelay(t *testing.T) {

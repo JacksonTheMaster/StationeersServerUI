@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 )
@@ -225,8 +226,11 @@ func validateBackupSettings(cfg *config.JsonConfig) error {
 		}
 	}
 
-	if cfg.BackupCleanupIntervalHours != nil && *cfg.BackupCleanupIntervalHours <= 0 {
-		return fmt.Errorf("backupCleanupIntervalHours must be greater than zero")
+	if cfg.BackupCleanupIntervalHours != nil {
+		maxCleanupIntervalHours := int64((1<<63 - 1) / int64(time.Hour))
+		if *cfg.BackupCleanupIntervalHours <= 0 || int64(*cfg.BackupCleanupIntervalHours) > maxCleanupIntervalHours {
+			return fmt.Errorf("backupCleanupIntervalHours must produce a positive valid duration")
+		}
 	}
 
 	return nil
