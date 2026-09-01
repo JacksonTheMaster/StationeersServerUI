@@ -106,7 +106,9 @@ func InitDetector() {
 			gamemgr.SetServerState(gamemgr.ServerStateLoadingMap)
 		case detectionmgr.EventServerHosted, detectionmgr.EventSessionStarting:
 			gamemgr.SetServerState(gamemgr.ServerStateHostingSession)
-		case detectionmgr.EventSessionRegistered:
+		case detectionmgr.EventSessionRegistered, detectionmgr.EventWorldSaved:
+			// Completing a world save proves the server is healthy and overrides
+			// transitional or uncertain startup state.
 			gamemgr.SetServerState(gamemgr.ServerStateRunning)
 		}
 	})

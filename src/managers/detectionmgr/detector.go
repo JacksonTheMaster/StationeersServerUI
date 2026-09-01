@@ -51,7 +51,6 @@ func (d *Detector) ProcessLogMessage(logMessage string) {
 		"Initialize engine version":           EventServerRunning,
 		"game manager initialized":            EventGameManagerReady,
 		"StartSession. config: {":             EventSessionStarting,
-		"registered with session #":           EventSessionRegistered,
 	}
 
 	for keyword, eventType := range keywordPatterns {
@@ -109,6 +108,17 @@ func (d *Detector) processRegexPatterns(logMessage string) {
 		pattern *regexp.Regexp
 		handler func(matches []string, logMessage string)
 	}{
+		{ // Session registration format and capitalization vary between game builds.
+			pattern: regexp.MustCompile(`(?i)registered\s+with\s+session\s*#?\s*\d+`),
+			handler: func(_ []string, logMessage string) {
+				d.triggerEvent(Event{
+					Type:      EventSessionRegistered,
+					Message:   "Session registered",
+					RawLog:    logMessage,
+					Timestamp: time.Now().Format(time.RFC3339),
+				})
+			},
+		},
 		{
 			// Player ready pattern
 			pattern: regexp.MustCompile(`Client\s+(.+)\s+\((\d+)\)\s+is\s+ready!?`),
@@ -175,8 +185,8 @@ func (d *Detector) processRegexPatterns(logMessage string) {
 			},
 		},
 		{
-			// World saved pattern (simpy detects "Saving - file created and zipped in" since preterrain detection using "World Saved:\s.*,\sBackupIndex:\s(\d+)" is no longer possible)
-			pattern: regexp.MustCompile(`Saving\s*-\s*file created and zipped in`),
+			// Current and historical save-completion messages.
+			pattern: regexp.MustCompile(`(?i)(?:serialized,\s*zipped\s+and\s+file\s+created|Saving\s*-\s*file\s+created\s+and\s+zipped)\s+in(?:\s+\d+\s*ms)?`),
 			handler: func(matches []string, logMessage string) {
 				d.triggerEvent(Event{
 					Type:      EventWorldSaved,
