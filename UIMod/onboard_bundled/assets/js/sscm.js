@@ -120,17 +120,10 @@ async function sendSSCMCommand(command) {
 // Append message to console
 function appendToConsole(message) {
     const consoleDiv = document.getElementById('console');
-    const commandContainer = consoleDiv.querySelector('.sscm-command-container');
     const messageElement = document.createElement('p');
     messageElement.textContent = message;
-    
-    if (commandContainer) {
-        consoleDiv.insertBefore(messageElement, commandContainer); // Insert before input
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
-    } else {
-        console.log("SSCM failed to insert command box");
-        return
-    }
+    consoleDiv.appendChild(messageElement);
+    consoleDiv.scrollTop = consoleDiv.scrollHeight;
 }
 
 // Enhanced autocomplete functionality

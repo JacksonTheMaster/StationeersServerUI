@@ -9,13 +9,17 @@
 
 .sscm-command-container {
     position: relative;
-    margin-top: 10px;
+    margin-top: 0;
     background: none;
     border-radius: 6px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
-    order: 1;
+    flex: 1;
+    height: 100%;
+    min-height: 52px;
+    box-sizing: border-box;
+    order: initial;
 }
 
 #sscm-command-input {

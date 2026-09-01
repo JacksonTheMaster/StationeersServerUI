@@ -256,7 +256,8 @@ function handleConsole() {
             suggestions.className = 'sscm-suggestions';
             
             commandContainer.append(prompt, input, suggestions);
-            consoleElement.appendChild(commandContainer);
+            const commandSlot = document.getElementById('sscm-command-slot') || consoleElement;
+            commandSlot.appendChild(commandContainer);
             consoleElement.scrollTop = consoleElement.scrollHeight;
         } catch (error) {
             console.error('Error checking SSCM enabled status:', error);

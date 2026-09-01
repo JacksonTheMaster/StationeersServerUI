@@ -206,6 +206,71 @@ button.panel-button.is-active {
   box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.75), 0 0 14px var(--primary-glow-soft);
 }
 
+.console-workspace #console-tab.active {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  animation: none;
+}
+.console-workspace #console,
+.console-workspace #detection-console,
+.console-workspace #backendlog-console {
+  box-sizing: border-box;
+  flex: 0 0 560px;
+  min-height: 560px;
+  overflow-y: auto;
+}
+
+.console-workspace #sscm-command-slot:empty {
+  display: none;
+}
+
+.console-workspace #sscm-command-slot {
+  flex: 0 0 52px;
+  height: 52px;
+  min-height: 52px;
+  margin-top: 10px;
+}
+
+.home-footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 18px auto 8px;
+}
+
+.home-community-link,
+.home-resource-link {
+  color: var(--primary);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: text-shadow var(--transition-normal);
+}
+
+.home-community-link {
+  margin-bottom: 12px;
+}
+
+.home-resource-links {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0 10px;
+  text-align: center;
+}
+
+.home-resource-separator {
+  color: var(--primary-dim);
+  user-select: none;
+}
+
+.home-community-link:hover,
+.home-resource-link:hover {
+  text-shadow: 0 0 10px var(--primary);
+}
 #players.side-panel,
 #backups.side-panel {
   grid-column: 2;
@@ -1276,4 +1341,14 @@ body.modal-open {
 .update-icon:hover {
   background: var(--danger);
   transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .console-workspace #console,
+  .console-workspace #detection-console,
+  .console-workspace #backendlog-console {
+    flex-basis: 320px;
+    height: 320px;
+    min-height: 320px;
+  }
 }

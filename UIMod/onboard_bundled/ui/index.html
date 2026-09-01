@@ -162,6 +162,7 @@
                 </div>
                 <div id="console-tab" class="tab-content active">
                     <div id="console"></div>
+                    <div id="sscm-command-slot"></div>
                 </div>
                 <div id="detection-tab" class="tab-content">
                     <div id="detection-console"></div>
@@ -260,18 +261,18 @@
                 alt="SSUI Discord" width="40" height="40">
         </a>
     </discord-button>
-    <span onclick="navigateTo('https://discord.gg/8n3vN92MyJ')" style="cursor: pointer; text-decoration: none;"
-        onmouseover="this.style.textDecoration='underline'"
-        onmouseout="this.style.textDecoration='none'">{{.UIText_Discord_Info}}</span>
-    <br>
-    <span onclick="navigateTo('/static/apiinfo.html')" style="cursor: pointer; text-decoration: none;"
-        onmouseover="this.style.textDecoration='underline'"
-        onmouseout="this.style.textDecoration='none'">{{.UIText_API_Info}}</span>
-    <br>
-    <span onclick="navigateTo('/static/credits.html')" style="cursor: pointer; text-decoration: none;"
-        onmouseover="this.style.textDecoration='underline'"
-        onmouseout="this.style.textDecoration='none'">Credits</span>
-    <br>
+    <div class="home-footer-links">
+        <a href="https://discord.gg/8n3vN92MyJ" target="_blank" rel="noopener noreferrer"
+            class="home-community-link">{{.UIText_Discord_Info}}</a>
+        <nav class="home-resource-links" aria-label="Resources">
+            <a href="/static/apiinfo.html" class="home-resource-link">Documentation</a>
+            <span class="home-resource-separator" aria-hidden="true">|</span>
+            <a href="/static/credits.html" class="home-resource-link">Credits</a>
+            <span class="home-resource-separator" aria-hidden="true">|</span>
+            <a href="https://ko-fi.com/jxsntm" target="_blank" rel="noopener noreferrer"
+                class="home-resource-link">Support SSUI</a>
+        </nav>
+    </div>
     <footer>
         <div class="copyright">
             Copyright © 2026 <a href="https://github.com/jacksonthemaster">JacksonTheMaster.</a>
