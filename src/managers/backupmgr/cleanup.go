@@ -139,40 +139,45 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 	)
 
 	for i, backup := range saves {
+		// Save timestamps are decoded from Windows FILETIME values as UTC. Apply
+		// retention buckets in the server's local calendar so window checks and
+		// daily/weekly/monthly grouping use the same day boundaries.
+		saveTime := backup.SaveTime.In(now.Location())
+
 		// Always keep the most recent N backups, but also update the retention
 		// trackers so the daily/weekly/monthly logic doesn't redundantly keep
 		// backups for periods already covered by KeepNewestCount.
 		if i < m.config.RetentionPolicy.KeepNewestCount {
-			updateRetentionTrackers(backup.SaveTime, &lastKeptDaily, &lastKeptWeekly, &lastKeptMonthly)
+			updateRetentionTrackers(saveTime, &lastKeptDaily, &lastKeptWeekly, &lastKeptMonthly)
 			continue
 		}
 
 		// Keep one backup per calendar day within the configured number of days.
 		// Compare full calendar day (year + day-of-year) instead of just day-of-month
 		// to avoid incorrectly treating e.g. Jan 15 and Feb 15 as the "same day".
-		if withinDailyWindow(backup.SaveTime, now, m.config.RetentionPolicy.DailyDays) {
-			if lastKeptDaily.IsZero() || !sameCalendarDay(backup.SaveTime, lastKeptDaily) {
-				lastKeptDaily = backup.SaveTime
+		if withinDailyWindow(saveTime, now, m.config.RetentionPolicy.DailyDays) {
+			if lastKeptDaily.IsZero() || !sameCalendarDay(saveTime, lastKeptDaily) {
+				lastKeptDaily = saveTime
 				continue
 			}
 		}
 
 		// Keep one backup per ISO calendar week within the configured week window.
-		if withinWeeklyWindow(backup.SaveTime, now, m.config.RetentionPolicy.WeeklyWeeks) {
-			year1, week1 := backup.SaveTime.ISOWeek()
+		if withinWeeklyWindow(saveTime, now, m.config.RetentionPolicy.WeeklyWeeks) {
+			year1, week1 := saveTime.ISOWeek()
 			year2, week2 := lastKeptWeekly.ISOWeek()
 			if lastKeptWeekly.IsZero() || year1 != year2 || week1 != week2 {
-				lastKeptWeekly = backup.SaveTime
+				lastKeptWeekly = saveTime
 				continue
 			}
 		}
 
 		// Keep one backup per calendar month within the configured month window.
-		if withinMonthlyWindow(backup.SaveTime, now, m.config.RetentionPolicy.MonthlyMonths) {
+		if withinMonthlyWindow(saveTime, now, m.config.RetentionPolicy.MonthlyMonths) {
 			if lastKeptMonthly.IsZero() ||
-				backup.SaveTime.Month() != lastKeptMonthly.Month() ||
-				backup.SaveTime.Year() != lastKeptMonthly.Year() {
-				lastKeptMonthly = backup.SaveTime
+				saveTime.Month() != lastKeptMonthly.Month() ||
+				saveTime.Year() != lastKeptMonthly.Year() {
+				lastKeptMonthly = saveTime
 				continue
 			}
 		}

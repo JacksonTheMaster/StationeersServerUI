@@ -76,7 +76,7 @@ func TestCleanSafeBackupDirAllowsAllRetentionRulesDisabled(t *testing.T) {
 func TestCleanSafeBackupDirKeepsConfiguredRestorePoints(t *testing.T) {
 	dir := t.TempDir()
 	now := time.Now()
-	newest := writeBackupSave(t, dir, "newest.save", now.Add(-time.Hour))
+	newest := writeBackupSave(t, dir, "newest.save", now)
 	daily := writeBackupSave(t, dir, "daily.save", startOfCalendarDay(now).Add(-12*time.Hour))
 	weekly := writeBackupSave(t, dir, "weekly.save", startOfISOWeek(now).AddDate(0, 0, -7).Add(12*time.Hour))
 	monthly := writeBackupSave(t, dir, "monthly.save", time.Date(now.Year(), now.Month(), 1, 12, 0, 0, 0, now.Location()).AddDate(0, -2, 0))
@@ -99,6 +99,19 @@ func TestCleanSafeBackupDirKeepsConfiguredRestorePoints(t *testing.T) {
 	assertFileExists(t, weekly, true)
 	assertFileExists(t, monthly, true)
 	assertFileExists(t, expired, false)
+}
+
+func TestCleanupUsesLocalCalendarForUTCMetadata(t *testing.T) {
+	location := time.FixedZone("UTC+2", 2*60*60)
+	now := time.Date(2026, time.September, 2, 0, 30, 0, 0, location)
+	newestUTC := now.UTC()
+	previousLocalDayUTC := time.Date(2026, time.September, 1, 12, 0, 0, 0, location).UTC()
+
+	var daily time.Time
+	updateRetentionTrackers(newestUTC.In(location), &daily, new(time.Time), new(time.Time))
+	if sameCalendarDay(previousLocalDayUTC.In(location), daily) {
+		t.Fatal("UTC metadata collapsed backups from different local calendar days")
+	}
 }
 
 func TestRetentionWindowsUseCalendarUnits(t *testing.T) {
