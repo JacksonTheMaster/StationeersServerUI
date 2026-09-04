@@ -119,7 +119,7 @@ func InstallSLP() (string, error) {
 	}
 
 	logger.Install.Info(fmt.Sprintf("✅ Stationeers Launch Pad %s installed to %s", selectedRelease.TagName, slpDir))
-	logger.Install.Info("💡 SLP contains its own auto-updater — future updates should happen automatically.")
+	logger.Install.Info("💡 SLP contains its own auto-updater - future updates should happen automatically.")
 	config.SetIsStationeersLaunchPadEnabled(true)
 
 	return selectedRelease.TagName, nil

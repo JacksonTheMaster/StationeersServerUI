@@ -18,7 +18,7 @@ function pollUpdateStatus() {
                 // Update modal text when opened
                 document.getElementById('modal-version-text').textContent = data.version;
             } else {
-                // No update — hide button and reset bounce
+                // No update - hide button and reset bounce
                 document.getElementById('update-button').style.display = 'none';
                 document.getElementById('update-button').classList.remove('bounce');
                 currentUpdateVersion = null;

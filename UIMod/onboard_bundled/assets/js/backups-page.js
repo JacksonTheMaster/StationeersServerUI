@@ -16,12 +16,12 @@
 
     function formatNumber(value) {
         const number = Number(value);
-        return Number.isFinite(number) ? number.toLocaleString() : '—';
+        return Number.isFinite(number) ? number.toLocaleString() : '-';
     }
 
     function formatBytes(value) {
         const bytes = Number(value);
-        if (!Number.isFinite(bytes) || bytes < 0) return '—';
+        if (!Number.isFinite(bytes) || bytes < 0) return '-';
         const units = ['B', 'KiB', 'MiB', 'GiB'];
         let amount = bytes;
         let unit = 0;
@@ -82,7 +82,7 @@
                     </div>
                     <div class="backup-page-meta">
                         <span><small>${escapeHTML(text.created)}</small><strong>${new Date(backup.SaveTime).toLocaleString()}</strong></span>
-                        <span><small>${escapeHTML(text.gameVersion)}</small><strong>${escapeHTML(summary.gameVersion || '—')}</strong></span>
+                        <span><small>${escapeHTML(text.gameVersion)}</small><strong>${escapeHTML(summary.gameVersion || '-')}</strong></span>
                     </div>
                 </div>
                 <div class="backup-page-core-metrics">

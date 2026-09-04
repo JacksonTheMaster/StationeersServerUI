@@ -40,7 +40,7 @@ func finishDiscordAction(err error) {
 	discordAction.busy = false
 	discordAction.result = "Completed"
 	if err != nil {
-		discordAction.result = "Failed — see the event log"
+		discordAction.result = "Failed - see the event log"
 	}
 	discordAction.changed = time.Now()
 	discordAction.Unlock()

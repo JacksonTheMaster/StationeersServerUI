@@ -243,7 +243,7 @@ func executePassedVote(result voteCastResult) {
 }
 
 func reportVoteExecutionFailure(kind string, err error) {
-	message := fmt.Sprintf("❌ **VOTED %s FAILED** — %s", strings.ToUpper(kind), err.Error())
+	message := fmt.Sprintf("❌ **VOTED %s FAILED** - %s", strings.ToUpper(kind), err.Error())
 	SendMessageToEventLogChannel(message)
 }
 
@@ -259,10 +259,10 @@ func activeVotesField() *discordgo.MessageEmbedField {
 	defer discordVotes.Unlock()
 	var lines []string
 	if vote := discordVotes.restart; vote != nil {
-		lines = append(lines, fmt.Sprintf("🔄 **VOTE FOR RESTART INITIATED** — %d/%d voted • ends <t:%d:R>", len(vote.voters), vote.required, vote.expiresAt.Unix()))
+		lines = append(lines, fmt.Sprintf("🔄 **VOTE FOR RESTART INITIATED** - %d/%d voted • ends <t:%d:R>", len(vote.voters), vote.required, vote.expiresAt.Unix()))
 	}
 	if vote := discordVotes.restore; vote != nil {
-		lines = append(lines, fmt.Sprintf("⏪ **VOTE TO RESTORE BACKUP %s INITIATED** — %d/%d voted • ends <t:%d:R>", vote.target.Name, len(vote.voters), vote.required, vote.expiresAt.Unix()))
+		lines = append(lines, fmt.Sprintf("⏪ **VOTE TO RESTORE BACKUP %s INITIATED** - %d/%d voted • ends <t:%d:R>", vote.target.Name, len(vote.voters), vote.required, vote.expiresAt.Unix()))
 	}
 	if len(lines) == 0 {
 		return nil
