@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"time"
@@ -31,6 +32,7 @@ type backupManifest struct {
 	Version int                     `json:"version"`
 	Backups map[string]backupRecord `json:"backups"`
 	Handled map[string]bool         `json:"handled,omitempty"`
+	Retired map[string]bool         `json:"retired,omitempty"`
 }
 
 func recordIdentity(record backupRecord) saveIdentity {
@@ -129,14 +131,34 @@ func loadInventory(m *BackupManager) error {
 			handled[name] = true
 		}
 	}
+	retired := make(map[string]bool)
+	for name, done := range manifest.Retired {
+		if done && filepath.IsLocal(filepath.FromSlash(name)) && isValidBackupFile(name) {
+			retired[name] = true
+		}
+	}
 	m.stateMu.Lock()
 	m.records = records
 	for name := range m.handled {
 		handled[name] = true
 	}
+	for name := range m.retired {
+		retired[name] = true
+	}
+	// A manifest entry means the archive was expected to exist. Unlike a
+	// retention deletion, its disappearance must not suppress another copy.
+	for name := range manifest.Backups {
+		if _, exists := records[name]; !exists && !retired[name] {
+			delete(handled, name)
+		}
+	}
 	m.handled = handled
+	m.retired = retired
 	m.loaded = true
-	m.revision++
+	if manifest.Version != manifestVersion || !maps.Equal(records, manifest.Backups) ||
+		!maps.Equal(handled, manifest.Handled) || !maps.Equal(retired, manifest.Retired) {
+		m.revision++
+	}
 	m.stateMu.Unlock()
 	return nil
 }
@@ -151,13 +173,7 @@ func saveManifest(m *BackupManager) error {
 		return nil
 	}
 	revision := m.revision
-	manifest := backupManifest{Version: manifestVersion, Backups: make(map[string]backupRecord, len(m.records)), Handled: make(map[string]bool, len(m.handled))}
-	for name, record := range m.records {
-		manifest.Backups[name] = record
-	}
-	for name, done := range m.handled {
-		manifest.Handled[name] = done
-	}
+	manifest := backupManifest{Version: manifestVersion, Backups: maps.Clone(m.records), Handled: maps.Clone(m.handled), Retired: maps.Clone(m.retired)}
 	m.stateMu.RUnlock()
 	file, err := os.CreateTemp(m.config.SafeBackupDir, ".backup-manifest-*.tmp")
 	if err != nil {

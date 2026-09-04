@@ -1,7 +1,6 @@
 package backupmgr
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
@@ -76,11 +75,6 @@ func InitGlobalBackupManager(bmconfig BackupConfig) error {
 	}
 	managerMu.Unlock()
 
-	// Do not handle old terrain and save system backups
-	if !config.GetIsNewTerrainAndSaveSystem() {
-		return fmt.Errorf("the old terrain system and save format are no longer supported by backup manager. Please switch to the new terrain and save system if you wish to continue to use new SSUI features. Alternatively, you can continue to use the old system by using an older version of SSUI (5.8 and below), disabling auto-updates via the config.json file")
-	}
-
 	// Start the backup manager in a goroutine to avoid blocking
 	go func(m *BackupManager) {
 		if err := m.Start(bmconfig.Identifier); err != nil {
@@ -88,7 +82,7 @@ func InitGlobalBackupManager(bmconfig BackupConfig) error {
 		}
 	}(manager)
 
-	logger.Backup.Infof("%s Backup manager reloaded successfully", bmconfig.Identifier)
+	logger.Backup.Debugf("%s Backup manager reload scheduled", bmconfig.Identifier)
 	return nil
 }
 

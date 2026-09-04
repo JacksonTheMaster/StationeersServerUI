@@ -57,6 +57,7 @@ type BackupManager struct {
 	loaded        bool
 	records       map[string]backupRecord
 	handled       map[string]bool
+	retired       map[string]bool // Intentional retention deletions while the source still exists.
 	observed      map[string]saveObservation
 	pending       map[string]saveIdentity
 	revision      uint64

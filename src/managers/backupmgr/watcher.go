@@ -83,7 +83,61 @@ func pollBackups(m *BackupManager) error {
 		return err
 	}
 	// A slow directory read must not count as time spent observing an unchanged file.
+	if err := reconcileSourceArchives(m, files); err != nil {
+		return err
+	}
 	return observeBackups(m, files, time.Now())
+}
+
+// Check only archives whose original still exists (normally five), not the whole
+// inventory. Copy and retention own the same lock; a busy worker can wait until
+// the next poll for this check without stopping source observations.
+func reconcileSourceArchives(m *BackupManager, sources map[string]saveIdentity) error {
+	if !m.mu.TryLock() {
+		return nil
+	}
+	defer m.mu.Unlock()
+	expected := make([]string, 0, len(sources))
+	m.stateMu.RLock()
+	for path := range sources {
+		name, err := backupName(m.config.BackupDir, path)
+		if err == nil {
+			if _, exists := m.records[name]; exists {
+				expected = append(expected, name)
+			}
+		}
+	}
+	m.stateMu.RUnlock()
+	if len(expected) == 0 {
+		return nil
+	}
+	// Do not turn an unavailable destination into a collection of missing files.
+	stat, err := os.Stat(m.config.SafeBackupDir)
+	if err != nil {
+		return err
+	}
+	if !stat.IsDir() {
+		return fmt.Errorf("safe backup folder is not a directory")
+	}
+	var missing []string
+	for _, name := range expected {
+		_, err := os.Lstat(filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name)))
+		if errors.Is(err, os.ErrNotExist) {
+			missing = append(missing, name)
+		} else if err != nil {
+			return err
+		}
+	}
+	m.stateMu.Lock()
+	for _, name := range missing {
+		delete(m.records, name)
+		if !m.retired[name] {
+			delete(m.handled, name)
+		}
+		m.revision++
+	}
+	m.stateMu.Unlock()
+	return nil
 }
 
 func observeBackups(m *BackupManager, files map[string]saveIdentity, now time.Time) error {
@@ -96,6 +150,12 @@ func observeBackups(m *BackupManager, files map[string]saveIdentity, now time.Ti
 		current[name] = identity
 	}
 	m.stateMu.Lock()
+	for name := range m.retired {
+		if _, exists := current[name]; !exists {
+			delete(m.retired, name)
+			m.revision++
+		}
+	}
 	for name := range m.handled {
 		if _, exists := current[name]; !exists {
 			delete(m.handled, name)
@@ -114,7 +174,7 @@ func observeBackups(m *BackupManager, files map[string]saveIdentity, now time.Ti
 			m.handled[name] = true
 			m.revision++
 		}
-		if archived || m.handled[name] {
+		if archived || m.handled[name] || m.retired[name] {
 			delete(m.observed, name)
 			delete(m.pending, name)
 			continue
@@ -149,7 +209,14 @@ func inheritDetectorState(next, old *BackupManager) {
 		next.observed[name] = observation
 	}
 	for name, handled := range old.handled {
-		next.handled[name] = handled
+		// Existing archives are reconciled from disk. Carrying their processed
+		// flag alone could hide a lost copy if the last manifest write failed.
+		if _, archived := old.records[name]; !archived || old.retired[name] {
+			next.handled[name] = handled
+		}
+	}
+	for name, retired := range old.retired {
+		next.retired[name] = retired
 	}
 }
 

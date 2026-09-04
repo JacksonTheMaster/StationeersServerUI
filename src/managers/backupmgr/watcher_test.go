@@ -17,6 +17,9 @@ func pollBackupsAt(m *BackupManager, at time.Time) error {
 	if err != nil {
 		return err
 	}
+	if err := reconcileSourceArchives(m, files); err != nil {
+		return err
+	}
 	return observeBackups(m, files, at)
 }
 

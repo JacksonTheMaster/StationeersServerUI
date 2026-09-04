@@ -2,6 +2,7 @@ package backupmgr
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -59,8 +60,26 @@ func (m *BackupManager) Start(identifier string) error {
 	}()
 
 	// Archives can be analyzed before the game creates autosave/.
-	if err := <-m.Initialize(identifier); err != nil {
-		return fmt.Errorf("load backup inventory: %w", err)
+	for {
+		err := <-m.Initialize(identifier)
+		if err == nil {
+			break
+		}
+		// A mount or manifest can be temporarily unreadable. Configuration errors
+		// and unsupported manifest versions still need an explicit correction.
+		var pathErr *os.PathError
+		var linkErr *os.LinkError
+		if !errors.As(err, &pathErr) && !errors.As(err, &linkErr) {
+			return fmt.Errorf("load backup inventory: %w", err)
+		}
+		logger.Backup.Warnf("%s Backup storage unavailable, retrying in %s: %v", identifier, m.config.WaitTime, err)
+		timer := time.NewTimer(m.config.WaitTime)
+		select {
+		case <-m.ctx.Done():
+			timer.Stop()
+			return m.ctx.Err()
+		case <-timer.C:
+		}
 	}
 	if err := m.ctx.Err(); err != nil {
 		return err
@@ -236,6 +255,7 @@ func NewBackupManager(cfg BackupConfig) *BackupManager {
 		config:   cfg,
 		records:  make(map[string]backupRecord),
 		handled:  make(map[string]bool),
+		retired:  make(map[string]bool),
 		observed: make(map[string]saveObservation),
 		pending:  make(map[string]saveIdentity),
 		wake:     make(chan struct{}, 1),

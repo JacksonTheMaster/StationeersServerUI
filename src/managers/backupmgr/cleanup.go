@@ -184,6 +184,7 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 		lastKeptMonthly time.Time
 	)
 
+	var expired []BackupSaveFile
 	knownIndex := 0
 	for _, backup := range saves {
 		// Never make retention decisions using a placeholder timestamp.
@@ -235,7 +236,36 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 			}
 		}
 
-		// If we get here, the backup should be deleted
+		name, _ := backupName(m.config.SafeBackupDir, backup.SaveFile)
+		m.stateMu.RLock()
+		hasSource := m.handled[name]
+		m.stateMu.RUnlock()
+		// A file already missing before cleanup is a repair candidate, not an
+		// intentional deletion. Check before recording any retention intent.
+		if hasSource {
+			if _, err := checkBackupIdentity(m, backup); err != nil {
+				return err
+			}
+		}
+		expired = append(expired, backup)
+	}
+
+	// Record intentional deletions before removing files, including across a
+	// crash between removal and the final manifest write. Only live sources
+	// need tombstones; the detector drops them when the game rotates them out.
+	m.stateMu.Lock()
+	for _, backup := range expired {
+		name, _ := backupName(m.config.SafeBackupDir, backup.SaveFile)
+		if m.handled[name] && !m.retired[name] {
+			m.retired[name] = true
+			m.revision++
+		}
+	}
+	m.stateMu.Unlock()
+	if err := saveManifest(m); err != nil {
+		return err
+	}
+	for _, backup := range expired {
 		if err := deleteBackup(m, backup); err != nil {
 			return err
 		}
@@ -245,22 +275,9 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 }
 
 func deleteBackup(m *BackupManager, saveFile BackupSaveFile) error {
-	name, err := backupName(m.config.SafeBackupDir, saveFile.SaveFile)
+	name, err := checkBackupIdentity(m, saveFile)
 	if err != nil {
 		return err
-	}
-	m.stateMu.RLock()
-	record, exists := m.records[name]
-	m.stateMu.RUnlock()
-	if !exists {
-		return fmt.Errorf("archive is no longer in the inventory: %s", name)
-	}
-	identity, err := identifySave(saveFile.SaveFile)
-	if err != nil {
-		return err
-	}
-	if identity != recordIdentity(record) {
-		return fmt.Errorf("archive changed before retention cleanup: %s", name)
 	}
 	if err := os.Remove(saveFile.SaveFile); err != nil {
 		return err
@@ -270,4 +287,25 @@ func deleteBackup(m *BackupManager, saveFile BackupSaveFile) error {
 	m.revision++
 	m.stateMu.Unlock()
 	return nil
+}
+
+func checkBackupIdentity(m *BackupManager, saveFile BackupSaveFile) (string, error) {
+	name, err := backupName(m.config.SafeBackupDir, saveFile.SaveFile)
+	if err != nil {
+		return "", err
+	}
+	m.stateMu.RLock()
+	record, exists := m.records[name]
+	m.stateMu.RUnlock()
+	if !exists {
+		return "", fmt.Errorf("archive is no longer in the inventory: %s", name)
+	}
+	identity, err := identifySave(saveFile.SaveFile)
+	if err != nil {
+		return "", err
+	}
+	if identity != recordIdentity(record) {
+		return "", fmt.Errorf("archive changed before retention cleanup: %s", name)
+	}
+	return name, nil
 }

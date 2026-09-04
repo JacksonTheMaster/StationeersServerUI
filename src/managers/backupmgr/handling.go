@@ -94,7 +94,7 @@ func handleBackup(m *BackupManager, name string, expected saveIdentity) error {
 	}
 	m.stateMu.RLock()
 	_, exists := m.records[name]
-	done := m.handled[name]
+	done := m.handled[name] || m.retired[name]
 	m.stateMu.RUnlock()
 	if exists || done {
 		return nil
@@ -166,7 +166,7 @@ func scanCopiedBackup(ctx context.Context, path string, identity saveIdentity) (
 		return backupRecord{}, err
 	}
 	record := backupRecord{Size: identity.size, ModifiedNS: identity.modifiedNS, SummaryReady: true, Analysis: SaveAnalysis{SaveSummary: summary}}
-	analysis, scanErr := AnalyzeSave(ctx, path)
+	analysis, scanErr := analyzeWorld(ctx, path, summary)
 	if scanErr == nil {
 		record.Analysis = analysis
 		record.ScanVersion = analysisVersion
@@ -276,12 +276,15 @@ func analyzeBackup(ctx context.Context, m *BackupManager, name string) (SaveAnal
 	expected := recordIdentity(record)
 	summary, summaryErr := ReadSaveSummary(path)
 	if summaryErr == nil {
-		record.Analysis.SaveSummary = summary
+		record.Analysis = SaveAnalysis{SaveSummary: summary}
 		record.SummaryReady = true
 	}
-	scanErr := validateBackupSave(ctx, path, expected)
+	scanErr := summaryErr
 	if scanErr == nil {
-		record.Analysis, scanErr = AnalyzeSave(ctx, path)
+		scanErr = validateBackupSave(ctx, path, expected)
+	}
+	if scanErr == nil {
+		record.Analysis, scanErr = analyzeWorld(ctx, path, summary)
 	}
 	if scanErr == nil {
 		record.SummaryReady = true
