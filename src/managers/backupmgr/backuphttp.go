@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
@@ -14,7 +15,14 @@ import (
 
 // HTTPHandler provides HTTP endpoints for backup operations
 type HTTPHandler struct {
+	mu      sync.RWMutex
 	manager *BackupManager
+}
+
+func handlerManager(h *HTTPHandler) *BackupManager {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.manager
 }
 
 type backupListResponse struct {
@@ -33,7 +41,8 @@ func NewHTTPHandler(manager *BackupManager) *HTTPHandler {
 
 // ListBackupsHandler handles requests to list available backups
 func (h *HTTPHandler) ListBackupsHandler(w http.ResponseWriter, r *http.Request) {
-	if h.manager == nil {
+	manager := handlerManager(h)
+	if manager == nil {
 		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
 		return
 	}
@@ -48,7 +57,7 @@ func (h *HTTPHandler) ListBackupsHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	backups, err := h.manager.ListBackups(limit)
+	backups, err := manager.ListBackups(limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -81,7 +90,7 @@ func (h *HTTPHandler) ListBackupsHandler(w http.ResponseWriter, r *http.Request)
 			SaveFile: backups[i].SaveFile,
 			SaveTime: backups[i].SaveTime,
 		}
-		if includeSummary {
+		if includeSummary && backups[i].SummaryReady {
 			response[i].Summary = &backups[i].Summary
 		}
 	}
@@ -93,12 +102,13 @@ func (h *HTTPHandler) ListBackupsHandler(w http.ResponseWriter, r *http.Request)
 
 // AnalyzeBackupHandler returns lazy, cached world.xml statistics for one backup.
 func (h *HTTPHandler) AnalyzeBackupHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed, use GET", http.StatusMethodNotAllowed)
+	manager := handlerManager(h)
+	if manager == nil {
+		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
 		return
 	}
-	if h.manager == nil {
-		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed, use GET", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -107,7 +117,7 @@ func (h *HTTPHandler) AnalyzeBackupHandler(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "valid index parameter is required", http.StatusBadRequest)
 		return
 	}
-	analysis, err := h.manager.AnalyzeBackup(r.Context(), index)
+	analysis, err := getBackupAnalysis(r.Context(), manager, index, r.URL.Query().Get("file"))
 	if err != nil {
 		if strings.Contains(err.Error(), "out of range") {
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -125,6 +135,11 @@ func (h *HTTPHandler) AnalyzeBackupHandler(w http.ResponseWriter, r *http.Reques
 
 // RestoreBackupHandler handles requests to restore a backup
 func (h *HTTPHandler) RestoreBackupHandler(w http.ResponseWriter, r *http.Request) {
+	manager := handlerManager(h)
+	if manager == nil {
+		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
+		return
+	}
 	logger.Web.Debug("Received restore request")
 	indexStr := r.URL.Query().Get("index")
 	if indexStr == "" {
@@ -140,7 +155,12 @@ func (h *HTTPHandler) RestoreBackupHandler(w http.ResponseWriter, r *http.Reques
 
 	gamemgr.InternalStopServer()
 
-	if err := h.manager.RestoreBackup(index); err != nil {
+	if file := r.URL.Query().Get("file"); file != "" {
+		err = manager.RestoreBackupFile(file)
+	} else {
+		err = manager.RestoreBackup(index)
+	}
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -150,11 +170,17 @@ func (h *HTTPHandler) RestoreBackupHandler(w http.ResponseWriter, r *http.Reques
 
 // DownloadBackupRequest represents the JSON request for downloading a backup
 type DownloadBackupRequest struct {
-	Index int `json:"index"`
+	Index    int    `json:"index"`
+	SaveFile string `json:"saveFile,omitempty"`
 }
 
 // DownloadBackupHandler handles requests to download a backup file
 func (h *HTTPHandler) DownloadBackupHandler(w http.ResponseWriter, r *http.Request) {
+	manager := handlerManager(h)
+	if manager == nil {
+		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
+		return
+	}
 	logger.Web.Debug("Received backup download request")
 
 	if r.Method != http.MethodPost {
@@ -172,7 +198,7 @@ func (h *HTTPHandler) DownloadBackupHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	backupData, err := h.manager.GetBackupFileData(req.Index)
+	backupData, err := getBackupFileData(manager, req.Index, req.SaveFile)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		if strings.Contains(err.Error(), "out of range") {

@@ -18,6 +18,9 @@ func TestValidateBackupSave(t *testing.T) {
 		valid             bool
 	}{
 		{"complete", "<WorldMetaData></WorldMetaData>", "<WorldData><Things/></WorldData>", true},
+		{"game text with raw controls", "<WorldMetaData/>", "<WorldData><Text>label\x0bvalue\x01</Text></WorldData>", true},
+		{"game text with control references", "<WorldMetaData/>", "<WorldData><Text>label&#xB;value&#11;</Text></WorldData>", true},
+		{"controls do not repair truncation", "<WorldMetaData/>", "<WorldData><Text>label\x0b</Text>", false},
 		{"empty roots", "<WorldMetaData/>", "<WorldData/>", true},
 		{"trailing whitespace", "<WorldMetaData/>\n", "<WorldData/>\n", true},
 		{"incomplete world", "<WorldMetaData/>", "<WorldData><Things/>", false},
@@ -92,76 +95,66 @@ func TestValidateBackupSaveRejectsBrokenArchives(t *testing.T) {
 	}
 }
 
-func TestPollBackupsRetriesAndDeduplicates(t *testing.T) {
-	ctx := context.Background()
+func TestPollBackupsRequiresTwoUnchangedObservations(t *testing.T) {
 	root := t.TempDir()
-	old := filepath.Join(root, "old.save")
-	if err := os.WriteFile(old, []byte("startup baseline"), 0600); err != nil {
-		t.Fatal(err)
-	}
-	handled, err := scanBackupFiles(ctx, root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	path := filepath.Join(root, "new.save")
-	if err := os.WriteFile(path, []byte("still writing"), 0600); err != nil {
-		t.Fatal(err)
-	}
-	calls := 0
-	fail := true
-	copyBackup := func(got string) error {
-		if got != path {
-			t.Fatalf("unexpected copy: %s", got)
-		}
-		calls++
-		if fail {
-			return errors.New("temporary copy failure")
-		}
-		return nil
-	}
-	poll := func() {
-		t.Helper()
-		if err := pollBackups(ctx, root, handled, copyBackup); err != nil {
-			t.Fatal(err)
-		}
-	}
-	poll()
-	if calls != 0 {
-		t.Fatal("copied incomplete save")
-	}
+	m := NewBackupManager(BackupConfig{BackupDir: root, SafeBackupDir: t.TempDir()})
+	path := filepath.Join(root, "130226_173454_auto.save")
 	if err := copyFile(analysisFixture(t), path); err != nil {
 		t.Fatal(err)
 	}
-	poll()
-	if calls != 1 {
-		t.Fatal("did not try completed save")
+	now := time.Now()
+	poll := func(at time.Time) {
+		t.Helper()
+		if err := pollBackups(m, at); err != nil {
+			t.Fatal(err)
+		}
 	}
-	fail = false
-	poll()
-	poll()
-	if calls != 2 {
-		t.Fatalf("retry/dedup: got %d copy attempts", calls)
+	poll(now)
+	if len(m.pending) != 0 {
+		t.Fatal("queued on first observation")
 	}
-	stamp := time.Now().Add(time.Hour)
+	poll(now.Add(44 * time.Second))
+	if len(m.pending) != 0 {
+		t.Fatal("queued before a full interval")
+	}
+	stamp := now.Add(time.Hour)
 	if err := os.Chtimes(path, stamp, stamp); err != nil {
 		t.Fatal(err)
 	}
-	poll()
-	if calls != 3 {
-		t.Fatal("did not detect modified save")
+	poll(now.Add(45 * time.Second))
+	if len(m.pending) != 0 {
+		t.Fatal("queued changed file")
 	}
-	if err := pollBackups(ctx, filepath.Join(root, "offline"), handled, copyBackup); err == nil {
+	poll(now.Add(90 * time.Second))
+	name, identity := nextAutosave(m)
+	if name == "" {
+		t.Fatal("did not queue stable save")
+	}
+	if err := handleBackup(m, name, identity); err != nil {
+		t.Fatal(err)
+	}
+	// Dated filenames remain archival keys even if a source is modified.
+	if err := os.Chtimes(path, now, now); err != nil {
+		t.Fatal(err)
+	}
+	poll(now.Add(135 * time.Second))
+	if len(m.pending) != 0 {
+		t.Fatal("queued an already archived name")
+	}
+	m.config.BackupDir = filepath.Join(root, "offline")
+	if err := pollBackups(m, now.Add(180*time.Second)); err == nil {
 		t.Fatal("expected scan error")
 	}
-	if len(handled) != 2 {
-		t.Fatal("scan error discarded baseline")
+	if !m.handled[name] {
+		t.Fatal("scan failure discarded processed state")
 	}
+	m.config.BackupDir = root
 	if err := os.Remove(path); err != nil {
 		t.Fatal(err)
 	}
-	poll()
-	if _, exists := handled[path]; exists {
-		t.Fatal("deleted file still tracked")
+	poll(now.Add(225 * time.Second))
+	if len(m.handled) != 0 {
+		t.Fatal("removed sources still consume processed state")
 	}
 }
 
@@ -190,7 +183,7 @@ func TestBackupManagerReloadCancelsInitialization(t *testing.T) {
 	select {
 	case err := <-result:
 		// Initialization retains its legacy formatted cancellation message.
-		if err == nil || !strings.Contains(err.Error(), context.Canceled.Error()) {
+		if err != nil && !strings.Contains(err.Error(), context.Canceled.Error()) {
 			t.Fatalf("got %v, want cancellation", err)
 		}
 	case <-time.After(2 * time.Second):

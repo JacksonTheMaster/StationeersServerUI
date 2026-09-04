@@ -202,7 +202,7 @@ func executePassedVote(result voteCastResult) {
 			reportVoteExecutionFailure("restart", err)
 		}
 	case voteRestore:
-		manager := backupmgr.GlobalBackupManager
+		manager := backupmgr.CurrentBackupManager()
 		if manager == nil {
 			reportVoteExecutionFailure("restore", fmt.Errorf("backup manager is not initialized"))
 			return

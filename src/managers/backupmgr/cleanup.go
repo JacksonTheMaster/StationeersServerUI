@@ -14,6 +14,9 @@ import (
 func (m *BackupManager) Cleanup() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if err := m.ctx.Err(); err != nil {
+		return err
+	}
 
 	// Verify and clean the safe backup directory first. If it is unavailable,
 	// leave the original autosaves untouched so cleanup cannot remove the only
@@ -46,6 +49,12 @@ func (m *BackupManager) cleanBackupDir() error {
 		}
 
 		fullPath := filepath.Join(m.config.BackupDir, file.Name())
+		m.stateMu.RLock()
+		archived := m.handled[file.Name()]
+		m.stateMu.RUnlock()
+		if !archived {
+			continue
+		}
 		info, err := os.Stat(fullPath)
 		if err != nil {
 			continue
@@ -123,8 +132,34 @@ func updateRetentionTrackers(saveTime time.Time, lastKeptDaily, lastKeptWeekly, 
 
 // cleanSafeBackupDir cleans the safe backup directory with retention policy
 func (m *BackupManager) cleanSafeBackupDir() error {
+	// A disconnected mount must not turn retention into deletion of source saves.
+	if _, err := os.ReadDir(m.config.SafeBackupDir); err != nil {
+		return err
+	}
 	saves, err := m.getBackupSaveFiles()
 	if err != nil {
+		return err
+	}
+	// There are normally only five source saves. Persist their processed names
+	// once before any deletions, not one full manifest write per removed archive.
+	if m.config.BackupDir != "" {
+		sources, err := scanBackupFiles(m.ctx, m.config.BackupDir)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		if err == nil {
+			m.stateMu.Lock()
+			for path := range sources {
+				name, _ := backupName(m.config.BackupDir, path)
+				if _, exists := m.records[name]; exists && !m.handled[name] {
+					m.handled[name] = true
+					m.revision++
+				}
+			}
+			m.stateMu.Unlock()
+		}
+	}
+	if err := saveManifest(m); err != nil {
 		return err
 	}
 
@@ -141,6 +176,10 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 	)
 
 	for i, backup := range saves {
+		// Never make retention decisions using a placeholder timestamp.
+		if !backup.SummaryReady {
+			continue
+		}
 		// Save timestamps are decoded from Windows FILETIME values as UTC. Apply
 		// retention buckets in the server's local calendar so window checks and
 		// daily/weekly/monthly grouping use the same day boundaries.
@@ -185,15 +224,25 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 		}
 
 		// If we get here, the backup should be deleted
-		m.deleteBackupGroup(backup)
+		if err := deleteBackup(m, backup); err != nil {
+			return err
+		}
 	}
 
-	return nil
+	return saveManifest(m)
 }
 
-// deleteBackupGroup removes all files in a backup group
-func (m *BackupManager) deleteBackupGroup(saveFile BackupSaveFile) {
-	if err := os.Remove(saveFile.SaveFile); err != nil {
-		logger.Backup.Error("Failed to delete backup file " + saveFile.SaveFile + ": " + err.Error())
+func deleteBackup(m *BackupManager, saveFile BackupSaveFile) error {
+	name, err := backupName(m.config.SafeBackupDir, saveFile.SaveFile)
+	if err != nil {
+		return err
 	}
+	if err := os.Remove(saveFile.SaveFile); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	m.stateMu.Lock()
+	delete(m.records, name)
+	m.revision++
+	m.stateMu.Unlock()
+	return nil
 }

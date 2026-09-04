@@ -56,7 +56,7 @@ func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
 	protectedMux.HandleFunc("/api/v2/server/status", GetGameServerRunState)
 	protectedMux.HandleFunc("/api/v2/server/status/connectedplayers", HandleConnectedPlayersList)
 
-	backupHandler := backupmgr.NewHTTPHandler(backupmgr.GlobalBackupManager)
+	backupHandler := backupmgr.NewHTTPHandler(backupmgr.CurrentBackupManager())
 	protectedMux.HandleFunc("/api/v2/backups", backupHandler.ListBackupsHandler)
 	protectedMux.HandleFunc("/api/v2/backups/analyze", backupHandler.AnalyzeBackupHandler)
 	protectedMux.HandleFunc("/api/v2/backups/restore", backupHandler.RestoreBackupHandler)

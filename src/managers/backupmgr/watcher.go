@@ -42,56 +42,97 @@ func scanBackupFiles(ctx context.Context, root string) (map[string]saveIdentity,
 	return files, err
 }
 
-// watchBackups preserves the startup baseline, then retries new/changed saves
-// until validation and the existing copy operation succeed. One goroutine owns
-// this state; there are no per-file timers or background copy jobs.
-func (m *BackupManager) watchBackups(identifier string, handled map[string]saveIdentity) {
+type saveObservation struct {
+	identity saveIdentity
+	since    time.Time
+}
+
+func watchBackups(m *BackupManager) {
 	defer m.wg.Done()
 	ticker := time.NewTicker(m.config.WaitTime)
 	defer ticker.Stop()
 	for {
+		if err := pollBackups(m, time.Now()); err != nil && m.ctx.Err() == nil && !errors.Is(err, os.ErrNotExist) {
+			logger.Backup.Warnf("%s Autosave scan failed: %v", m.config.Identifier, err)
+		}
 		select {
 		case <-m.ctx.Done():
 			return
 		case <-ticker.C:
-			if err := pollBackups(m.ctx, m.config.BackupDir, handled, m.handleNewBackup); err != nil && m.ctx.Err() == nil {
-				logger.Backup.Warnf("%s Autosave scan failed: %v", identifier, err)
-			}
 		}
 	}
 }
 
-func pollBackups(ctx context.Context, root string, handled map[string]saveIdentity, copyBackup func(string) error) error {
-	files, err := scanBackupFiles(ctx, root)
+// An unsuccessful directory read must not erase observations or processed names.
+func pollBackups(m *BackupManager, now time.Time) error {
+	files, err := scanBackupFiles(m.ctx, m.config.BackupDir)
 	if err != nil {
 		return err
 	}
-	for path := range handled {
-		if _, exists := files[path]; !exists {
-			delete(handled, path)
+	current := make(map[string]saveIdentity, len(files))
+	for path, identity := range files {
+		name, err := backupName(m.config.BackupDir, path)
+		if err != nil {
+			return err
+		}
+		current[name] = identity
+	}
+	m.stateMu.Lock()
+	for name := range m.handled {
+		if _, exists := current[name]; !exists {
+			delete(m.handled, name)
+			m.revision++
 		}
 	}
-	for path, identity := range files {
-		if err := ctx.Err(); err != nil {
-			return err
+	for name := range m.observed {
+		if _, exists := current[name]; !exists {
+			delete(m.observed, name)
+			delete(m.pending, name)
 		}
-		if previous, ok := handled[path]; ok && previous == identity {
+	}
+	for name, identity := range current {
+		_, archived := m.records[name]
+		if archived && !m.handled[name] {
+			m.handled[name] = true
+			m.revision++
+		}
+		if archived || m.handled[name] {
+			delete(m.observed, name)
+			delete(m.pending, name)
 			continue
 		}
-		if err := validateBackupSave(ctx, path, identity); err != nil {
-			logger.Backup.Debugf("Autosave not ready, will retry %s: %v", path, err)
+		previous, exists := m.observed[name]
+		if !exists || previous.identity != identity {
+			m.observed[name] = saveObservation{identity: identity, since: now}
+			delete(m.pending, name)
 			continue
 		}
-		if err := ctx.Err(); err != nil {
-			return err
+		if now.Sub(previous.since) >= m.config.WaitTime {
+			m.pending[name] = identity
 		}
-		if err := copyBackup(path); err != nil {
-			logger.Backup.Warnf("Autosave copy failed, will retry %s: %v", path, err)
-			continue
-		}
-		handled[path] = identity
+	}
+	m.stateMu.Unlock()
+	select {
+	case m.wake <- struct{}{}:
+	default:
 	}
 	return nil
+}
+
+// Called after old.Shutdown. Only identical source and destination folders share state.
+func inheritDetectorState(next, old *BackupManager) {
+	if old == nil || filepath.Clean(next.config.BackupDir) != filepath.Clean(old.config.BackupDir) ||
+		filepath.Clean(next.config.SafeBackupDir) != filepath.Clean(old.config.SafeBackupDir) {
+		return
+	}
+	old.stateMu.RLock()
+	defer old.stateMu.RUnlock()
+	for name, observation := range old.observed {
+		next.observed[name] = observation
+	}
+	for name, handled := range old.handled {
+		next.handled[name] = handled
+	}
 }
 
 // Validation reads both XML members to EOF, checking XML structure and ZIP CRCs.
@@ -153,7 +194,7 @@ func validateBackupSave(ctx context.Context, path string, expected saveIdentity)
 }
 
 func validateSaveXML(ctx context.Context, reader io.Reader, root string) error {
-	decoder := xml.NewDecoder(&contextReader{ctx: ctx, reader: reader})
+	decoder := xml.NewDecoder(&saveXMLReader{reader: &contextReader{ctx: ctx, reader: reader}})
 	depth, roots := 0, 0
 	for {
 		token, err := decoder.Token()

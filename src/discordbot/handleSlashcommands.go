@@ -172,7 +172,7 @@ func handleRestore(s *discordgo.Session, i *discordgo.InteractionCreate, data Em
 		return err
 	}
 	gamemgr.InternalStopServer()
-	if err := backupmgr.GlobalBackupManager.RestoreBackup(index); err != nil {
+	if err := backupmgr.CurrentBackupManager().RestoreBackup(index); err != nil {
 		SendMessageToControlChannel(fmt.Sprintf("❌Failed to restore backup %d: %v", index, err))
 		SendMessageToEventLogChannel("⚠️Restore command failed")
 		return nil
@@ -194,7 +194,7 @@ func handleDownload(s *discordgo.Session, i *discordgo.InteractionCreate, data E
 
 	// If no index provided, get the most recent backup index
 	if index == -1 {
-		backups, err := backupmgr.GlobalBackupManager.ListBackups(1)
+		backups, err := backupmgr.CurrentBackupManager().ListBackups(1)
 		if err != nil || len(backups) == 0 {
 			data.Title, data.Description = "Download Failed", "No backups available"
 			data.Fields = []EmbedField{{Name: "Error", Value: "Could not find any backups", Inline: true}}
@@ -214,7 +214,7 @@ func handleDownload(s *discordgo.Session, i *discordgo.InteractionCreate, data E
 }
 
 func sendBackupToChannel(s *discordgo.Session, channelID string, index int) {
-	backupData, err := backupmgr.GlobalBackupManager.GetBackupFileData(index)
+	backupData, err := backupmgr.CurrentBackupManager().GetBackupFileData(index)
 	if err != nil {
 		s.ChannelMessageSend(channelID, fmt.Sprintf("❌ Failed to download backup #%d: %v", index, err))
 		return
@@ -255,7 +255,7 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, data Embed
 		}
 	}
 
-	backups, err := backupmgr.GlobalBackupManager.ListBackups(limit)
+	backups, err := backupmgr.CurrentBackupManager().ListBackups(limit)
 	if err != nil {
 		data.Title, data.Description = "List Failed", "Error fetching backups"
 		data.Fields = []EmbedField{{Name: "Error", Value: "Failed to fetch backup list", Inline: true}}

@@ -20,7 +20,7 @@ func initializeDiscordBackupSummary() {
 		refreshStatusPanel()
 	})
 
-	manager := backupmgr.GlobalBackupManager
+	manager := backupmgr.CurrentBackupManager()
 	if manager == nil {
 		return
 	}
@@ -29,7 +29,7 @@ func initializeDiscordBackupSummary() {
 		logger.Discord.Debug("Latest backup statistics are not available yet: " + err.Error())
 		return
 	}
-	if len(backups) > 0 {
+	if len(backups) > 0 && backups[0].SummaryReady {
 		setLatestBackupSummary(backups[0].Summary)
 	}
 }

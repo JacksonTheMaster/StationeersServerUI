@@ -67,10 +67,10 @@ func buildVoteMenuOptions() []discordgo.SelectMenuOption {
 	}
 	discordVotes.Unlock()
 
-	if backupmgr.GlobalBackupManager == nil {
+	if backupmgr.CurrentBackupManager() == nil {
 		return options
 	}
-	backups, err := backupmgr.GlobalBackupManager.ListBackups(3)
+	backups, err := backupmgr.CurrentBackupManager().ListBackups(3)
 	if err != nil {
 		logger.Discord.Debug("Could not populate restore vote menu: " + err.Error())
 		return options
@@ -148,10 +148,10 @@ func handleVoteSelection(session *discordgo.Session, interaction *discordgo.Inte
 }
 
 func restoreTargetForIndex(index int) (restoreVoteTarget, error) {
-	if backupmgr.GlobalBackupManager == nil {
+	if backupmgr.CurrentBackupManager() == nil {
 		return restoreVoteTarget{}, fmt.Errorf("backup manager is not initialized")
 	}
-	backups, err := backupmgr.GlobalBackupManager.ListBackups(0)
+	backups, err := backupmgr.CurrentBackupManager().ListBackups(0)
 	if err != nil {
 		return restoreVoteTarget{}, err
 	}

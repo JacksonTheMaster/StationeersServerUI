@@ -1,0 +1,196 @@
+package backupmgr
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+)
+
+const manifestFilename = "backup-meta-manifest.ssui"
+const manifestVersion = 1
+const analysisVersion = 1
+const maxManifestSize = 64 << 20
+
+// Only aggregate values belong here. Never retain world XML or individual things.
+type backupRecord struct {
+	Size         int64        `json:"size"`
+	ModifiedNS   int64        `json:"mtime"`
+	Analysis     SaveAnalysis `json:"analysis"`
+	SummaryReady bool         `json:"summaryReady,omitempty"`
+	ScanVersion  int          `json:"scanVersion,omitempty"`
+	ScanError    string       `json:"scanError,omitempty"`
+}
+
+type backupManifest struct {
+	Version int                     `json:"version"`
+	Backups map[string]backupRecord `json:"backups"`
+	Handled map[string]bool         `json:"handled,omitempty"`
+}
+
+func recordIdentity(record backupRecord) saveIdentity {
+	return saveIdentity{size: record.Size, modifiedNS: record.ModifiedNS}
+}
+
+func analysisReady(record backupRecord) bool {
+	return record.SummaryReady && record.ScanVersion == analysisVersion && record.ScanError == ""
+}
+
+func backupName(root, path string) (string, error) {
+	name, err := filepath.Rel(root, path)
+	if err != nil || !filepath.IsLocal(name) || name == "." {
+		return "", fmt.Errorf("backup is outside its folder: %s", path)
+	}
+	return filepath.ToSlash(name), nil
+}
+
+func readManifest(path string) (backupManifest, error) {
+	var manifest backupManifest
+	file, err := os.Open(path)
+	if err != nil {
+		return manifest, err
+	}
+	defer file.Close()
+	stat, err := file.Stat()
+	if err != nil {
+		return manifest, err
+	}
+	if stat.Size() > maxManifestSize {
+		return manifest, fmt.Errorf("manifest exceeds %d bytes", maxManifestSize)
+	}
+	decoder := json.NewDecoder(io.LimitReader(file, maxManifestSize+1))
+	if err := decoder.Decode(&manifest); err != nil {
+		return manifest, err
+	}
+	if manifest.Version < 1 || manifest.Version == manifestVersion && manifest.Backups == nil {
+		return manifest, fmt.Errorf("manifest is missing its version or backup inventory")
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		return manifest, fmt.Errorf("trailing manifest data")
+	}
+	return manifest, nil
+}
+
+// Startup reconciles names and file identities, not the contents of thousands of ZIPs.
+func loadInventory(m *BackupManager) error {
+	m.loadMu.Lock()
+	defer m.loadMu.Unlock()
+	m.stateMu.RLock()
+	loaded := m.loaded
+	m.stateMu.RUnlock()
+	if loaded {
+		return nil
+	}
+	files, err := scanBackupFiles(m.ctx, m.config.SafeBackupDir)
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(m.config.SafeBackupDir, manifestFilename)
+	manifest, err := readManifest(path)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		// Preserve the broken file for diagnosis. A failed rename must not lead to an overwrite.
+		quarantine := path + ".invalid-" + time.Now().UTC().Format("20060102T150405.000000000")
+		if renameErr := os.Rename(path, quarantine); renameErr != nil {
+			return fmt.Errorf("read manifest: %v; preserve invalid manifest: %w", err, renameErr)
+		}
+		logger.Backup.Warnf("Preserved unreadable backup manifest at %s: %v", quarantine, err)
+		manifest = backupManifest{}
+	}
+	if manifest.Version != 0 && manifest.Version != manifestVersion {
+		return fmt.Errorf("unsupported backup manifest version %d; leaving it untouched", manifest.Version)
+	}
+	records := make(map[string]backupRecord, len(files))
+	for path, identity := range files {
+		name, err := backupName(m.config.SafeBackupDir, path)
+		if err != nil {
+			return err
+		}
+		record, exists := manifest.Backups[name]
+		if !exists || recordIdentity(record) != identity {
+			record = backupRecord{Size: identity.size, ModifiedNS: identity.modifiedNS}
+		}
+		records[name] = record
+	}
+	handled := make(map[string]bool)
+	for name, done := range manifest.Handled {
+		if done && filepath.IsLocal(filepath.FromSlash(name)) && isValidBackupFile(name) {
+			handled[name] = true
+		}
+	}
+	m.stateMu.Lock()
+	m.records = records
+	for name := range m.handled {
+		handled[name] = true
+	}
+	m.handled = handled
+	m.loaded = true
+	m.revision++
+	m.stateMu.Unlock()
+	return nil
+}
+
+// A single writer batches backfill updates. The old file remains intact until rename.
+func saveManifest(m *BackupManager) error {
+	m.manifestMu.Lock()
+	defer m.manifestMu.Unlock()
+	m.stateMu.RLock()
+	if !m.loaded || m.revision == m.savedRevision {
+		m.stateMu.RUnlock()
+		return nil
+	}
+	revision := m.revision
+	manifest := backupManifest{Version: manifestVersion, Backups: make(map[string]backupRecord, len(m.records)), Handled: make(map[string]bool, len(m.handled))}
+	for name, record := range m.records {
+		manifest.Backups[name] = record
+	}
+	for name, done := range m.handled {
+		manifest.Handled[name] = done
+	}
+	m.stateMu.RUnlock()
+	file, err := os.CreateTemp(m.config.SafeBackupDir, ".backup-manifest-*.tmp")
+	if err != nil {
+		return err
+	}
+	temp := file.Name()
+	defer os.Remove(temp)
+	err = json.NewEncoder(file).Encode(manifest)
+	if err == nil {
+		err = file.Sync()
+	}
+	closeErr := file.Close()
+	if err != nil {
+		return err
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	if err := os.Rename(temp, filepath.Join(m.config.SafeBackupDir, manifestFilename)); err != nil {
+		return err
+	}
+	m.stateMu.Lock()
+	m.savedRevision = revision
+	m.stateMu.Unlock()
+	return nil
+}
+
+func persistInventory(m *BackupManager) {
+	defer m.wg.Done()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-m.ctx.Done():
+			return
+		case <-ticker.C:
+			if err := saveManifest(m); err != nil {
+				logger.Backup.Warnf("Could not save backup manifest: %v", err)
+			}
+		}
+	}
+}

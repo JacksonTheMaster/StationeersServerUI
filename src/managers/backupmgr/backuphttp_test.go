@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"testing"
 )
@@ -12,6 +13,8 @@ import (
 func TestListBackupsSummaryIsOptIn(t *testing.T) {
 	path := analysisFixture(t)
 	handler := &HTTPHandler{manager: NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})}
+
+	primeBackupInventory(t, handler.manager)
 
 	legacyRequest := httptest.NewRequest(http.MethodGet, "/api/v2/backups?limit=5", nil)
 	legacyResponse := httptest.NewRecorder()
@@ -44,6 +47,41 @@ func TestListBackupsSummaryIsOptIn(t *testing.T) {
 	if !bytes.Contains(summaryResponse.Body.Bytes(), []byte(`"Summary"`)) ||
 		!bytes.Contains(summaryResponse.Body.Bytes(), []byte(`"daysPlayed":67`)) {
 		t.Fatalf("summary response is missing metadata: %s", summaryResponse.Body.String())
+	}
+}
+
+func TestBackupHTTPSelectionUsesStableFile(t *testing.T) {
+	path := analysisFixture(t)
+	m := NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})
+	handler := &HTTPHandler{manager: m}
+	query := url.Values{"index": {"999"}, "file": {path}}
+	request := httptest.NewRequest(http.MethodGet, "/api/v2/backups/analyze?"+query.Encode(), nil)
+	response := httptest.NewRecorder()
+	handler.AnalyzeBackupHandler(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("stable selection depended on the old index: %d %s", response.Code, response.Body.String())
+	}
+	body, err := json.Marshal(DownloadBackupRequest{Index: 999, SaveFile: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response = httptest.NewRecorder()
+	handler.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/api/v2/backups/download", bytes.NewReader(body)))
+	if response.Code != http.StatusOK || !bytes.HasPrefix(response.Body.Bytes(), []byte("PK")) {
+		t.Fatalf("stable download: %d", response.Code)
+	}
+	if _, err := getBackupFileData(m, 0, filepath.Join(filepath.Dir(path), "..", "outside.save")); err == nil {
+		t.Fatal("accepted a file outside the inventory")
+	}
+}
+
+func TestListPendingAnalysisDoesNotInventSummary(t *testing.T) {
+	path := analysisFixture(t)
+	handler := &HTTPHandler{manager: NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})}
+	response := httptest.NewRecorder()
+	handler.ListBackupsHandler(response, httptest.NewRequest(http.MethodGet, "/api/v2/backups?include=summary", nil))
+	if response.Code != http.StatusOK || bytes.Contains(response.Body.Bytes(), []byte(`"Summary"`)) {
+		t.Fatalf("pending archive returned fabricated statistics: %s", response.Body.String())
 	}
 }
 

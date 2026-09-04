@@ -72,6 +72,7 @@
         const item = document.createElement('li');
         item.className = 'backup-page-item';
         item.dataset.backupIndex = String(index);
+        item.dataset.backupFile = backup.SaveFile;
 
         item.innerHTML = `
             <div class="backup-page-row">
@@ -106,8 +107,8 @@
             if (event.target.closest('button, a, input, select, textarea')) return;
             toggleAnalysis(item);
         });
-        item.querySelector('.backup-download').addEventListener('click', () => downloadBackup(index));
-        item.querySelector('.backup-restore').addEventListener('click', () => restoreBackup(index));
+        item.querySelector('.backup-download').addEventListener('click', () => downloadBackup(index, backup.SaveFile));
+        item.querySelector('.backup-restore').addEventListener('click', () => restoreBackup(index, backup.SaveFile));
         item.querySelector('.backup-page-chevron').addEventListener('click', () => toggleAnalysis(item));
         wireIconFallbacks(item);
 
@@ -134,7 +135,8 @@
         panel.dataset.state = 'loading';
         panel.innerHTML = `<div class="backup-analysis-message"><span class="backup-analysis-spinner"></span>${escapeHTML(text.analysisLoading)}</div>`;
 
-        fetch(`/api/v2/backups/analyze?index=${index}`)
+        const selection = new URLSearchParams({ index, file: item.dataset.backupFile });
+        fetch(`/api/v2/backups/analyze?${selection}`)
             .then(response => {
                 if (!response.ok) return response.text().then(message => { throw new Error(message || text.analysisFailed); });
                 return response.json();
@@ -219,8 +221,9 @@
             });
     }
 
-    function restoreBackup(index) {
-        fetch(`/api/v2/backups/restore?index=${index}`)
+    function restoreBackup(index, saveFile) {
+        const selection = new URLSearchParams({ index, file: saveFile });
+        fetch(`/api/v2/backups/restore?${selection}`)
             .then(response => response.text().then(message => ({ ok: response.ok, message })))
             .then(result => {
                 if (!result.ok) throw new Error(result.message);
@@ -229,11 +232,11 @@
             .catch(error => showNotice(error.message, 'error'));
     }
 
-    function downloadBackup(index) {
+    function downloadBackup(index, saveFile) {
         fetch('/api/v2/backups/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ index })
+            body: JSON.stringify({ index, saveFile })
         })
             .then(async response => {
                 if (!response.ok) {

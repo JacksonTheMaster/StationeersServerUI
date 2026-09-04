@@ -17,6 +17,9 @@ import (
 func (m *BackupManager) RestoreBackup(index int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if err := m.ctx.Err(); err != nil {
+		return err
+	}
 	logger.Backup.Infof("Restoring backup with index %d", index)
 
 	saves, err := m.getBackupSaveFiles()
@@ -39,6 +42,9 @@ func (m *BackupManager) RestoreBackup(index int) error {
 func (m *BackupManager) RestoreBackupFile(saveFile string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if err := m.ctx.Err(); err != nil {
+		return err
+	}
 
 	saves, err := m.getBackupSaveFiles()
 	if err != nil {

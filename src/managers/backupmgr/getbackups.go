@@ -2,67 +2,67 @@ package backupmgr
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"time"
 )
 
-// getBackupSaveFiles retrieves all backup save files from the safe backup directory
-func (m *BackupManager) getBackupSaveFiles() ([]BackupSaveFile, error) {
-	var saves []BackupSaveFile
-
-	err := filepath.WalkDir(m.config.SafeBackupDir, func(path string, de os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !de.IsDir() {
-			// Process the save file
-			filename := de.Name()
-
-			// Skip invalid backup files
-			if !isValidBackupFile(filename) {
-				return nil
-			}
-
-			// Get the full path
-			fullPath := filepath.Join(m.config.SafeBackupDir, filename)
-
-			summary, err := ReadSaveSummary(fullPath)
-			if err != nil {
-				logger.Backup.Warnf("Skipping invalid backup file %s: %s", fullPath, err.Error())
-				return nil
-			}
-
-			// Add the backup save file info to the list
-			saves = append(saves, BackupSaveFile{
-				SaveFile: fullPath,
-				SaveTime: summary.SavedAt,
-				Summary:  summary,
-			})
-		}
-		return nil
-	})
-
-	// Handle errors
+// New clients select a stable path. The numeric index remains supported for older clients.
+func selectBackup(m *BackupManager, index int, saveFile string) (BackupSaveFile, error) {
+	saves, err := m.getBackupSaveFiles()
 	if err != nil {
-		// if the error contains no such file or directory, return nil but return a custom string intsted 	of the error
-		if strings.Contains(err.Error(), "no such file or directory") || strings.Contains(err.Error(), "The system cannot find the file specified") {
-			return nil, fmt.Errorf("save dir doesn't seem to exist (yet). Try starting the gameserver and click ↻ once it's up. If the Save folder exists and you still get this error, verify the 'Use New Terrain and Save System' setting. Detailed Error: %w", err)
-		}
-		return nil, fmt.Errorf("failed to handle safe backup dir: %w", err)
+		return BackupSaveFile{}, err
 	}
+	if saveFile != "" {
+		for _, save := range saves {
+			if save.SaveFile == saveFile {
+				return save, nil
+			}
+		}
+		return BackupSaveFile{}, fmt.Errorf("selected backup is no longer available")
+	}
+	if index < 0 || index >= len(saves) {
+		return BackupSaveFile{}, fmt.Errorf("backup index %d out of range (0-%d)", index, len(saves)-1)
+	}
+	return saves[index], nil
+}
 
-	// Sort saves by save time ascending
+// Unknown archives are visible immediately; metadata arrives in the background.
+func (m *BackupManager) getBackupSaveFiles() ([]BackupSaveFile, error) {
+	if err := loadInventory(m); err != nil {
+		return nil, err
+	}
+	m.stateMu.RLock()
+	saves := make([]BackupSaveFile, 0, len(m.records))
+	for name, record := range m.records {
+		savedAt := recordTimestamp(name, record)
+		saves = append(saves, BackupSaveFile{SaveFile: filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name)), SaveTime: savedAt, Summary: record.Analysis.SaveSummary, SummaryReady: record.SummaryReady})
+	}
+	m.stateMu.RUnlock()
 	sort.Slice(saves, func(i, j int) bool {
+		if saves[i].SaveTime.Equal(saves[j].SaveTime) {
+			return saves[i].SaveFile < saves[j].SaveFile
+		}
 		return saves[i].SaveTime.Before(saves[j].SaveTime)
 	})
-	// Add the index to each save
 	for i := range saves {
 		saves[i].Index = i
 	}
-
 	return saves, nil
+}
+
+func recordTimestamp(name string, record backupRecord) time.Time {
+	if record.SummaryReady {
+		return record.Analysis.SavedAt
+	}
+	return backupTimestamp(name, record.ModifiedNS)
+}
+
+func backupTimestamp(name string, modifiedNS int64) time.Time {
+	stamp := strings.TrimSuffix(filepath.Base(name), "_auto.save")
+	if parsed, err := time.ParseInLocation("020106_150405", stamp, time.Local); err == nil {
+		return parsed
+	}
+	return time.Unix(0, modifiedNS)
 }
