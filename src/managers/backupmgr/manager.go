@@ -9,8 +9,6 @@ import (
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
-
-	"github.com/fsnotify/fsnotify"
 )
 
 /*
@@ -79,6 +77,19 @@ func (m *BackupManager) Initialize(identifier string) <-chan error {
 
 // Start begins the backup monitoring and cleanup routines
 func (m *BackupManager) Start(identifier string) error {
+	m.lifecycleMu.Lock()
+	if err := m.ctx.Err(); err != nil {
+		m.lifecycleMu.Unlock()
+		return err
+	}
+	if m.started {
+		m.lifecycleMu.Unlock()
+		return nil
+	}
+	m.started = true
+	m.wg.Add(1)
+	m.lifecycleMu.Unlock()
+	defer m.wg.Done()
 
 	// Wait for initialization to complete
 	logger.Backup.Debugf("%s is waiting for save folder initialization...", identifier)
@@ -88,107 +99,68 @@ func (m *BackupManager) Start(identifier string) error {
 	}
 	logger.Backup.Infof("%s Backup manager instance started", identifier)
 
-	// Start file watcher
-	watcher, err := newFsWatcher(m.config.BackupDir, identifier)
+	// Preserve the old startup baseline; polling handles subsequent new/changed files.
+	baseline, err := scanBackupFiles(m.ctx, m.config.BackupDir)
 	if err != nil {
-		return fmt.Errorf("failed to create autosave watcher: %w", err)
+		return fmt.Errorf("read autosave baseline: %w", err)
 	}
-	m.watcher = watcher
-	go m.watchBackups(identifier)
+	if err := m.ctx.Err(); err != nil {
+		return err
+	}
+	m.wg.Add(1)
+	go m.watchBackups(identifier, baseline)
 
 	if config.GetBackupRetentionEnabled() {
+		m.wg.Add(1)
 		go m.startCleanupRoutine()
 	}
 
 	return nil
 }
 
-// watchBackups monitors the backup directory for new files
-func (m *BackupManager) watchBackups(identifier string) {
-	m.wg.Add(1)
-	defer m.wg.Done()
-
-	logger.Backup.Debugf("%s Starting backup file watcher...", identifier)
-	defer logger.Backup.Debugf("%s Backup file watcher stopped", identifier)
-
-	for {
-		select {
-		case <-m.ctx.Done():
-			logger.Backup.Debugf("%s WatchBackups stopped due to context cancellation", identifier)
-			return
-		case event, ok := <-m.watcher.events:
-			if !ok {
-				return
-			}
-			if event.Op&fsnotify.Create == fsnotify.Create {
-				logger.Backup.Infof("%s New backup file detected: %s", identifier, event.Name)
-				m.handleNewBackup(event.Name)
-			}
-		case err, ok := <-m.watcher.errors:
-			if !ok {
-				return
-			}
-			logger.Backup.Errorf("%s Backup watcher error: %s", identifier, err.Error())
-		}
-	}
-}
-
 // handleNewBackup processes a newly created backup file
-func (m *BackupManager) handleNewBackup(filePath string) {
+func (m *BackupManager) handleNewBackup(filePath string) error {
 	if !isValidBackupFile(filepath.Base(filePath)) {
-		return
+		return fmt.Errorf("invalid backup filename")
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if err := m.ctx.Err(); err != nil {
+		return err
 	}
 
-	m.wg.Add(1)
-	go func() {
-		defer m.wg.Done()
+	fileName := filepath.Base(filePath)
+	relativePath, err := filepath.Rel(m.config.BackupDir, filePath)
+	if err != nil {
+		logger.Backup.Error("Error getting relative path for " + filePath + ": " + err.Error())
+		return err
+	}
+	dstPath := filepath.Join(m.config.SafeBackupDir, relativePath)
 
-		time.Sleep(m.config.WaitTime)
+	if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
+		logger.Backup.Error("Error creating destination dir for " + dstPath + ": " + err.Error())
+		return err
+	}
 
-		//// save the world into Head save too if SSCM is enabled
-		//if config.GetIsSSCMEnabled() && config.GetIsNewTerrainAndSaveSystem() {
-		//	commandmgr.WriteCommand("SAVE")
-		//	logger.Backup.Debug("HEAD Save triggered via SSCM")
-		//} else {
-		//	logger.Backup.Debug("HEAD Save NOT refreshed via SSCM")
-		//}
+	if err := copyFile(filePath, dstPath); err != nil {
+		logger.Backup.Error("Error copying backup " + fileName + ": " + err.Error())
+		return err
+	}
 
-		m.mu.Lock()
-		defer m.mu.Unlock()
-
-		fileName := filepath.Base(filePath)
-		relativePath, err := filepath.Rel(m.config.BackupDir, filePath)
-		if err != nil {
-			logger.Backup.Error("Error getting relative path for " + filePath + ": " + err.Error())
-			return
-		}
-		dstPath := filepath.Join(m.config.SafeBackupDir, relativePath)
-
-		if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
-			logger.Backup.Error("Error creating destination dir for " + dstPath + ": " + err.Error())
-			return
-		}
-
-		if err := copyFile(filePath, dstPath); err != nil {
-			logger.Backup.Error("Error copying backup " + fileName + ": " + err.Error())
-			return
-		}
-
-		logger.Backup.Debug("Backup successfully copied to safe location: " + dstPath)
-		summary, err := ReadSaveSummary(dstPath)
-		if err != nil {
-			logger.Backup.Warn("Could not read metadata from copied backup " + dstPath + ": " + err.Error())
-			return
-		}
-		// Consumers such as Discord may perform network I/O. Do not keep the
-		// backup manager locked while notifying them.
-		go notifyBackupCopied(summary)
-	}()
+	logger.Backup.Debug("Backup successfully copied to safe location: " + dstPath)
+	summary, err := ReadSaveSummary(dstPath)
+	if err != nil {
+		logger.Backup.Warn("Could not read metadata from copied backup " + dstPath + ": " + err.Error())
+		return err
+	}
+	// Consumers such as Discord may perform network I/O. Do not keep the
+	// backup manager locked while notifying them.
+	go notifyBackupCopied(summary)
+	return nil
 }
 
 // startCleanupRoutine runs periodic backup cleanup
 func (m *BackupManager) startCleanupRoutine() {
-	m.wg.Add(1)
 	defer m.wg.Done()
 
 	ticker := time.NewTicker(m.config.RetentionPolicy.CleanupInterval)
@@ -290,19 +262,9 @@ func (m *BackupManager) GetBackupFileData(index int) (*BackupFileData, error) {
 func (m *BackupManager) Shutdown() {
 	logger.Backup.Debug("Shutting down previous backup manager...")
 
-	m.mu.Lock()
-	if m.cancel != nil {
-		m.cancel()
-		m.cancel = nil
-		logger.Backup.Debug("Context canceled for previous backup manager")
-	}
-
-	if m.watcher != nil {
-		m.watcher.close()
-		m.watcher = nil
-		logger.Backup.Debug("File watcher closed")
-	}
-	m.mu.Unlock()
+	m.lifecycleMu.Lock()
+	m.cancel()
+	m.lifecycleMu.Unlock()
 
 	// Wait for all goroutines to finish
 	logger.Backup.Debug("Waiting for background tasks to complete...")
@@ -315,7 +277,7 @@ func (m *BackupManager) Shutdown() {
 func NewBackupManager(cfg BackupConfig) *BackupManager {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	if cfg.WaitTime == 0 {
+	if cfg.WaitTime <= 0 {
 		cfg.WaitTime = defaultWaitTime
 	}
 

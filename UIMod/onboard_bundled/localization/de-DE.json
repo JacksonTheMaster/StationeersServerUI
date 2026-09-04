@@ -120,7 +120,7 @@
             "UIText_BackupFiles": "Backups",
             "UIText_BackupWarningTitle": "Endgültige Bereinigung",
             "UIText_BackupWarning": "Bei aktivierter Bereinigung werden Autosaves, die älter als 24 Stunden sind, sowie nicht von diesen Regeln geschützte Safebackups endgültig gelöscht.",
-            "UIText_BackupCopyDelayInfo": "Neue Speicherstände werden nach einer festen Sicherheitswartezeit von 45 Sekunden nach Safebackups kopiert.",
+            "UIText_BackupCopyDelayInfo": "SSUI prüft alle 45 Sekunden auf neue oder geänderte Autosaves. Lesbare Archive mit vollständiger world.xml und world_meta.xml werden nach Safebackups kopiert; unvollständige Dateien werden später erneut geprüft.",
             "basic": {
                 "UIText_BasicServerSettings": "Grundlegende Servereinstellungen",
                 "UIText_ServerName": "Servername",

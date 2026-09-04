@@ -120,7 +120,7 @@
             "UIText_BackupFiles": "backups",
             "UIText_BackupWarningTitle": "Permanent cleanup",
             "UIText_BackupWarning": "When cleanup is enabled, autosaves older than 24 hours and Safebackups not covered by this policy are permanently deleted.",
-            "UIText_BackupCopyDelayInfo": "New save files are copied to Safebackups after a fixed 45-second safety delay.",
+            "UIText_BackupCopyDelayInfo": "SSUI checks for new or changed autosaves every 45 seconds. Readable archives with complete world.xml and world_meta.xml files are copied to Safebackups; incomplete files are retried later.",
             "tabDescriptions": {
                 "UIText_ServerConfigTabDescription": "Here you can configure settings related to your gameserver like basic settings like server name and password, network settings like ports and UPnP, and SSUI settings like automatic SSUI updates, scheduled gameserver restarts and more.",
                 "UIText_DiscordIntegrationTabDescription": "Configure the Discord integration for real-time server status updates, remote management, player connection tracking, and community engagement. Learn more about the Discord integration and setup instructions in the <href href='https://github.com/SteamServerUI/StationeersServerUI/wiki/Discord-Integration'>Wiki.</href>",
