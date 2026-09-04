@@ -2,7 +2,15 @@ package config
 
 import (
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
+
+func GetDiscordSession() *discordgo.Session {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return DiscordSession
+}
 
 func GetDiscordToken() string {
 	ConfigMu.RLock()
@@ -10,10 +18,10 @@ func GetDiscordToken() string {
 	return DiscordToken
 }
 
-func GetControlChannelID() string {
+func GetDiscordAdminRoleID() string {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
-	return ControlChannelID
+	return DiscordAdminRoleID
 }
 
 func GetEventLogChannelID() string {
@@ -32,12 +40,6 @@ func GetLogChannelID() string {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()
 	return LogChannelID
-}
-
-func GetControlPanelChannelID() string {
-	ConfigMu.RLock()
-	defer ConfigMu.RUnlock()
-	return ControlPanelChannelID
 }
 
 func GetDiscordCharBufferSize() int {

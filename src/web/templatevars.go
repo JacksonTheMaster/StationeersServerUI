@@ -77,11 +77,10 @@ type IndexTemplateData struct {
 type ConfigTemplateData struct {
 	// Config values
 	DiscordToken                            string
-	ControlChannelID                        string
+	DiscordAdminRoleID                      string
 	EventLogChannelID                       string
 	StatusPanelChannelID                    string
 	LogChannelID                            string
-	ControlPanelChannelID                   string
 	BlackListFilePath                       string
 	IsDiscordEnabled                        string
 	IsDiscordEnabledTrueSelected            string
@@ -296,10 +295,8 @@ type ConfigTemplateData struct {
 	UIText_DiscordBotToken            string
 	UIText_DiscordBotTokenInfo        string
 	UIText_ChannelConfiguration       string
-	UIText_AdminCommandChannel        string
-	UIText_AdminCommandChannelInfo    string
-	UIText_ControlPanelChannel        string
-	UIText_ControlPanelChannelInfo    string
+	UIText_DiscordAdminRole           string
+	UIText_DiscordAdminRoleInfo       string
 	UIText_RotateServerPassword       string
 	UIText_RotateServerPasswordInfo   string
 	UIText_EventLogChannel            string

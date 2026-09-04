@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/fs"
+	"path"
 	"sync"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
@@ -20,6 +21,8 @@ var backupStatEmojiAssets = map[string]string{
 	"rooms":          "rooms.webp",
 	"pipe_networks":  "pipe-networks.webp",
 	"cable_networks": "cable-networks.webp",
+	"players":        "../players.png",
+	"archive_size":   "../archive-size.png",
 }
 
 var applicationEmojis = struct {
@@ -57,15 +60,19 @@ func syncApplicationEmojis(session *discordgo.Session) {
 			continue
 		}
 
-		data, readErr := fs.ReadFile(assets, discordBackupEmojiAssetDir+"/"+filename)
+		data, readErr := fs.ReadFile(assets, path.Join(discordBackupEmojiAssetDir, filename))
 		if readErr != nil {
 			logger.Discord.Warn(fmt.Sprintf("Could not read bundled emoji %s: %v", filename, readErr))
 			continue
 		}
 
+		mediaType := "image/webp"
+		if path.Ext(filename) == ".png" {
+			mediaType = "image/png"
+		}
 		created, createErr := session.ApplicationEmojiCreate(appID, &discordgo.EmojiParams{
 			Name:  name,
-			Image: "data:image/webp;base64," + base64.StdEncoding.EncodeToString(data),
+			Image: "data:" + mediaType + ";base64," + base64.StdEncoding.EncodeToString(data),
 		})
 		if createErr != nil {
 			logger.Discord.Warn(fmt.Sprintf("Could not create Discord application emoji %s: %v", name, createErr))

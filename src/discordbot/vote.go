@@ -9,8 +9,6 @@ import (
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/backupmgr"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/gamemgr"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -119,6 +117,13 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 		refreshStatusPanel()
 		return voteCastResult{message: message}
 	}
+	// Reserve execution before marking the vote as passed or applying cooldowns.
+	// A busy admin operation must not consume an otherwise valid community vote.
+	if !beginDiscordAction(string(kind) + " vote") {
+		delete(vote.voters, userID)
+		discordVotes.Unlock()
+		return voteCastResult{message: "Another Discord action is running. Your vote was not added; try again when it finishes."}
+	}
 
 	result := voteCastResult{
 		message: fmt.Sprintf("Vote passed with **%d/%d** votes.", count, vote.required),
@@ -178,69 +183,36 @@ func expireDiscordVote(kind voteKind, id uint64, expiresAt time.Time) {
 }
 
 func executePassedVote(result voteCastResult) {
+	// castDiscordVote already reserved the shared execution slot.
 	if result.cancelledKind != "" {
 		SendMessageToEventLogChannel(fmt.Sprintf("🗳️ The active %s vote was cancelled because another vote passed.", result.cancelledKind))
 	}
-
-	switch result.kind {
-	case voteRestart:
-		serverWasRunning := gamemgr.InternalIsServerRunning()
-		if serverWasRunning {
-			sendVotePanelMessage("🗳️ **VOTE FOR RESTART CONFIRMED** — restarting game server.")
-			SendMessageToEventLogChannel("🗳️ Restart vote passed. Restarting the game server...")
-			if err := gamemgr.InternalStopServer(); err != nil {
-				reportVoteExecutionFailure("restart", err)
-				return
-			}
-			time.Sleep(5 * time.Second)
-		} else {
-			sendVotePanelMessage("🗳️ **VOTE FOR RESTART CONFIRMED** — game server is stopped; starting it.")
-			SendMessageToEventLogChannel("🗳️ Restart vote passed. Starting the stopped game server...")
-		}
-		if err := gamemgr.InternalStartServer(); err != nil {
-			reportVoteExecutionFailure("restart", err)
-		}
-	case voteRestore:
-		manager := backupmgr.CurrentBackupManager()
-		if manager == nil {
-			reportVoteExecutionFailure("restore", fmt.Errorf("backup manager is not initialized"))
-			return
-		}
-		if err := backupmgr.CheckBackupAvailable(manager, result.target.Name); err != nil {
-			reportVoteExecutionFailure("restore", err)
-			return
-		}
-		sendVotePanelMessage(fmt.Sprintf("🗳️ **VOTE TO RESTORE BACKUP %s CONFIRMED** — restoring backup and starting game server.", result.target.Name))
-		SendMessageToEventLogChannel(fmt.Sprintf("🗳️ Restore vote passed. Restoring backup %s...", result.target.Name))
-		serverWasRunning := gamemgr.InternalIsServerRunning()
-		if serverWasRunning {
-			if err := gamemgr.InternalStopServer(); err != nil {
-				reportVoteExecutionFailure("restore", err)
-				return
-			}
-		}
-		if err := manager.RestoreBackup(result.target.Name); err != nil {
-			reportVoteExecutionFailure("restore", err)
-			return
-		}
-		if serverWasRunning {
-			time.Sleep(5 * time.Second)
-		}
-		if err := gamemgr.InternalStartServer(); err != nil {
-			reportVoteExecutionFailure("restore", err)
-		}
+	sendVotePanelMessage(fmt.Sprintf("🗳️ **%s vote passed** — carrying out the server action.", voteKindLabel(result.kind)))
+	refreshStatusPanel()
+	_, err := performServerAction(string(result.kind), result.target.Name, gameActionBackend())
+	finishDiscordAction(err)
+	if err != nil {
+		reportVoteExecutionFailure(string(result.kind), err)
+	} else {
+		SendMessageToEventLogChannel(fmt.Sprintf("✅ %s vote action completed.", voteKindLabel(result.kind)))
 	}
+	refreshStatusPanel()
 }
 
 func sendVotePanelMessage(message string) {
-	if !config.GetIsDiscordEnabled() || config.DiscordSession == nil {
+	session := config.GetDiscordSession()
+	if session == nil {
+		return
+	}
+
+	if !config.GetIsDiscordEnabled() {
 		return
 	}
 	channelID := config.GetStatusPanelChannelID()
 	if channelID == "" {
 		return
 	}
-	if _, err := config.DiscordSession.ChannelMessageSend(channelID, message); err != nil {
+	if _, err := session.ChannelMessageSend(channelID, message); err != nil {
 		logger.Discord.Error("Error sending vote result to status panel channel: " + err.Error())
 	}
 }

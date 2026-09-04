@@ -764,17 +764,10 @@
                     </div>
                     <div class="channel-grid discord-channel-grid">
                         <div class="form-group">
-                            <label for="controlChannelID">{{.UIText_AdminCommandChannel}}:</label>
-                            <input type="text" id="controlChannelID" name="controlChannelID"
-                                value="{{.ControlChannelID}}">
-                            <div class="input-info">{{.UIText_AdminCommandChannelInfo}}</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="controlPanelChannelID">{{.UIText_ControlPanelChannel}}:</label>
-                            <input type="text" id="controlPanelChannelID" name="controlPanelChannelID"
-                                value="{{.ControlPanelChannelID}}">
-                            <div class="input-info">{{.UIText_ControlPanelChannelInfo}}</div>
+                            <label for="discordAdminRoleID">{{.UIText_DiscordAdminRole}}:</label>
+                            <input type="text" id="discordAdminRoleID" name="discordAdminRoleID" inputmode="numeric" pattern="[0-9]{1,20}"
+                                value="{{.DiscordAdminRoleID}}">
+                            <div class="input-info">{{.UIText_DiscordAdminRoleInfo}}</div>
                         </div>
 
                         <div class="form-group">
