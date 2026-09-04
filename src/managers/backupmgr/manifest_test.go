@@ -100,7 +100,7 @@ func TestReloadKeepsPendingObservation(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Now()
-	if err := pollBackups(old, now); err != nil {
+	if err := pollBackupsAt(old, now); err != nil {
 		t.Fatal(err)
 	}
 	old.Shutdown()
@@ -109,7 +109,7 @@ func TestReloadKeepsPendingObservation(t *testing.T) {
 	if err := loadInventory(next); err != nil {
 		t.Fatal(err)
 	}
-	if err := pollBackups(next, now.Add(45*time.Second)); err != nil {
+	if err := pollBackupsAt(next, now.Add(45*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	ready, identity := nextAutosave(next)
@@ -151,10 +151,10 @@ func TestRetentionDoesNotResurrectAutosaveAfterRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Now()
-	if err := pollBackups(next, now); err != nil {
+	if err := pollBackupsAt(next, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := pollBackups(next, now.Add(45*time.Second)); err != nil {
+	if err := pollBackupsAt(next, now.Add(45*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	if len(next.pending) != 0 || !next.handled[name] {
@@ -163,7 +163,7 @@ func TestRetentionDoesNotResurrectAutosaveAfterRestart(t *testing.T) {
 	if err := os.Remove(source); err != nil {
 		t.Fatal(err)
 	}
-	if err := pollBackups(next, now.Add(90*time.Second)); err != nil {
+	if err := pollBackupsAt(next, now.Add(90*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	if len(next.handled) != 0 {

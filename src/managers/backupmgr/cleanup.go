@@ -51,8 +51,9 @@ func (m *BackupManager) cleanBackupDir() error {
 		fullPath := filepath.Join(m.config.BackupDir, file.Name())
 		m.stateMu.RLock()
 		archived := m.handled[file.Name()]
+		record, hasArchive := m.records[file.Name()]
 		m.stateMu.RUnlock()
-		if !archived {
+		if !archived || !hasArchive || !analysisReady(record) {
 			continue
 		}
 		info, err := os.Stat(fullPath)
@@ -61,6 +62,14 @@ func (m *BackupManager) cleanBackupDir() error {
 		}
 
 		if info.ModTime().Before(cutoff) {
+			// A cached archive entry is not proof that its file is still intact.
+			identity, err := identifySave(filepath.Join(m.config.SafeBackupDir, file.Name()))
+			if err != nil {
+				return fmt.Errorf("verify archive before source cleanup: %w", err)
+			}
+			if identity != recordIdentity(record) {
+				return fmt.Errorf("archive changed before source cleanup: %s", file.Name())
+			}
 			if err := os.Remove(fullPath); err != nil {
 				logger.Backup.Error("Failed to remove old backup " + fullPath + ": " + err.Error())
 			}
@@ -240,7 +249,20 @@ func deleteBackup(m *BackupManager, saveFile BackupSaveFile) error {
 	if err != nil {
 		return err
 	}
-	if err := os.Remove(saveFile.SaveFile); err != nil && !os.IsNotExist(err) {
+	m.stateMu.RLock()
+	record, exists := m.records[name]
+	m.stateMu.RUnlock()
+	if !exists {
+		return fmt.Errorf("archive is no longer in the inventory: %s", name)
+	}
+	identity, err := identifySave(saveFile.SaveFile)
+	if err != nil {
+		return err
+	}
+	if identity != recordIdentity(record) {
+		return fmt.Errorf("archive changed before retention cleanup: %s", name)
+	}
+	if err := os.Remove(saveFile.SaveFile); err != nil {
 		return err
 	}
 	m.stateMu.Lock()

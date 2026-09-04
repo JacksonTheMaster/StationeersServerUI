@@ -59,26 +59,34 @@ type saveObservation struct {
 
 func watchBackups(m *BackupManager) {
 	defer m.wg.Done()
-	ticker := time.NewTicker(m.config.WaitTime)
-	defer ticker.Stop()
+	timer := time.NewTimer(m.config.WaitTime)
+	defer timer.Stop()
 	for {
-		if err := pollBackups(m, time.Now()); err != nil && m.ctx.Err() == nil && !errors.Is(err, os.ErrNotExist) {
+		if err := pollBackups(m); err != nil && m.ctx.Err() == nil && !errors.Is(err, os.ErrNotExist) {
 			logger.Backup.Warnf("%s Autosave scan failed: %v", m.config.Identifier, err)
 		}
+		// Count the interval from the completed scan. A slow mount must not leave
+		// a queued ticker event that immediately triggers a second observation.
+		timer.Reset(m.config.WaitTime)
 		select {
 		case <-m.ctx.Done():
 			return
-		case <-ticker.C:
+		case <-timer.C:
 		}
 	}
 }
 
 // An unsuccessful directory read must not erase observations or processed names.
-func pollBackups(m *BackupManager, now time.Time) error {
+func pollBackups(m *BackupManager) error {
 	files, err := scanBackupFiles(m.ctx, m.config.BackupDir)
 	if err != nil {
 		return err
 	}
+	// A slow directory read must not count as time spent observing an unchanged file.
+	return observeBackups(m, files, time.Now())
+}
+
+func observeBackups(m *BackupManager, files map[string]saveIdentity, now time.Time) error {
 	current := make(map[string]saveIdentity, len(files))
 	for path, identity := range files {
 		name, err := backupName(m.config.BackupDir, path)

@@ -187,7 +187,10 @@ func TestCleanBackupDirOnlyRemovesOldSaveFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := NewBackupManager(BackupConfig{BackupDir: dir})
+	safe := t.TempDir()
+	writeBackupSave(t, safe, "old.save", oldTime)
+	m := NewBackupManager(BackupConfig{BackupDir: dir, SafeBackupDir: safe})
+	primeBackupInventory(t, m)
 	m.handled["old.save"] = true
 	if err := m.cleanBackupDir(); err != nil {
 		t.Fatal(err)

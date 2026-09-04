@@ -49,6 +49,8 @@ func backupName(root, path string) (string, error) {
 	return filepath.ToSlash(name), nil
 }
 
+var errInvalidManifest = errors.New("invalid backup manifest")
+
 func readManifest(path string) (backupManifest, error) {
 	var manifest backupManifest
 	file, err := os.Open(path)
@@ -56,23 +58,24 @@ func readManifest(path string) (backupManifest, error) {
 		return manifest, err
 	}
 	defer file.Close()
-	stat, err := file.Stat()
+	data, err := io.ReadAll(io.LimitReader(file, maxManifestSize+1))
+	// Storage errors are not evidence of corrupt JSON. Leave the file in place.
 	if err != nil {
 		return manifest, err
 	}
-	if stat.Size() > maxManifestSize {
-		return manifest, fmt.Errorf("manifest exceeds %d bytes", maxManifestSize)
+	if len(data) > maxManifestSize {
+		return manifest, fmt.Errorf("%w: exceeds %d bytes", errInvalidManifest, maxManifestSize)
 	}
-	decoder := json.NewDecoder(io.LimitReader(file, maxManifestSize+1))
-	if err := decoder.Decode(&manifest); err != nil {
-		return manifest, err
+	err = json.Unmarshal(data, &manifest)
+	// A newer format may also change the types of existing fields.
+	if manifest.Version > 0 && manifest.Version != manifestVersion {
+		return backupManifest{Version: manifest.Version}, nil
 	}
-	if manifest.Version < 1 || manifest.Version == manifestVersion && manifest.Backups == nil {
-		return manifest, fmt.Errorf("manifest is missing its version or backup inventory")
+	if err != nil {
+		return manifest, fmt.Errorf("%w: %v", errInvalidManifest, err)
 	}
-	var trailing any
-	if err := decoder.Decode(&trailing); err != io.EOF {
-		return manifest, fmt.Errorf("trailing manifest data")
+	if manifest.Version < 1 || manifest.Backups == nil {
+		return manifest, fmt.Errorf("%w: missing version or backup inventory", errInvalidManifest)
 	}
 	return manifest, nil
 }
@@ -93,7 +96,10 @@ func loadInventory(m *BackupManager) error {
 	}
 	path := filepath.Join(m.config.SafeBackupDir, manifestFilename)
 	manifest, err := readManifest(path)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err != nil && !errors.Is(err, os.ErrNotExist) && !errors.Is(err, errInvalidManifest) {
+		return fmt.Errorf("read backup manifest: %w", err)
+	}
+	if errors.Is(err, errInvalidManifest) {
 		// Preserve the broken file for diagnosis. A failed rename must not lead to an overwrite.
 		quarantine := path + ".invalid-" + time.Now().UTC().Format("20060102T150405.000000000")
 		if renameErr := os.Rename(path, quarantine); renameErr != nil {

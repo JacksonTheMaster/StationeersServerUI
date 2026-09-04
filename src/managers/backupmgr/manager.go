@@ -23,6 +23,8 @@ func (m *BackupManager) Initialize(identifier string) <-chan error {
 	result := make(chan error, 1)
 	if err := m.ctx.Err(); err != nil {
 		result <- fmt.Errorf("%s I have to go, the config was likely changed: %s", identifier, err)
+	} else if err := checkBackupFolders(m.config); err != nil {
+		result <- err
 	} else if err := os.MkdirAll(m.config.SafeBackupDir, 0755); err != nil {
 		result <- err
 	} else {
@@ -139,6 +141,12 @@ func (m *BackupManager) AnalyzeBackup(ctx context.Context, index int) (SaveAnaly
 }
 
 func getBackupAnalysis(ctx context.Context, m *BackupManager, index int, saveFile string) (SaveAnalysis, error) {
+	if err := m.ctx.Err(); err != nil {
+		return SaveAnalysis{}, err
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	save, err := selectBackup(m, index, saveFile)
 	if err != nil {
 		return SaveAnalysis{}, fmt.Errorf("failed to get backup files: %w", err)

@@ -16,15 +16,7 @@ import (
 // keeps polling while a scan runs, and the startup backlog is attempted once.
 func handleBackups(m *BackupManager) {
 	defer m.wg.Done()
-	m.stateMu.RLock()
-	backlog := make([]string, 0, len(m.records))
-	for name, record := range m.records {
-		if !analysisReady(record) {
-			backlog = append(backlog, name)
-		}
-	}
-	m.stateMu.RUnlock()
-	sort.Strings(backlog)
+	backlog := pendingAnalyses(m)
 	for m.ctx.Err() == nil {
 		name, identity := nextAutosave(m)
 		if name != "" {
@@ -46,6 +38,26 @@ func handleBackups(m *BackupManager) {
 		case <-m.wake:
 		}
 	}
+}
+
+func pendingAnalyses(m *BackupManager) []string {
+	m.stateMu.RLock()
+	defer m.stateMu.RUnlock()
+	backlog := make([]string, 0, len(m.records))
+	for name, record := range m.records {
+		if !analysisReady(record) {
+			backlog = append(backlog, name)
+		}
+	}
+	// Show useful recent statistics first. DDMMYY names do not sort chronologically.
+	sort.Slice(backlog, func(i, j int) bool {
+		a, b := recordTimestamp(backlog[i], m.records[backlog[i]]), recordTimestamp(backlog[j], m.records[backlog[j]])
+		if a.Equal(b) {
+			return backlog[i] > backlog[j]
+		}
+		return a.After(b)
+	})
+	return backlog
 }
 
 func nextAutosave(m *BackupManager) (string, saveIdentity) {
@@ -224,6 +236,9 @@ func shortScanError(err error) string {
 }
 
 func analyzeBackup(ctx context.Context, m *BackupManager, name string) (SaveAnalysis, error) {
+	if err := m.ctx.Err(); err != nil {
+		return SaveAnalysis{}, err
+	}
 	if err := ctx.Err(); err != nil {
 		return SaveAnalysis{}, err
 	}
@@ -242,6 +257,9 @@ func analyzeBackup(ctx context.Context, m *BackupManager, name string) (SaveAnal
 	case m.scanGate <- struct{}{}:
 	}
 	defer func() { <-m.scanGate }()
+	if err := m.ctx.Err(); err != nil {
+		return SaveAnalysis{}, err
+	}
 	if err := ctx.Err(); err != nil {
 		return SaveAnalysis{}, err
 	}

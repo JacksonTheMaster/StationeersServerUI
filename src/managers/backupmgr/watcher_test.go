@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+func pollBackupsAt(m *BackupManager, at time.Time) error {
+	files, err := scanBackupFiles(m.ctx, m.config.BackupDir)
+	if err != nil {
+		return err
+	}
+	return observeBackups(m, files, at)
+}
+
 func TestValidateBackupSave(t *testing.T) {
 	for _, tc := range []struct {
 		name, meta, world string
@@ -105,7 +113,7 @@ func TestPollBackupsRequiresTwoUnchangedObservations(t *testing.T) {
 	now := time.Now()
 	poll := func(at time.Time) {
 		t.Helper()
-		if err := pollBackups(m, at); err != nil {
+		if err := pollBackupsAt(m, at); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -142,7 +150,7 @@ func TestPollBackupsRequiresTwoUnchangedObservations(t *testing.T) {
 		t.Fatal("queued an already archived name")
 	}
 	m.config.BackupDir = filepath.Join(root, "offline")
-	if err := pollBackups(m, now.Add(180*time.Second)); err == nil {
+	if err := pollBackupsAt(m, now.Add(180*time.Second)); err == nil {
 		t.Fatal("expected scan error")
 	}
 	if !m.handled[name] {
