@@ -214,3 +214,29 @@ func TestBackupManagerPollingUsesExistingCopy(t *testing.T) {
 	}
 	t.Fatal("polling did not hand save to copy operation")
 }
+
+func TestScanBackupFilesFollowsConfiguredRootOnly(t *testing.T) {
+	root := t.TempDir()
+	actual := t.TempDir()
+	name := "130226_173454_auto.save"
+	if err := copyFile(analysisFixture(t), filepath.Join(actual, name)); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(root, "autosave")
+	if err := os.Symlink(actual, link); err != nil {
+		t.Skipf("symlink creation unavailable: %v", err)
+	}
+	if err := os.Symlink(actual, filepath.Join(actual, "loop")); err != nil {
+		t.Fatal(err)
+	}
+	files, err := scanBackupFiles(context.Background(), link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("expected exactly one file through root link, got %d", len(files))
+	}
+	if _, exists := files[filepath.Join(link, name)]; !exists {
+		t.Fatal("snapshot no longer uses configured paths")
+	}
+}

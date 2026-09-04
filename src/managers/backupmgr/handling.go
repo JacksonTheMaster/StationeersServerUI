@@ -111,12 +111,8 @@ func handleBackup(m *BackupManager, name string, expected saveIdentity) error {
 		return err
 	}
 	defer os.Remove(temp)
-	after, err := identifySave(source)
-	if err != nil {
+	if err := checkCopiedSource(source, expected); err != nil {
 		return err
-	}
-	if after != expected {
-		return fmt.Errorf("autosave changed during copy")
 	}
 	identity, err := identifySave(temp)
 	if err != nil {
@@ -166,6 +162,22 @@ func scanCopiedBackup(ctx context.Context, path string, identity saveIdentity) (
 		record.ScanError = shortScanError(scanErr)
 	}
 	return record, nil
+}
+
+func checkCopiedSource(source string, expected saveIdentity) error {
+	after, err := identifySave(source)
+	// Rotation may unlink the source after we opened it. Validate the completed
+	// temporary copy instead of throwing away what may now be the only copy.
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if after != expected {
+		return fmt.Errorf("autosave changed during copy")
+	}
+	return nil
 }
 
 func copyBackupToTemp(source, directory string) (string, error) {
@@ -254,6 +266,7 @@ func analyzeBackup(ctx context.Context, m *BackupManager, name string) (SaveAnal
 		record.Analysis, scanErr = AnalyzeSave(ctx, path)
 	}
 	if scanErr == nil {
+		record.SummaryReady = true
 		record.ScanVersion = analysisVersion
 		record.ScanError = ""
 	} else {

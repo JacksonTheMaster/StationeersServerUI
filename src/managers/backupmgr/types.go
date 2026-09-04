@@ -65,5 +65,5 @@ type BackupManager struct {
 	scanGate      chan struct{}
 	ctx           context.Context
 	cancel        context.CancelFunc
-	wg            sync.WaitGroup // Added for tracking goroutines
+	wg            sync.WaitGroup
 }

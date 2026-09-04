@@ -19,7 +19,13 @@ import (
 // scan (for example a disconnected mount) as files having disappeared.
 func scanBackupFiles(ctx context.Context, root string) (map[string]saveIdentity, error) {
 	files := make(map[string]saveIdentity)
-	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+	// Follow the configured root (which may be a symlink/junction to a mount),
+	// but do not follow arbitrary symlinks found inside the save directory.
+	resolved, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return files, err
+	}
+	err = filepath.WalkDir(resolved, func(path string, entry os.DirEntry, err error) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -36,7 +42,11 @@ func scanBackupFiles(ctx context.Context, root string) (map[string]saveIdentity,
 		if err != nil {
 			return err
 		}
-		files[path] = identity
+		relative, err := filepath.Rel(resolved, path)
+		if err != nil {
+			return err
+		}
+		files[filepath.Join(root, relative)] = identity
 		return nil
 	})
 	return files, err

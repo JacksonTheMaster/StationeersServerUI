@@ -175,11 +175,14 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 		lastKeptMonthly time.Time
 	)
 
-	for i, backup := range saves {
+	knownIndex := 0
+	for _, backup := range saves {
 		// Never make retention decisions using a placeholder timestamp.
 		if !backup.SummaryReady {
 			continue
 		}
+		keepNewest := knownIndex < m.config.RetentionPolicy.KeepNewestCount
+		knownIndex++
 		// Save timestamps are decoded from Windows FILETIME values as UTC. Apply
 		// retention buckets in the server's local calendar so window checks and
 		// daily/weekly/monthly grouping use the same day boundaries.
@@ -188,7 +191,7 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 		// Always keep the most recent N backups, but also update the retention
 		// trackers so the daily/weekly/monthly logic doesn't redundantly keep
 		// backups for periods already covered by KeepNewestCount.
-		if i < m.config.RetentionPolicy.KeepNewestCount {
+		if keepNewest {
 			updateRetentionTrackers(saveTime, &lastKeptDaily, &lastKeptWeekly, &lastKeptMonthly)
 			continue
 		}

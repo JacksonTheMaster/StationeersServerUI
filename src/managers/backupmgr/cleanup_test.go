@@ -224,3 +224,38 @@ func TestNewBackupManagerUsesFixedScanInterval(t *testing.T) {
 		t.Fatalf("WaitTime = %s, want 45s", m.config.WaitTime)
 	}
 }
+
+func TestPendingBackupsDoNotConsumeNewestRetentionSlots(t *testing.T) {
+	dir := t.TempDir()
+	newest := writeBackupSave(t, dir, "newest.save", time.Now().Add(-time.Hour))
+	expired := writeBackupSave(t, dir, "expired.save", time.Now().Add(-2*time.Hour))
+	m := NewBackupManager(BackupConfig{SafeBackupDir: dir, RetentionPolicy: RetentionPolicy{KeepNewestCount: 1}})
+	primeBackupInventory(t, m)
+	pending := writeBackupSave(t, dir, "pending.save", time.Now())
+	identity, err := identifySave(pending)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.records["pending.save"] = backupRecord{Size: identity.size, ModifiedNS: identity.modifiedNS}
+	m.revision++
+	if err := m.cleanSafeBackupDir(); err != nil {
+		t.Fatal(err)
+	}
+	assertFileExists(t, newest, true)
+	assertFileExists(t, pending, true)
+	assertFileExists(t, expired, false)
+}
+
+func TestSourceCleanupKeepsUnarchivedOldSave(t *testing.T) {
+	dir := t.TempDir()
+	path := writeBackupSave(t, dir, "only-copy.save", time.Now().Add(-48*time.Hour))
+	stamp := time.Now().Add(-48 * time.Hour)
+	if err := os.Chtimes(path, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	m := NewBackupManager(BackupConfig{BackupDir: dir})
+	if err := m.cleanBackupDir(); err != nil {
+		t.Fatal(err)
+	}
+	assertFileExists(t, path, true)
+}

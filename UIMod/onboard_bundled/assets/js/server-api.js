@@ -121,11 +121,13 @@ function createBackupItem(backup) {
                 ${renderBackupSummaryStrip(summary)}
             </div>
             <div class="backup-actions">
-                <button class="download-btn" onclick="downloadBackup(${backupIndex})">Download</button>
-                <button class="restore-btn" onclick="restoreBackup(${backupIndex})">Restore</button>
+                <button class="download-btn">Download</button>
+                <button class="restore-btn">Restore</button>
             </div>
         </div>
     `;
+    li.querySelector('.download-btn').addEventListener('click', () => downloadBackup(backupIndex, backup.SaveFile));
+    li.querySelector('.restore-btn').addEventListener('click', () => restoreBackup(backupIndex, backup.SaveFile));
     return li;
 }
 
@@ -317,9 +319,11 @@ function extractIndex(backupText) {
     return backupText.match(/Index: (\d+)/)?.[1] || null;
 }
 
-function restoreBackup(index) {
+function restoreBackup(index, saveFile) {
     const status = document.getElementById('status');
-    fetch(`/api/v2/backups/restore?index=${index}`)
+    const selection = new URLSearchParams({ index });
+    if (saveFile) selection.set('file', saveFile);
+    fetch(`/api/v2/backups/restore?${selection}`)
         .then(response => response.text())
         .then(data => {
             status.hidden = false;
@@ -331,7 +335,7 @@ function restoreBackup(index) {
         .catch(err => console.error(`Failed to restore backup ${index}:`, err));
 }
 
-function downloadBackup(index) {
+function downloadBackup(index, saveFile) {
     const status = document.getElementById('status');
     status.hidden = false;
     typeTextWithCallback(status, 'Preparing download...', 20, () => {});
@@ -341,7 +345,7 @@ function downloadBackup(index) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ index: index })
+        body: JSON.stringify({ index, saveFile })
     })
     .then(response => {
         if (!response.ok) {

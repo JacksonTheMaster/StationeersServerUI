@@ -84,7 +84,7 @@ func InitGlobalBackupManager(bmconfig BackupConfig) error {
 	// Start the backup manager in a goroutine to avoid blocking
 	go func(m *BackupManager) {
 		if err := m.Start(bmconfig.Identifier); err != nil {
-			logger.Backup.Warnf("%s Exited: "+err.Error(), bmconfig.Identifier)
+			logger.Backup.Warnf("%s Exited: %v", bmconfig.Identifier, err)
 		}
 	}(manager)
 
@@ -97,7 +97,9 @@ func RegisterHTTPHandler(handler *HTTPHandler) {
 	managerMu.Lock()
 	defer managerMu.Unlock()
 	if GlobalBackupManager != nil {
+		handler.mu.Lock()
 		handler.manager = GlobalBackupManager
+		handler.mu.Unlock()
 	}
 	activeHTTPHandlers = append(activeHTTPHandlers, handler)
 }

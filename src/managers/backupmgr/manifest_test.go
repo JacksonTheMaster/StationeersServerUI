@@ -490,6 +490,29 @@ func BenchmarkManifest4000(b *testing.B) {
 			}
 		}
 	})
+	b.Run("persist", func(b *testing.B) {
+		m := NewBackupManager(BackupConfig{SafeBackupDir: b.TempDir()})
+		m.loaded = true
+		m.records = manifest.Backups
+		b.ReportAllocs()
+		for b.Loop() {
+			m.revision++
+			if err := saveManifest(m); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("list", func(b *testing.B) {
+		m := NewBackupManager(BackupConfig{SafeBackupDir: b.TempDir()})
+		m.loaded = true
+		m.records = manifest.Backups
+		b.ReportAllocs()
+		for b.Loop() {
+			if _, err := m.ListBackups(0); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
 }
 
 func TestCopiedSaveSurvivesCanceledAnalysis(t *testing.T) {
@@ -550,5 +573,37 @@ func TestNestedBackupDownloadAndRestore(t *testing.T) {
 	analysis, err := AnalyzeSave(context.Background(), restored)
 	if err != nil || analysis.Players != 3 {
 		t.Fatalf("restored analysis: %+v, %v", analysis, err)
+	}
+}
+
+func TestCompletedCopySurvivesSourceRotation(t *testing.T) {
+	path := analysisFixture(t)
+	expected, err := identifySave(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	temp, err := copyBackupToTemp(path, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkCopiedSource(path, expected); err != nil {
+		t.Fatal(err)
+	}
+	identity, err := identifySave(temp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record, err := scanCopiedBackup(context.Background(), temp, identity)
+	if err != nil || !analysisReady(record) {
+		t.Fatalf("lost completed copy during rotation: %+v, %v", record, err)
+	}
+	if err := os.WriteFile(path, []byte("different content"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkCopiedSource(path, expected); err == nil {
+		t.Fatal("accepted a source changed during copy")
 	}
 }
