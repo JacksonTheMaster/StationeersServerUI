@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -30,6 +29,7 @@ type activeVote struct {
 	required  int
 	voters    map[string]struct{}
 	expiresAt time.Time
+	panel     *votePanel
 }
 
 var discordVotes = struct {
@@ -46,6 +46,7 @@ type voteCastResult struct {
 	kind          voteKind
 	target        restoreVoteTarget
 	cancelledKind voteKind
+	vote          *activeVote
 }
 
 func requiredVoteCount(playerCount, percentage, minimum int) int {
@@ -57,6 +58,10 @@ func requiredVoteCount(playerCount, percentage, minimum int) int {
 }
 
 func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) voteCastResult {
+	return castVote(kind, target, userID, "")
+}
+
+func castVote(kind voteKind, target restoreVoteTarget, userID, expectedToken string) voteCastResult {
 	now := time.Now()
 	players, _ := statusPanelSnapshot()
 	playerCount := len(players)
@@ -83,6 +88,16 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 		return voteCastResult{message: "Unknown vote type."}
 	}
 
+	if expectedToken != "" && (*current == nil || (*current).panel == nil || (*current).panel.token != expectedToken) {
+		discordVotes.Unlock()
+		return voteCastResult{message: "This vote has ended. Open the vote menu to start a new one."}
+	}
+	if *current != nil && !now.Before((*current).expiresAt) {
+		vote := *current
+		discordVotes.Unlock()
+		expireVote(kind, vote.id)
+		return voteCastResult{message: "This vote has expired."}
+	}
 	if *current == nil {
 		if now.Before(cooldownUntil) {
 			discordVotes.Unlock()
@@ -97,6 +112,7 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 			voters:    make(map[string]struct{}),
 			expiresAt: now.Add(time.Duration(config.GetDiscordVoteDurationMinutes()) * time.Minute),
 		}
+		(*current).panel = newVotePanel(*current)
 		go expireDiscordVote(kind, (*current).id, (*current).expiresAt)
 	} else if kind == voteRestore && (*current).target.Name != target.Name && target.Name != "" {
 		discordVotes.Unlock()
@@ -114,6 +130,7 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 	if count < vote.required {
 		message := fmt.Sprintf("Vote recorded: **%d/%d**. The vote ends <t:%d:R>.", count, vote.required, vote.expiresAt.Unix())
 		discordVotes.Unlock()
+		refreshVotePanel(vote.panel)
 		refreshStatusPanel()
 		return voteCastResult{message: message}
 	}
@@ -122,6 +139,7 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 	if !beginDiscordAction(string(kind) + " vote") {
 		delete(vote.voters, userID)
 		discordVotes.Unlock()
+		refreshVotePanel(vote.panel)
 		return voteCastResult{message: "Another Discord action is running. Your vote was not added; try again when it finishes."}
 	}
 
@@ -129,13 +147,17 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 		message: fmt.Sprintf("Vote passed with **%d/%d** votes.", count, vote.required),
 		kind:    kind,
 		target:  vote.target,
+		vote:    vote,
 	}
+	finishVotePanelLocked(vote, "passed", "Vote passed. The server action is in progress.")
+	var cancelled *activeVote
 	*current = nil
 	cooldownUntil = now.Add(time.Duration(cooldownMinutes) * time.Minute)
 	if kind == voteRestart {
 		discordVotes.restartCooldownUntil = cooldownUntil
 		if discordVotes.restore != nil {
 			result.cancelledKind = voteRestore
+			cancelled = discordVotes.restore
 			discordVotes.restore = nil
 			discordVotes.restoreCooldownUntil = now.Add(time.Duration(config.GetDiscordRestoreVoteCooldownMinutes()) * time.Minute)
 		}
@@ -143,11 +165,17 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 		discordVotes.restoreCooldownUntil = cooldownUntil
 		if discordVotes.restart != nil {
 			result.cancelledKind = voteRestart
+			cancelled = discordVotes.restart
 			discordVotes.restart = nil
 			discordVotes.restartCooldownUntil = now.Add(time.Duration(config.GetDiscordRestartVoteCooldownMinutes()) * time.Minute)
 		}
 	}
+	finishVotePanelLocked(cancelled, "cancelled", "Another vote passed first, so this vote was cancelled.")
 	discordVotes.Unlock()
+	refreshVotePanel(vote.panel)
+	if cancelled != nil {
+		refreshVotePanel(cancelled.panel)
+	}
 	refreshStatusPanel()
 	go executePassedVote(result)
 	return result
@@ -157,26 +185,31 @@ func expireDiscordVote(kind voteKind, id uint64, expiresAt time.Time) {
 	timer := time.NewTimer(time.Until(expiresAt))
 	defer timer.Stop()
 	<-timer.C
+	expireVote(kind, id)
+}
 
+func expireVote(kind voteKind, id uint64) {
 	now := time.Now()
 	discordVotes.Lock()
-	expired := false
+	var expired *activeVote
 	switch kind {
 	case voteRestart:
 		if discordVotes.restart != nil && discordVotes.restart.id == id {
+			expired = discordVotes.restart
 			discordVotes.restart = nil
 			discordVotes.restartCooldownUntil = now.Add(time.Duration(config.GetDiscordRestartVoteCooldownMinutes()) * time.Minute)
-			expired = true
 		}
 	case voteRestore:
 		if discordVotes.restore != nil && discordVotes.restore.id == id {
+			expired = discordVotes.restore
 			discordVotes.restore = nil
 			discordVotes.restoreCooldownUntil = now.Add(time.Duration(config.GetDiscordRestoreVoteCooldownMinutes()) * time.Minute)
-			expired = true
 		}
 	}
+	finishVotePanelLocked(expired, "expired", "Voting ended without enough votes. No server action was taken.")
 	discordVotes.Unlock()
-	if expired {
+	if expired != nil {
+		refreshVotePanel(expired.panel)
 		SendMessageToEventLogChannel(fmt.Sprintf("🗳️ %s vote expired without enough votes.", voteKindLabel(kind)))
 		refreshStatusPanel()
 	}
@@ -187,10 +220,20 @@ func executePassedVote(result voteCastResult) {
 	if result.cancelledKind != "" {
 		SendMessageToEventLogChannel(fmt.Sprintf("🗳️ The active %s vote was cancelled because another vote passed.", result.cancelledKind))
 	}
-	sendVotePanelMessage(fmt.Sprintf("🗳️ **%s vote passed** — carrying out the server action.", voteKindLabel(result.kind)))
+	SendMessageToEventLogChannel(fmt.Sprintf("🗳️ %s vote passed. Carrying out the server action.", voteKindLabel(result.kind)))
 	refreshStatusPanel()
-	_, err := performServerAction(string(result.kind), result.target.Name, gameActionBackend())
+	message, err := performServerAction(string(result.kind), result.target.Name, gameActionBackend())
 	finishDiscordAction(err)
+	discordVotes.Lock()
+	if err != nil {
+		finishVotePanelLocked(result.vote, "failed", "The vote passed, but the server action failed. An administrator can check the event log for details.")
+	} else {
+		finishVotePanelLocked(result.vote, "completed", message)
+	}
+	discordVotes.Unlock()
+	if result.vote != nil {
+		refreshVotePanel(result.vote.panel)
+	}
 	if err != nil {
 		reportVoteExecutionFailure(string(result.kind), err)
 	} else {
@@ -199,27 +242,8 @@ func executePassedVote(result voteCastResult) {
 	refreshStatusPanel()
 }
 
-func sendVotePanelMessage(message string) {
-	session := config.GetDiscordSession()
-	if session == nil {
-		return
-	}
-
-	if !config.GetIsDiscordEnabled() {
-		return
-	}
-	channelID := config.GetStatusPanelChannelID()
-	if channelID == "" {
-		return
-	}
-	if _, err := session.ChannelMessageSend(channelID, message); err != nil {
-		logger.Discord.Error("Error sending vote result to status panel channel: " + err.Error())
-	}
-}
-
 func reportVoteExecutionFailure(kind string, err error) {
 	message := fmt.Sprintf("❌ **VOTED %s FAILED** — %s", strings.ToUpper(kind), err.Error())
-	sendVotePanelMessage(message)
 	SendMessageToEventLogChannel(message)
 }
 
@@ -248,10 +272,19 @@ func activeVotesField() *discordgo.MessageEmbedField {
 
 func resetDiscordVotes() {
 	discordVotes.Lock()
+	restart, restore := discordVotes.restart, discordVotes.restore
+	finishVotePanelLocked(restart, "cancelled", "The Discord integration was reloaded or disabled. Start a new vote from the hub.")
+	finishVotePanelLocked(restore, "cancelled", "The Discord integration was reloaded or disabled. Start a new vote from the hub.")
 	discordVotes.nextID++
 	discordVotes.restart = nil
 	discordVotes.restore = nil
 	discordVotes.restartCooldownUntil = time.Time{}
 	discordVotes.restoreCooldownUntil = time.Time{}
 	discordVotes.Unlock()
+	if restart != nil {
+		refreshVotePanel(restart.panel)
+	}
+	if restore != nil {
+		refreshVotePanel(restore.panel)
+	}
 }

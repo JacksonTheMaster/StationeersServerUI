@@ -328,6 +328,10 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 	}
 
 	customID := i.MessageComponentData().CustomID
+	if strings.HasPrefix(customID, voteButtonPrefix) {
+		handleVotePanelButton(s, i)
+		return
+	}
 	switch customID {
 	case ButtonGetPassword, ButtonGetGameVersion, ButtonGetNextRestart, ButtonVoteMenu, voteSelectCustomID:
 		if !requireHubInteraction(s, i) {
