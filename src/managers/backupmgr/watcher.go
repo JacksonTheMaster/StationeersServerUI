@@ -59,11 +59,16 @@ type saveObservation struct {
 
 func watchBackups(m *BackupManager) {
 	defer m.wg.Done()
+	logger.Backup.Debugf("%s Watching autosaves in %q every %s", m.config.Identifier, m.config.BackupDir, m.config.WaitTime)
 	timer := time.NewTimer(m.config.WaitTime)
 	defer timer.Stop()
 	for {
-		if err := pollBackups(m); err != nil && m.ctx.Err() == nil && !errors.Is(err, os.ErrNotExist) {
-			logger.Backup.Warnf("%s Autosave scan failed: %v", m.config.Identifier, err)
+		if err := pollBackups(m); err != nil && m.ctx.Err() == nil {
+			if errors.Is(err, os.ErrNotExist) {
+				logger.Backup.Debugf("%s Autosave scan waiting for storage, retrying in %s: %v", m.config.Identifier, m.config.WaitTime, err)
+			} else {
+				logger.Backup.Warnf("%s Autosave scan failed: %v", m.config.Identifier, err)
+			}
 		}
 		// Count the interval from the completed scan. A slow mount must not leave
 		// a queued ticker event that immediately triggers a second observation.
@@ -78,6 +83,7 @@ func watchBackups(m *BackupManager) {
 
 // An unsuccessful directory read must not erase observations or processed names.
 func pollBackups(m *BackupManager) error {
+	started := time.Now()
 	files, err := scanBackupFiles(m.ctx, m.config.BackupDir)
 	if err != nil {
 		return err
@@ -86,7 +92,14 @@ func pollBackups(m *BackupManager) error {
 	if err := reconcileSourceArchives(m, files); err != nil {
 		return err
 	}
-	return observeBackups(m, files, time.Now())
+	if err := observeBackups(m, files, time.Now()); err != nil {
+		return err
+	}
+	m.stateMu.RLock()
+	observed, pending := len(m.observed), len(m.pending)
+	m.stateMu.RUnlock()
+	logger.Backup.Debugf("%s Autosave poll: %d files, %d observed, %d queued (%s)", m.config.Identifier, len(files), observed, pending, time.Since(started).Round(time.Millisecond))
+	return nil
 }
 
 // Check only archives whose original still exists (normally five), not the whole
@@ -137,6 +150,9 @@ func reconcileSourceArchives(m *BackupManager, sources map[string]saveIdentity) 
 		m.revision++
 	}
 	m.stateMu.Unlock()
+	for _, name := range missing {
+		logger.Backup.Debugf("%s Archive missing for %q; source will be reconsidered by the detector", m.config.Identifier, name)
+	}
 	return nil
 }
 
@@ -164,6 +180,7 @@ func observeBackups(m *BackupManager, files map[string]saveIdentity, now time.Ti
 	}
 	for name := range m.observed {
 		if _, exists := current[name]; !exists {
+			logger.Backup.Debugf("%s Observed autosave no longer in source folder: %q", m.config.Identifier, name)
 			delete(m.observed, name)
 			delete(m.pending, name)
 		}
@@ -181,11 +198,19 @@ func observeBackups(m *BackupManager, files map[string]saveIdentity, now time.Ti
 		}
 		previous, exists := m.observed[name]
 		if !exists || previous.identity != identity {
+			if exists {
+				logger.Backup.Debugf("%s Autosave changed: %q; restarting stability wait", m.config.Identifier, name)
+			} else {
+				logger.Backup.Debugf("%s Autosave detected: %q; waiting at least %s for an unchanged observation", m.config.Identifier, name, m.config.WaitTime)
+			}
 			m.observed[name] = saveObservation{identity: identity, since: now}
 			delete(m.pending, name)
 			continue
 		}
 		if now.Sub(previous.since) >= m.config.WaitTime {
+			if _, queued := m.pending[name]; !queued {
+				logger.Backup.Debugf("%s Autosave stable: %q; queued for validation and handling", m.config.Identifier, name)
+			}
 			m.pending[name] = identity
 		}
 	}
@@ -218,6 +243,7 @@ func inheritDetectorState(next, old *BackupManager) {
 	for name, retired := range old.retired {
 		next.retired[name] = retired
 	}
+	logger.Backup.Debugf("%s Detector state carried over from reload: %d observations", next.config.Identifier, len(next.observed))
 }
 
 // Validation reads both XML members to EOF, checking XML structure and ZIP CRCs.

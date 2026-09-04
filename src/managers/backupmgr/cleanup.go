@@ -17,6 +17,7 @@ func (m *BackupManager) Cleanup() error {
 	if err := m.ctx.Err(); err != nil {
 		return err
 	}
+	logger.Backup.Debugf("%s Starting backup retention cleanup", m.config.Identifier)
 
 	// Verify and clean the safe backup directory first. If it is unavailable,
 	// leave the original autosaves untouched so cleanup cannot remove the only
@@ -30,6 +31,7 @@ func (m *BackupManager) Cleanup() error {
 		return fmt.Errorf("backup dir cleanup failed: %w", err)
 	}
 
+	logger.Backup.Debugf("%s Backup retention cleanup complete", m.config.Identifier)
 	return nil
 }
 
@@ -72,6 +74,8 @@ func (m *BackupManager) cleanBackupDir() error {
 			}
 			if err := os.Remove(fullPath); err != nil {
 				logger.Backup.Error("Failed to remove old backup " + fullPath + ": " + err.Error())
+			} else {
+				logger.Backup.Debugf("%s Removed old autosave %q; analyzed archive verified", m.config.Identifier, file.Name())
 			}
 		}
 	}
@@ -286,6 +290,7 @@ func deleteBackup(m *BackupManager, saveFile BackupSaveFile) error {
 	delete(m.records, name)
 	m.revision++
 	m.stateMu.Unlock()
+	logger.Backup.Debugf("%s Removed expired archive %q", m.config.Identifier, name)
 	return nil
 }
 

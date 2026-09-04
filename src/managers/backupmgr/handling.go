@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
@@ -17,18 +18,19 @@ import (
 func handleBackups(m *BackupManager) {
 	defer m.wg.Done()
 	backlog := pendingAnalyses(m)
+	logger.Backup.Debugf("%s Backup worker ready: %d archives awaiting analysis; new autosaves take priority", m.config.Identifier, len(backlog))
 	for m.ctx.Err() == nil {
 		name, identity := nextAutosave(m)
 		if name != "" {
 			if err := handleBackup(m, name, identity); err != nil && m.ctx.Err() == nil {
-				logger.Backup.Warnf("Backup handling failed, will retry %s: %v", name, err)
+				logger.Backup.Warnf("%s Backup handling failed, will retry %q: %v", m.config.Identifier, name, err)
 			}
 			continue
 		}
 		if len(backlog) > 0 {
 			name, backlog = backlog[0], backlog[1:]
 			if _, err := analyzeBackup(m.ctx, m, name); err != nil && m.ctx.Err() == nil && !errors.Is(err, os.ErrNotExist) {
-				logger.Backup.Warnf("Backup analysis failed for %s (retry on next start): %v", name, err)
+				logger.Backup.Warnf("%s Backup analysis failed for %q (retry on next start): %v", m.config.Identifier, name, err)
 			}
 			continue
 		}
@@ -99,6 +101,8 @@ func handleBackup(m *BackupManager, name string, expected saveIdentity) error {
 	if exists || done {
 		return nil
 	}
+	started := time.Now()
+	logger.Backup.Debugf("%s Handling backup %q: validating source", m.config.Identifier, name)
 	source := filepath.Join(m.config.BackupDir, filepath.FromSlash(name))
 	destination := filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name))
 	// A file imported since startup is never overwritten, even without a manifest entry.
@@ -108,6 +112,7 @@ func handleBackup(m *BackupManager, name string, expected saveIdentity) error {
 		m.handled[name] = true
 		m.revision++
 		m.stateMu.Unlock()
+		logger.Backup.Debugf("%s Archive already exists for %q; keeping it without overwriting", m.config.Identifier, name)
 		return nil
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return err
@@ -118,6 +123,7 @@ func handleBackup(m *BackupManager, name string, expected saveIdentity) error {
 	if err := os.MkdirAll(filepath.Dir(destination), 0755); err != nil {
 		return err
 	}
+	logger.Backup.Debugf("%s Copying backup %q to safe storage", m.config.Identifier, name)
 	temp, err := copyBackupToTemp(source, filepath.Dir(destination))
 	if err != nil {
 		return err
@@ -130,6 +136,7 @@ func handleBackup(m *BackupManager, name string, expected saveIdentity) error {
 	if err != nil {
 		return err
 	}
+	logger.Backup.Debugf("%s Scanning copied backup %q: validation, world metadata and deep analysis", m.config.Identifier, name)
 	record, err := scanCopiedBackup(m.ctx, temp, identity)
 	if err != nil {
 		return err
@@ -146,10 +153,15 @@ func handleBackup(m *BackupManager, name string, expected saveIdentity) error {
 	m.revision++
 	m.stateMu.Unlock()
 	if err := saveManifest(m); err != nil {
-		logger.Backup.Warnf("Backup saved, but its manifest could not be written: %v", err)
+		logger.Backup.Warnf("%s Backup %q saved, but its manifest could not be written: %v", m.config.Identifier, name, err)
 	}
 	if record.ScanError != "" && m.ctx.Err() == nil {
-		logger.Backup.Warnf("Backup saved without deep analysis, will retry on next start: %s: %v", name, record.ScanError)
+		logger.Backup.Warnf("%s Backup saved without deep analysis, will retry on next start: %q: %v", m.config.Identifier, name, record.ScanError)
+	}
+	if analysisReady(record) {
+		logger.Backup.Infof("%s Backup handled: %q (%d bytes, copied and analyzed in %s)", m.config.Identifier, name, record.Size, time.Since(started).Round(time.Millisecond))
+	} else {
+		logger.Backup.Infof("%s Backup archived: %q (%d bytes, %s); deep analysis pending", m.config.Identifier, name, record.Size, time.Since(started).Round(time.Millisecond))
 	}
 	notifyLatestAnalysis(m, name, record.Analysis.SaveSummary)
 	return nil
@@ -277,6 +289,8 @@ func analyzeBackup(ctx context.Context, m *BackupManager, name string) (SaveAnal
 		return SaveAnalysis{}, err
 	}
 	expected := recordIdentity(record)
+	started := time.Now()
+	logger.Backup.Debugf("%s Analyzing archived backup %q", m.config.Identifier, name)
 	summary, summaryErr := ReadSaveSummary(path)
 	if summaryErr == nil {
 		record.Analysis = SaveAnalysis{SaveSummary: summary}
@@ -315,6 +329,11 @@ func analyzeBackup(ctx context.Context, m *BackupManager, name string) (SaveAnal
 	m.stateMu.Unlock()
 	if !exists {
 		return SaveAnalysis{}, os.ErrNotExist
+	}
+	if scanErr == nil {
+		logger.Backup.Debugf("%s Archive analysis complete: %q (%s)", m.config.Identifier, name, time.Since(started).Round(time.Millisecond))
+	} else {
+		logger.Backup.Debugf("%s Archive analysis incomplete: %q (%s): %v", m.config.Identifier, name, time.Since(started).Round(time.Millisecond), scanErr)
 	}
 	if record.SummaryReady {
 		notifyLatestAnalysis(m, name, record.Analysis.SaveSummary)

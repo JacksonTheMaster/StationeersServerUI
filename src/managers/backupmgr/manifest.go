@@ -92,6 +92,8 @@ func loadInventory(m *BackupManager) error {
 	if loaded {
 		return nil
 	}
+	started := time.Now()
+	logger.Backup.Debugf("%s Loading backup inventory from %q", m.config.Identifier, m.config.SafeBackupDir)
 	files, err := scanBackupFiles(m.ctx, m.config.SafeBackupDir)
 	if err != nil {
 		return err
@@ -114,6 +116,7 @@ func loadInventory(m *BackupManager) error {
 		return fmt.Errorf("unsupported backup manifest version %d; leaving it untouched", manifest.Version)
 	}
 	records := make(map[string]backupRecord, len(files))
+	analyzed := 0
 	for path, identity := range files {
 		name, err := backupName(m.config.SafeBackupDir, path)
 		if err != nil {
@@ -124,6 +127,9 @@ func loadInventory(m *BackupManager) error {
 			record = backupRecord{Size: identity.size, ModifiedNS: identity.modifiedNS}
 		}
 		records[name] = record
+		if analysisReady(record) {
+			analyzed++
+		}
 	}
 	handled := make(map[string]bool)
 	for name, done := range manifest.Handled {
@@ -160,6 +166,7 @@ func loadInventory(m *BackupManager) error {
 		m.revision++
 	}
 	m.stateMu.Unlock()
+	logger.Backup.Debugf("%s Backup inventory loaded: %d archives, %d analyses reused, %d awaiting analysis (%s)", m.config.Identifier, len(files), analyzed, len(files)-analyzed, time.Since(started).Round(time.Millisecond))
 	return nil
 }
 
@@ -198,6 +205,7 @@ func saveManifest(m *BackupManager) error {
 	m.stateMu.Lock()
 	m.savedRevision = revision
 	m.stateMu.Unlock()
+	logger.Backup.Debugf("%s Backup manifest saved: %d archives, revision %d", m.config.Identifier, len(manifest.Backups), revision)
 	return nil
 }
 
