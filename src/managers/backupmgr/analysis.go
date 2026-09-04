@@ -22,7 +22,7 @@ const (
 	maxWorldMetaSize = 1 << 20
 	// Large, long-running worlds can legitimately have very large world.xml files.
 	// The limit is only a safety boundary against accidental or malicious zip bombs.
-	maxWorldSize = 2 << 30
+	maxWorldSize = 1000 << 20
 )
 
 // SaveSummary contains information that can be read cheaply from world_meta.xml.
@@ -76,24 +76,9 @@ func ReadSaveSummary(path string) (SaveSummary, error) {
 	}
 	defer archive.Close()
 
-	metaFile := findZipMember(archive.File, worldMetaFilename)
-	if metaFile == nil {
-		return SaveSummary{}, fmt.Errorf("save archive is missing %s", worldMetaFilename)
-	}
-	if metaFile.UncompressedSize64 > maxWorldMetaSize {
-		return SaveSummary{}, fmt.Errorf("%s exceeds the %d-byte safety limit", worldMetaFilename, maxWorldMetaSize)
-	}
-
-	metaReader, err := metaFile.Open()
+	meta, err := readMetadataFromArchive(archive)
 	if err != nil {
-		return SaveSummary{}, fmt.Errorf("open %s: %w", worldMetaFilename, err)
-	}
-	defer metaReader.Close()
-
-	var meta worldMetaData
-	limited := io.LimitReader(metaReader, maxWorldMetaSize+1)
-	if err := xml.NewDecoder(limited).Decode(&meta); err != nil {
-		return SaveSummary{}, fmt.Errorf("decode %s: %w", worldMetaFilename, err)
+		return SaveSummary{}, err
 	}
 
 	worldFile := findZipMember(archive.File, worldFilename)
@@ -110,35 +95,43 @@ func AnalyzeSave(ctx context.Context, path string) (SaveAnalysis, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if err := ctx.Err(); err != nil {
+		return SaveAnalysis{}, err
+	}
 
-	archive, stat, err := openSaveArchive(path)
+	summary, err := ReadSaveSummary(path)
 	if err != nil {
 		return SaveAnalysis{}, err
+	}
+	return analyzeWorld(ctx, path, summary)
+}
+
+// Metadata has already been read. Keep it on failure, but never expose partial counts.
+func analyzeWorld(ctx context.Context, path string, summary SaveSummary) (SaveAnalysis, error) {
+	base := SaveAnalysis{SaveSummary: summary}
+	if err := ctx.Err(); err != nil {
+		return base, err
+	}
+	archive, _, err := openSaveArchive(path)
+	if err != nil {
+		return base, err
 	}
 	defer archive.Close()
-
-	meta, err := readMetadataFromArchive(archive)
-	if err != nil {
-		return SaveAnalysis{}, err
-	}
 	worldFile := findZipMember(archive.File, worldFilename)
 	if worldFile == nil {
-		return SaveAnalysis{}, fmt.Errorf("save archive is missing %s", worldFilename)
+		return base, fmt.Errorf("save archive is missing %s", worldFilename)
 	}
 	if worldFile.UncompressedSize64 > maxWorldSize {
-		return SaveAnalysis{}, fmt.Errorf("%s exceeds the %d-byte safety limit", worldFilename, maxWorldSize)
+		return base, fmt.Errorf("%s exceeds the %d-byte safety limit", worldFilename, maxWorldSize)
 	}
-
 	worldReader, err := worldFile.Open()
 	if err != nil {
-		return SaveAnalysis{}, fmt.Errorf("open %s: %w", worldFilename, err)
+		return base, fmt.Errorf("open %s: %w", worldFilename, err)
 	}
 	defer worldReader.Close()
-
-	result := SaveAnalysis{SaveSummary: summaryFromMetadata(meta, stat.Size(), worldFile)}
-	limited := io.LimitReader(worldReader, maxWorldSize+1)
-	if err := scanWorld(ctx, limited, &result); err != nil {
-		return SaveAnalysis{}, fmt.Errorf("scan %s: %w", worldFilename, err)
+	result := base
+	if err := scanWorld(ctx, io.LimitReader(worldReader, maxWorldSize+1), &result); err != nil {
+		return base, fmt.Errorf("scan %s: %w", worldFilename, err)
 	}
 	return result, nil
 }
@@ -322,7 +315,7 @@ func readMetadataFromArchive(archive *zip.ReadCloser) (worldMetaData, error) {
 	defer reader.Close()
 
 	var meta worldMetaData
-	if err := xml.NewDecoder(io.LimitReader(reader, maxWorldMetaSize+1)).Decode(&meta); err != nil {
+	if err := xml.NewDecoder(&saveXMLReader{reader: io.LimitReader(reader, maxWorldMetaSize+1)}).Decode(&meta); err != nil {
 		return worldMetaData{}, fmt.Errorf("decode %s: %w", worldMetaFilename, err)
 	}
 	return meta, nil

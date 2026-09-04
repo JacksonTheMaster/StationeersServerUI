@@ -1,102 +1,338 @@
 package backupmgr
 
 import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"encoding/xml"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
-
-	"github.com/fsnotify/fsnotify"
 )
 
-// fsWatcher wraps fsnotify.Watcher with additional safety
-type fsWatcher struct {
-	watcher *fsnotify.Watcher
-	events  chan fsnotify.Event
-	errors  chan error
-	done    chan struct{}
-}
-
-// newFsWatcher creates a new file system watcher
-func newFsWatcher(path string, identifier string) (*fsWatcher, error) {
-	// Normalize path
-	normalizedPath := filepath.Clean(path)
-	logger.Backup.Debugf("%s Creating watcher for path: %s", identifier, normalizedPath)
-
-	watcher, err := fsnotify.NewWatcher()
+// scanBackupFiles takes a metadata-only snapshot. Do not interpret an incomplete
+// scan (for example a disconnected mount) as files having disappeared.
+func scanBackupFiles(ctx context.Context, root string) (map[string]saveIdentity, error) {
+	files := make(map[string]saveIdentity)
+	// Follow the configured root (which may be a symlink/junction to a mount),
+	// but do not follow arbitrary symlinks found inside the save directory.
+	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
-		return nil, fmt.Errorf("%s failed to create watcher: %w", identifier, err)
+		return files, err
 	}
-	logger.Backup.Debugf("%s Watcher created successfully", identifier)
-
-	// Watch the root save path and all subdirectories
-	err = filepath.WalkDir(normalizedPath, func(subPath string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(resolved, func(path string, entry os.DirEntry, err error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if err != nil {
 			return err
 		}
-		if d.IsDir() {
-			if err := watcher.Add(subPath); err != nil {
-				logger.Backup.Errorf("%s Failed to add subdir %s to watcher: %s", identifier, subPath, err.Error())
-			} else {
-				logger.Backup.Debugf("%s Added subdir %s to watcher", identifier, subPath)
-			}
+		if entry.IsDir() || !isValidBackupFile(entry.Name()) || entry.Type()&os.ModeSymlink != 0 {
+			return nil
 		}
+		identity, err := identifySave(path)
+		if errors.Is(err, os.ErrNotExist) {
+			return nil // A file can disappear between enumeration and stat.
+		}
+		if err != nil {
+			return err
+		}
+		relative, err := filepath.Rel(resolved, path)
+		if err != nil {
+			return err
+		}
+		files[filepath.Join(root, relative)] = identity
 		return nil
 	})
-	if err != nil {
-		watcher.Close()
-		return nil, fmt.Errorf("%s failed to add subdirectories to watcher: %w", identifier, err)
-	}
-
-	w := &fsWatcher{
-		watcher: watcher,
-		events:  make(chan fsnotify.Event),
-		errors:  make(chan error),
-		done:    make(chan struct{}),
-	}
-
-	go w.forwardEvents()
-	return w, nil
+	return files, err
 }
 
-// forwardEvents forwards events and errors from the underlying watcher
-func (w *fsWatcher) forwardEvents() {
+type saveObservation struct {
+	identity saveIdentity
+	since    time.Time
+}
 
+func watchBackups(m *BackupManager) {
+	defer m.wg.Done()
+	logger.Backup.Debugf("%s Watching autosaves in %q every %s", m.config.Identifier, m.config.BackupDir, m.config.WaitTime)
+	timer := time.NewTimer(m.config.WaitTime)
+	defer timer.Stop()
 	for {
+		if err := pollBackups(m); err != nil && m.ctx.Err() == nil {
+			if errors.Is(err, os.ErrNotExist) {
+				logger.Backup.Debugf("%s Autosave scan waiting for storage, retrying in %s: %v", m.config.Identifier, m.config.WaitTime, err)
+			} else {
+				logger.Backup.Warnf("%s Autosave scan failed: %v", m.config.Identifier, err)
+			}
+		}
+		// Count the interval from the completed scan. A slow mount must not leave
+		// a queued ticker event that immediately triggers a second observation.
+		timer.Reset(m.config.WaitTime)
 		select {
-		case event, ok := <-w.watcher.Events:
-			if !ok {
-				close(w.events)
-				return
-			}
-			select {
-			case w.events <- event:
-				// Successfully sent event
-			case <-w.done:
-				return
-			}
-		case err, ok := <-w.watcher.Errors:
-			if !ok {
-				close(w.errors)
-				return
-			}
-			select {
-			case w.errors <- err:
-				// Successfully sent error
-			case <-w.done:
-				return
-			}
-		case <-w.done:
+		case <-m.ctx.Done():
 			return
+		case <-timer.C:
 		}
 	}
 }
 
-// close stops the watcher and closes all channels
-func (w *fsWatcher) close() {
-	close(w.done)
-	if w.watcher != nil {
-		w.watcher.Close()
+// An unsuccessful directory read must not erase observations or processed names.
+func pollBackups(m *BackupManager) error {
+	started := time.Now()
+	files, err := scanBackupFiles(m.ctx, m.config.BackupDir)
+	if err != nil {
+		return err
+	}
+	// A slow directory read must not count as time spent observing an unchanged file.
+	if err := reconcileSourceArchives(m, files); err != nil {
+		return err
+	}
+	if err := observeBackups(m, files, time.Now()); err != nil {
+		return err
+	}
+	m.stateMu.RLock()
+	observed, pending := len(m.observed), len(m.pending)
+	m.stateMu.RUnlock()
+	logger.Backup.Debugf("%s Autosave poll: %d files, %d observed, %d queued (%s)", m.config.Identifier, len(files), observed, pending, time.Since(started).Round(time.Millisecond))
+	return nil
+}
+
+// Check only archives whose original still exists (normally five), not the whole
+// inventory. Copy and retention own the same lock; a busy worker can wait until
+// the next poll for this check without stopping source observations.
+func reconcileSourceArchives(m *BackupManager, sources map[string]saveIdentity) error {
+	if !m.mu.TryLock() {
+		return nil
+	}
+	defer m.mu.Unlock()
+	expected := make([]string, 0, len(sources))
+	m.stateMu.RLock()
+	for path := range sources {
+		name, err := backupName(m.config.BackupDir, path)
+		if err == nil {
+			if _, exists := m.records[name]; exists {
+				expected = append(expected, name)
+			}
+		}
+	}
+	m.stateMu.RUnlock()
+	if len(expected) == 0 {
+		return nil
+	}
+	// Do not turn an unavailable destination into a collection of missing files.
+	stat, err := os.Stat(m.config.SafeBackupDir)
+	if err != nil {
+		return err
+	}
+	if !stat.IsDir() {
+		return fmt.Errorf("safe backup folder is not a directory")
+	}
+	var missing []string
+	for _, name := range expected {
+		_, err := os.Lstat(filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name)))
+		if errors.Is(err, os.ErrNotExist) {
+			missing = append(missing, name)
+		} else if err != nil {
+			return err
+		}
+	}
+	m.stateMu.Lock()
+	for _, name := range missing {
+		delete(m.records, name)
+		if !m.retired[name] {
+			delete(m.handled, name)
+		}
+		m.revision++
+	}
+	m.stateMu.Unlock()
+	for _, name := range missing {
+		logger.Backup.Debugf("%s Archive missing for %q; source will be reconsidered by the detector", m.config.Identifier, name)
+	}
+	return nil
+}
+
+func observeBackups(m *BackupManager, files map[string]saveIdentity, now time.Time) error {
+	current := make(map[string]saveIdentity, len(files))
+	for path, identity := range files {
+		name, err := backupName(m.config.BackupDir, path)
+		if err != nil {
+			return err
+		}
+		current[name] = identity
+	}
+	m.stateMu.Lock()
+	for name := range m.retired {
+		if _, exists := current[name]; !exists {
+			delete(m.retired, name)
+			m.revision++
+		}
+	}
+	for name := range m.handled {
+		if _, exists := current[name]; !exists {
+			delete(m.handled, name)
+			m.revision++
+		}
+	}
+	for name := range m.observed {
+		if _, exists := current[name]; !exists {
+			logger.Backup.Debugf("%s Observed autosave no longer in source folder: %q", m.config.Identifier, name)
+			delete(m.observed, name)
+			delete(m.pending, name)
+		}
+	}
+	for name, identity := range current {
+		_, archived := m.records[name]
+		if archived && !m.handled[name] {
+			m.handled[name] = true
+			m.revision++
+		}
+		if archived || m.handled[name] || m.retired[name] {
+			delete(m.observed, name)
+			delete(m.pending, name)
+			continue
+		}
+		previous, exists := m.observed[name]
+		if !exists || previous.identity != identity {
+			if exists {
+				logger.Backup.Debugf("%s Autosave changed: %q; restarting stability wait", m.config.Identifier, name)
+			} else {
+				logger.Backup.Debugf("%s Autosave detected: %q; waiting at least %s for an unchanged observation", m.config.Identifier, name, m.config.WaitTime)
+			}
+			m.observed[name] = saveObservation{identity: identity, since: now}
+			delete(m.pending, name)
+			continue
+		}
+		if now.Sub(previous.since) >= m.config.WaitTime {
+			if _, queued := m.pending[name]; !queued {
+				logger.Backup.Debugf("%s Autosave stable: %q; queued for validation and handling", m.config.Identifier, name)
+			}
+			m.pending[name] = identity
+		}
+	}
+	m.stateMu.Unlock()
+	select {
+	case m.wake <- struct{}{}:
+	default:
+	}
+	return nil
+}
+
+// Called after old.Shutdown. Only identical source and destination folders share state.
+func inheritDetectorState(next, old *BackupManager) {
+	if old == nil || filepath.Clean(next.config.BackupDir) != filepath.Clean(old.config.BackupDir) ||
+		filepath.Clean(next.config.SafeBackupDir) != filepath.Clean(old.config.SafeBackupDir) {
+		return
+	}
+	old.stateMu.RLock()
+	defer old.stateMu.RUnlock()
+	for name, observation := range old.observed {
+		next.observed[name] = observation
+	}
+	for name, handled := range old.handled {
+		// Existing archives are reconciled from disk. Carrying their processed
+		// flag alone could hide a lost copy if the last manifest write failed.
+		if _, archived := old.records[name]; !archived || old.retired[name] {
+			next.handled[name] = handled
+		}
+	}
+	for name, retired := range old.retired {
+		next.retired[name] = retired
+	}
+	logger.Backup.Debugf("%s Detector state carried over from reload: %d observations", next.config.Identifier, len(next.observed))
+}
+
+// Validation reads both XML members to EOF, checking XML structure and ZIP CRCs.
+// This establishes that the observed archive is complete, not that another
+// process can never write to the source again. Size/mtime changes invalidate it.
+func validateBackupSave(ctx context.Context, path string, expected saveIdentity) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	archive, stat, err := openSaveArchive(path)
+	if err != nil {
+		return err
+	}
+	defer archive.Close()
+	if (saveIdentity{size: stat.Size(), modifiedNS: stat.ModTime().UnixNano()}) != expected {
+		return fmt.Errorf("save changed before validation")
+	}
+	for _, member := range []struct {
+		name  string
+		root  string
+		limit uint64
+	}{
+		{worldMetaFilename, "WorldMetaData", maxWorldMetaSize},
+		{worldFilename, "WorldData", maxWorldSize},
+	} {
+		var file *zip.File
+		for _, candidate := range archive.File {
+			if candidate.Name == member.name {
+				if file != nil {
+					return fmt.Errorf("duplicate %s", member.name)
+				}
+				file = candidate
+			}
+		}
+		if file == nil || file.UncompressedSize64 > member.limit {
+			return fmt.Errorf("missing or oversized %s", member.name)
+		}
+		reader, err := file.Open()
+		if err != nil {
+			return err
+		}
+		err = validateSaveXML(ctx, io.LimitReader(reader, int64(member.limit)+1), member.root)
+		closeErr := reader.Close()
+		if err != nil {
+			return fmt.Errorf("validate %s: %w", member.name, err)
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+	}
+	after, err := identifySave(path)
+	if err != nil {
+		return err
+	}
+	if after != expected {
+		return fmt.Errorf("save changed during validation")
+	}
+	return ctx.Err()
+}
+
+func validateSaveXML(ctx context.Context, reader io.Reader, root string) error {
+	decoder := xml.NewDecoder(&saveXMLReader{reader: &contextReader{ctx: ctx, reader: reader}})
+	depth, roots := 0, 0
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			if roots != 1 || depth != 0 {
+				return fmt.Errorf("missing or incomplete %s root", root)
+			}
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		switch token := token.(type) {
+		case xml.StartElement:
+			if depth == 0 {
+				roots++
+				if roots != 1 || token.Name.Local != root {
+					return fmt.Errorf("expected one %s root", root)
+				}
+			}
+			depth++
+		case xml.EndElement:
+			depth--
+		case xml.CharData:
+			if depth == 0 && len(bytes.TrimSpace(token)) != 0 {
+				return fmt.Errorf("text outside %s root", root)
+			}
+		}
 	}
 }

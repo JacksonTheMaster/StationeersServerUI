@@ -49,7 +49,6 @@
             "UIText_UpdateNow": "Uppdatera nu",
             "UIText_UpdateInstalling": "Uppdatering installeras, vänligen vänta...",
             "UIText_UpdateFailed": "Uppdateringen misslyckades. Försök igen senare.",
-            "UIText_BackupIndex": "Backup",
             "UIText_BackupCreated": "Skapad",
             "UIText_BackupDaysPlayed": "Speldagar",
             "UIText_BackupThings": "Föremål",
@@ -120,7 +119,7 @@
             "UIText_BackupFiles": "backuper",
             "UIText_BackupWarningTitle": "Permanent rensning",
             "UIText_BackupWarning": "När rensning är aktiverad tas autosaves äldre än 24 timmar och Safebackups som inte skyddas av policyn bort permanent.",
-            "UIText_BackupCopyDelayInfo": "Nya sparfiler kopieras till Safebackups efter en fast säkerhetsfördröjning på 45 sekunder.",
+            "UIText_BackupCopyDelayInfo": "SSUI söker efter nya eller ändrade autosaves var 45:e sekund. Läsbara arkiv med fullständiga world.xml och world_meta.xml kopieras till Safebackups; ofullständiga filer kontrolleras igen senare.",
             "basic": {
                 "UIText_BasicServerSettings": "Grundläggande serverinställningar",
                 "UIText_ServerName": "Servernamn",

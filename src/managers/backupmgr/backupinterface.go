@@ -1,7 +1,6 @@
 package backupmgr
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
@@ -11,6 +10,15 @@ import (
 
 // GlobalBackupManager is the singleton instance of the backup manager
 var GlobalBackupManager *BackupManager
+
+var managerMu sync.RWMutex
+
+// CurrentBackupManager takes a consistent snapshot while config reload swaps instances.
+func CurrentBackupManager() *BackupManager {
+	managerMu.RLock()
+	defer managerMu.RUnlock()
+	return GlobalBackupManager
+}
 
 // Track all HTTP handlers that need updating when manager changes
 var activeHTTPHandlers []*HTTPHandler
@@ -46,40 +54,47 @@ func InitGlobalBackupManager(bmconfig BackupConfig) error {
 	initMutex.Lock()
 	defer initMutex.Unlock()
 
+	previous := CurrentBackupManager()
 	// Shut down existing manager if it exists
-	if GlobalBackupManager != nil {
+	if previous != nil {
 		logger.Backup.Debugf("%s Previous Backup manager found. Shutting it down.", bmconfig.Identifier)
-		GlobalBackupManager.Shutdown()
-		GlobalBackupManager = nil // Clear the manager to avoid stale references
+		previous.Shutdown()
 	}
 
 	logger.Backup.Debugf("%s Creating a global backup manager with ID %s", bmconfig.Identifier, bmconfig.Identifier)
 	manager := NewBackupManager(bmconfig)
+	inheritDetectorState(manager, previous)
+	managerMu.Lock()
 	GlobalBackupManager = manager
 
 	// Update all active HTTP handlers with the new manager
 	for _, handler := range activeHTTPHandlers {
+		handler.mu.Lock()
 		handler.manager = GlobalBackupManager
+		handler.mu.Unlock()
 	}
-
-	// Do not handle old terrain and save system backups
-	if !config.GetIsNewTerrainAndSaveSystem() {
-		return fmt.Errorf("the old terrain system and save format are no longer supported by backup manager. Please switch to the new terrain and save system if you wish to continue to use new SSUI features. Alternatively, you can continue to use the old system by using an older version of SSUI (5.8 and below), disabling auto-updates via the config.json file")
-	}
+	managerMu.Unlock()
 
 	// Start the backup manager in a goroutine to avoid blocking
 	go func(m *BackupManager) {
 		if err := m.Start(bmconfig.Identifier); err != nil {
-			logger.Backup.Warnf("%s Exited: "+err.Error(), bmconfig.Identifier)
+			logger.Backup.Warnf("%s Exited: %v", bmconfig.Identifier, err)
 		}
 	}(manager)
 
-	logger.Backup.Infof("%s Backup manager reloaded successfully", bmconfig.Identifier)
+	logger.Backup.Debugf("%s Backup manager reload scheduled", bmconfig.Identifier)
 	return nil
 }
 
 // RegisterHTTPHandler registers an HTTP handler to be updated when the manager changes
 func RegisterHTTPHandler(handler *HTTPHandler) {
+	managerMu.Lock()
+	defer managerMu.Unlock()
+	if GlobalBackupManager != nil {
+		handler.mu.Lock()
+		handler.manager = GlobalBackupManager
+		handler.mu.Unlock()
+	}
 	activeHTTPHandlers = append(activeHTTPHandlers, handler)
 }
 

@@ -30,10 +30,10 @@ type RetentionPolicy struct {
 }
 
 type BackupSaveFile struct {
-	Index    int
-	SaveFile string
-	SaveTime time.Time
-	Summary  SaveSummary `json:"-"`
+	Name         string
+	SaveTime     time.Time
+	Summary      SaveSummary `json:"-"`
+	SummaryReady bool        `json:"-"`
 }
 
 // BackupFileData contains the backup file bytes and metadata for download/transfer
@@ -46,11 +46,24 @@ type BackupFileData struct {
 
 // BackupManager manages backup operations
 type BackupManager struct {
-	config   BackupConfig
-	mu       sync.Mutex
-	watcher  *fsWatcher
-	analyzer *SaveAnalyzer
-	ctx      context.Context
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup // Added for tracking goroutines
+	config        BackupConfig
+	mu            sync.Mutex
+	lifecycleMu   sync.Mutex
+	started       bool
+	stateMu       sync.RWMutex
+	loadMu        sync.Mutex
+	manifestMu    sync.Mutex
+	loaded        bool
+	records       map[string]backupRecord
+	handled       map[string]bool
+	retired       map[string]bool // Intentional retention deletions while the source still exists.
+	observed      map[string]saveObservation
+	pending       map[string]saveIdentity
+	revision      uint64
+	savedRevision uint64
+	wake          chan struct{}
+	scanGate      chan struct{}
+	ctx           context.Context
+	cancel        context.CancelFunc
+	wg            sync.WaitGroup
 }

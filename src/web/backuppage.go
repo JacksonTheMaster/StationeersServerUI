@@ -17,7 +17,6 @@ type backupPageTemplateData struct {
 	UITextBackupManager            string
 	UITextBackupManagerDescription string
 	UITextBackupHistory            string
-	UITextBackupIndex              string
 	UITextBackupCreated            string
 	UITextBackupDaysPlayed         string
 	UITextBackupThings             string
@@ -75,7 +74,6 @@ func ServeBackupPage(w http.ResponseWriter, r *http.Request) {
 		UITextBackupManager:            localization.GetString("UIText_Backup_Manager"),
 		UITextBackupManagerDescription: localization.GetString("UIText_BackupManagerDescription"),
 		UITextBackupHistory:            localization.GetString("UIText_BackupHistory"),
-		UITextBackupIndex:              localization.GetString("UIText_BackupIndex"),
 		UITextBackupCreated:            localization.GetString("UIText_BackupCreated"),
 		UITextBackupDaysPlayed:         localization.GetString("UIText_BackupDaysPlayed"),
 		UITextBackupThings:             localization.GetString("UIText_BackupThings"),

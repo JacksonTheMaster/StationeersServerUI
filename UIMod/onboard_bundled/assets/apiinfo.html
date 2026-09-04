@@ -85,10 +85,10 @@
                 <div class="endpoint">
                     <h3>Backups</h3>
                     <ul class="api-list">
-                        <li><div class="method get">GET</div><a href="/api/v2/backups" class="endpoint-link">/api/v2/backups</a><div class="endpoint-desc">List backups. Supports <code>?limit=N</code>, <code>?mode=classic</code>, and opt-in metadata via <code>?include=summary</code>.</div></li>
-                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/backups/analyze?index=N</span><div class="endpoint-desc">Lazily analyze player and structure statistics for one backup.</div></li>
-                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/backups/restore?index=N</span><div class="endpoint-desc">Stop the server and restore a backup index.</div></li>
-                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/backups/download</span><div class="endpoint-desc">Download a backup. JSON body: <code>{"index": N}</code>.</div></li>
+                        <li><div class="method get">GET</div><a href="/api/v2/backups" class="endpoint-link">/api/v2/backups</a><div class="endpoint-desc">List backups. Supports <code>?limit=N</code> and opt-in metadata via <code>?include=summary</code>.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/backups/analyze?name=BACKUP.save</span><div class="endpoint-desc">Lazily analyze player and structure statistics for one backup.</div></li>
+                        <li><div class="method get">GET</div><span class="endpoint-link">/api/v2/backups/restore?name=BACKUP.save</span><div class="endpoint-desc">Stop the server and restore the named backup.</div></li>
+                        <li><div class="method post">POST</div><span class="endpoint-link">/api/v2/backups/download</span><div class="endpoint-desc">Download a backup. JSON body: <code>{"name": "040926_112440_auto.save"}</code>.</div></li>
                     </ul>
                 </div>
 
@@ -289,10 +289,10 @@
                 <div class="example-body">
                     <div class="example-grid">
                         <div><h4>Request JSON</h4><pre><code>{
-  "index": 3
+  "name": "040926_112440_auto.save"
 }</code></pre></div>
                         <div><h4>200 Response</h4><pre><code>Content-Type: application/octet-stream
-Content-Disposition: attachment; filename="backup.zip"
+Content-Disposition: attachment; filename="040926_112440_auto.save"
 
 &lt;binary backup data&gt;</code></pre></div>
                     </div>
@@ -399,14 +399,13 @@ Content-Disposition: attachment; filename="backup.zip"
             <div class="read-examples">
                 <article><h4><span class="method get">GET</span> /api/v2/backups</h4><pre><code>[
   {
-    "Index": 0,
-    "SaveFile": "world_2026-08-31.zip",
+    "Name": "310826_100000_auto.save",
     "SaveTime": "2026-08-31T10:00:00Z"
   }
 ]</code></pre></article>
                 <article><h4><span class="method get">GET</span> /api/v2/backups?include=summary</h4><pre><code>[
   {
-    "Index": 0,
+    "Name": "310826_100000_auto.save",
     "SaveTime": "2026-08-31T10:00:00Z",
     "Summary": {
       "worldName": "Europa",

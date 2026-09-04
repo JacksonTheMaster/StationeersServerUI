@@ -58,12 +58,12 @@ func registerSlashCommands(s *discordgo.Session) {
 		},
 		{
 			Name:        "restore",
-			Description: "Restore a backup at the specified index",
+			Description: "Restore a backup at the specified filename",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "index",
-					Description: "Backup index to restore (e.g., 1)",
+					Name:        "name",
+					Description: "Backup filename from /list",
 					Required:    true,
 				},
 			},
@@ -82,12 +82,12 @@ func registerSlashCommands(s *discordgo.Session) {
 		},
 		{
 			Name:        "download",
-			Description: "Download a backup file (most recent if no index given)",
+			Description: "Download a backup file (most recent if no name given)",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
-					Type:        discordgo.ApplicationCommandOptionInteger,
-					Name:        "index",
-					Description: "Backup index to download (default: most recent)",
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Backup filename from /list (default: most recent)",
 					Required:    false,
 				},
 			},

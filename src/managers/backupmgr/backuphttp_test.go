@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"testing"
 )
@@ -13,25 +14,27 @@ func TestListBackupsSummaryIsOptIn(t *testing.T) {
 	path := analysisFixture(t)
 	handler := &HTTPHandler{manager: NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})}
 
-	legacyRequest := httptest.NewRequest(http.MethodGet, "/api/v2/backups?limit=5", nil)
-	legacyResponse := httptest.NewRecorder()
-	handler.ListBackupsHandler(legacyResponse, legacyRequest)
-	if legacyResponse.Code != http.StatusOK {
-		t.Fatalf("legacy response status %d: %s", legacyResponse.Code, legacyResponse.Body.String())
+	primeBackupInventory(t, handler.manager)
+
+	basicRequest := httptest.NewRequest(http.MethodGet, "/api/v2/backups?limit=5", nil)
+	basicResponse := httptest.NewRecorder()
+	handler.ListBackupsHandler(basicResponse, basicRequest)
+	if basicResponse.Code != http.StatusOK {
+		t.Fatalf("basic response status %d: %s", basicResponse.Code, basicResponse.Body.String())
 	}
-	if bytes.Contains(legacyResponse.Body.Bytes(), []byte(`"Summary"`)) {
-		t.Fatalf("legacy response unexpectedly contains Summary: %s", legacyResponse.Body.String())
+	if bytes.Contains(basicResponse.Body.Bytes(), []byte(`"Summary"`)) {
+		t.Fatalf("basic response unexpectedly contains Summary: %s", basicResponse.Body.String())
 	}
-	var legacyRows []map[string]any
-	if err := json.NewDecoder(bytes.NewReader(legacyResponse.Body.Bytes())).Decode(&legacyRows); err != nil {
+	var basicRows []map[string]any
+	if err := json.NewDecoder(bytes.NewReader(basicResponse.Body.Bytes())).Decode(&basicRows); err != nil {
 		t.Fatal(err)
 	}
-	if len(legacyRows) != 1 || len(legacyRows[0]) != 3 {
-		t.Fatalf("legacy response shape changed: %#v", legacyRows)
+	if len(basicRows) != 1 || len(basicRows[0]) != 2 {
+		t.Fatalf("basic response shape changed: %#v", basicRows)
 	}
-	for _, key := range []string{"Index", "SaveFile", "SaveTime"} {
-		if _, exists := legacyRows[0][key]; !exists {
-			t.Fatalf("legacy response is missing %s: %#v", key, legacyRows[0])
+	for _, key := range []string{"Name", "SaveTime"} {
+		if _, exists := basicRows[0][key]; !exists {
+			t.Fatalf("basic response is missing %s: %#v", key, basicRows[0])
 		}
 	}
 
@@ -47,11 +50,46 @@ func TestListBackupsSummaryIsOptIn(t *testing.T) {
 	}
 }
 
+func TestBackupHTTPSelectionUsesName(t *testing.T) {
+	path := analysisFixture(t)
+	m := NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})
+	handler := &HTTPHandler{manager: m}
+	query := url.Values{"name": {filepath.Base(path)}}
+	request := httptest.NewRequest(http.MethodGet, "/api/v2/backups/analyze?"+query.Encode(), nil)
+	response := httptest.NewRecorder()
+	handler.AnalyzeBackupHandler(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("stable selection depended on the old index: %d %s", response.Code, response.Body.String())
+	}
+	body, err := json.Marshal(DownloadBackupRequest{Name: filepath.Base(path)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response = httptest.NewRecorder()
+	handler.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/api/v2/backups/download", bytes.NewReader(body)))
+	if response.Code != http.StatusOK || !bytes.HasPrefix(response.Body.Bytes(), []byte("PK")) {
+		t.Fatalf("stable download: %d", response.Code)
+	}
+	if _, err := m.GetBackupFileData("../outside.save"); err == nil {
+		t.Fatal("accepted a file outside the inventory")
+	}
+}
+
+func TestListPendingAnalysisDoesNotInventSummary(t *testing.T) {
+	path := analysisFixture(t)
+	handler := &HTTPHandler{manager: NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})}
+	response := httptest.NewRecorder()
+	handler.ListBackupsHandler(response, httptest.NewRequest(http.MethodGet, "/api/v2/backups?include=summary", nil))
+	if response.Code != http.StatusOK || bytes.Contains(response.Body.Bytes(), []byte(`"Summary"`)) {
+		t.Fatalf("pending archive returned fabricated statistics: %s", response.Body.String())
+	}
+}
+
 func TestAnalyzeBackupHandler(t *testing.T) {
 	path := analysisFixture(t)
 	manager := NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})
 	handler := &HTTPHandler{manager: manager}
-	request := httptest.NewRequest(http.MethodGet, "/api/v2/backups/analyze?index=0", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/v2/backups/analyze?name=analysis.save", nil)
 	response := httptest.NewRecorder()
 
 	handler.AnalyzeBackupHandler(response, request)

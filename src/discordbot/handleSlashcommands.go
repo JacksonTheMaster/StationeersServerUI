@@ -148,8 +148,8 @@ func handleHelp(s *discordgo.Session, i *discordgo.InteractionCreate, data Embed
 		{Name: "/status", Value: "Gets the running status of the gameserver process"},
 		{Name: "/update", Value: "Updates the gameserver via SteamCMD"},
 		{Name: "/list [limit]", Value: "Lists recent backups (default: 5)"},
-		{Name: "/restore <index>", Value: "Restores a backup"},
-		{Name: "/download [index]", Value: "Downloads a backup (most recent if no index)"},
+		{Name: "/restore <name>", Value: "Restores a backup"},
+		{Name: "/download [name]", Value: "Downloads a backup (most recent if no name)"},
 		{Name: "/bansteamid <SteamID>", Value: "Bans a player"},
 		{Name: "/unbansteamid <SteamID>", Value: "Unbans a player"},
 		{Name: "/command <command>", Value: "Sends a command to the gameserver console"},
@@ -160,24 +160,29 @@ func handleHelp(s *discordgo.Session, i *discordgo.InteractionCreate, data Embed
 }
 
 func handleRestore(s *discordgo.Session, i *discordgo.InteractionCreate, data EmbedData) error {
-	index, err := strconv.Atoi(i.ApplicationCommandData().Options[0].StringValue())
+	name, err := backupCommandName(i.ApplicationCommandData().Options)
+	manager := backupmgr.CurrentBackupManager()
+	if err == nil && manager == nil {
+		err = fmt.Errorf("backup manager is not initialized")
+	}
+	if err == nil {
+		err = backupmgr.CheckBackupAvailable(manager, name)
+	}
 	if err != nil {
-		data.Title, data.Description = "Restore Failed", "Invalid index provided"
-		data.Fields = []EmbedField{{Name: "Error", Value: "Please provide a valid number", Inline: true}}
+		data.Title, data.Description = "Restore Failed", err.Error()
 		return respond(s, i, data)
 	}
-	data.Title, data.Description, data.Color = "Backup Restore", fmt.Sprintf("Restoring backup #%d...", index), 0xFFA500
-	data.Fields = []EmbedField{{Name: "Status", Value: "🕛 Recieved", Inline: true}}
+	data.Title, data.Description, data.Color = "Backup Restore", fmt.Sprintf("Restoring %s...", name), 0xFFA500
 	if err := respond(s, i, data); err != nil {
 		return err
 	}
 	gamemgr.InternalStopServer()
-	if err := backupmgr.GlobalBackupManager.RestoreBackup(index); err != nil {
-		SendMessageToControlChannel(fmt.Sprintf("❌Failed to restore backup %d: %v", index, err))
-		SendMessageToEventLogChannel("⚠️Restore command failed")
+	if err := manager.RestoreBackup(name); err != nil {
+		SendMessageToControlChannel(fmt.Sprintf("❌ Failed to restore %s: %v", name, err))
+		SendMessageToEventLogChannel("⚠️ Restore command failed")
 		return nil
 	}
-	SendMessageToControlChannel(fmt.Sprintf("✅Backup %d restored, Starting Server...", index))
+	SendMessageToControlChannel(fmt.Sprintf("✅ Restored %s. Starting server...", name))
 	time.Sleep(5 * time.Second)
 	gamemgr.InternalStartServer()
 	return nil
@@ -186,57 +191,66 @@ func handleRestore(s *discordgo.Session, i *discordgo.InteractionCreate, data Em
 const maxDiscordFileSize = 10 * 1024 * 1024 // 10MB Discord file upload limit
 
 func handleDownload(s *discordgo.Session, i *discordgo.InteractionCreate, data EmbedData) error {
-	index := -1 // -1 means most recent
-
-	if len(i.ApplicationCommandData().Options) > 0 {
-		index = int(i.ApplicationCommandData().Options[0].IntValue())
+	manager := backupmgr.CurrentBackupManager()
+	if manager == nil {
+		data.Title, data.Description = "Download Failed", "Backup manager is not initialized"
+		return respond(s, i, data)
 	}
-
-	// If no index provided, get the most recent backup index
-	if index == -1 {
-		backups, err := backupmgr.GlobalBackupManager.ListBackups(1)
-		if err != nil || len(backups) == 0 {
-			data.Title, data.Description = "Download Failed", "No backups available"
-			data.Fields = []EmbedField{{Name: "Error", Value: "Could not find any backups", Inline: true}}
-			return respond(s, i, data)
+	name, err := backupCommandName(i.ApplicationCommandData().Options)
+	if len(i.ApplicationCommandData().Options) == 0 {
+		var backups []backupmgr.BackupSaveFile
+		backups, err = manager.ListBackups(1)
+		if err == nil && len(backups) == 0 {
+			err = fmt.Errorf("no backups available")
 		}
-		index = backups[0].Index
+		if err == nil {
+			name = backups[0].Name
+		}
 	}
-
-	data.Title, data.Description, data.Color = "📥 Backup Download", fmt.Sprintf("Preparing backup #%d for download...", index), 0xFFA500
-	data.Fields = []EmbedField{{Name: "Status", Value: "🕛 Processing", Inline: true}}
+	if err == nil {
+		err = backupmgr.CheckBackupAvailable(manager, name)
+	}
+	if err != nil {
+		data.Title, data.Description = "Download Failed", err.Error()
+		return respond(s, i, data)
+	}
+	data.Title, data.Description, data.Color = "📥 Backup Download", fmt.Sprintf("Preparing %s...", name), 0xFFA500
 	if err := respond(s, i, data); err != nil {
 		return err
 	}
-
-	sendBackupToChannel(s, i.ChannelID, index)
+	sendBackupToChannel(s, i.ChannelID, manager, name)
 	return nil
 }
 
-func sendBackupToChannel(s *discordgo.Session, channelID string, index int) {
-	backupData, err := backupmgr.GlobalBackupManager.GetBackupFileData(index)
+// Reject stale registered index options instead of interpreting them as filenames.
+func backupCommandName(options []*discordgo.ApplicationCommandInteractionDataOption) (string, error) {
+	if len(options) != 1 || options[0] == nil || options[0].Name != "name" || options[0].Type != discordgo.ApplicationCommandOptionString {
+		return "", fmt.Errorf("provide a backup name from /list")
+	}
+	name, ok := options[0].Value.(string)
+	if !ok || name == "" {
+		return "", fmt.Errorf("provide a backup name from /list")
+	}
+	return name, nil
+}
+
+func sendBackupToChannel(s *discordgo.Session, channelID string, manager *backupmgr.BackupManager, name string) {
+	backupData, err := manager.GetBackupFileData(name)
 	if err != nil {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("❌ Failed to download backup #%d: %v", index, err))
+		s.ChannelMessageSend(channelID, fmt.Sprintf("❌ Failed to download %s: %v", name, err))
 		return
 	}
-
 	if backupData.Size > maxDiscordFileSize {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("❌ Backup #%d is too large to upload (%.2f MB > 10 MB limit)", index, float64(backupData.Size)/(1024*1024)))
+		s.ChannelMessageSend(channelID, fmt.Sprintf("❌ %s is too large to upload (%.2f MB > 10 MB limit)", name, float64(backupData.Size)/(1024*1024)))
 		return
 	}
-
-	file := &discordgo.File{
-		Name:        backupData.Filename,
-		ContentType: "application/octet-stream",
-		Reader:      bytes.NewReader(backupData.Data),
-	}
-
+	file := &discordgo.File{Name: backupData.Filename, ContentType: "application/octet-stream", Reader: bytes.NewReader(backupData.Data)}
 	_, err = s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
-		Content: fmt.Sprintf("📦 Backup #%d (%s)", index, backupData.SaveTime.Format("Jan 2, 2006 3:04 PM")),
+		Content: fmt.Sprintf("📦 %s (%s)", name, backupData.SaveTime.Format("Jan 2, 2006 3:04 PM")),
 		Files:   []*discordgo.File{file},
 	})
 	if err != nil {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("❌ Failed to upload backup #%d: %v", index, err))
+		s.ChannelMessageSend(channelID, fmt.Sprintf("❌ Failed to upload %s: %v", name, err))
 	}
 }
 
@@ -255,7 +269,7 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, data Embed
 		}
 	}
 
-	backups, err := backupmgr.GlobalBackupManager.ListBackups(limit)
+	backups, err := backupmgr.CurrentBackupManager().ListBackups(limit)
 	if err != nil {
 		data.Title, data.Description = "List Failed", "Error fetching backups"
 		data.Fields = []EmbedField{{Name: "Error", Value: "Failed to fetch backup list", Inline: true}}
@@ -276,7 +290,7 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, data Embed
 		}
 		fields := make([]EmbedField, end-start)
 		for j, b := range backups[start:end] {
-			fields[j] = EmbedField{Name: fmt.Sprintf("📂 Backup #%d", b.Index), Value: b.SaveTime.Format("January 2, 2006, 3:04 PM")}
+			fields[j] = EmbedField{Name: "📂 " + b.Name, Value: b.SaveTime.Format("January 2, 2006, 3:04 PM")}
 		}
 		embeds = append(embeds, generateEmbed(EmbedData{
 			Title: "📜 Backup Archives", Description: fmt.Sprintf("Showing %d-%d of %d backups", start+1, end, len(backups)),
@@ -289,13 +303,18 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, data Embed
 	if len(backups) <= 5 {
 		var buttons []discordgo.MessageComponent
 		for _, b := range backups {
+			if len(ButtonDownloadBackupPfx+b.Name) > 100 {
+				continue // Long nested names remain available through /download name.
+			}
 			buttons = append(buttons, discordgo.Button{
-				Label:    fmt.Sprintf("📥 Download #%d", b.Index),
+				Label:    shortBackupLabel("📥 "+b.Name, 80),
 				Style:    discordgo.SecondaryButton,
-				CustomID: fmt.Sprintf("%s%d", ButtonDownloadBackupPfx, b.Index),
+				CustomID: ButtonDownloadBackupPfx + b.Name,
 			})
 		}
-		components = append(components, discordgo.ActionsRow{Components: buttons})
+		if len(buttons) > 0 {
+			components = append(components, discordgo.ActionsRow{Components: buttons})
+		}
 	}
 
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -423,17 +442,21 @@ func handleDownloadButtonInteraction(s *discordgo.Session, i *discordgo.Interact
 		return
 	}
 
-	indexStr := strings.TrimPrefix(customID, ButtonDownloadBackupPfx)
-	index, err := strconv.Atoi(indexStr)
-	if err != nil {
-		respondToButtonError(s, i, "Invalid backup index")
+	name := strings.TrimPrefix(customID, ButtonDownloadBackupPfx)
+	manager := backupmgr.CurrentBackupManager()
+	if manager == nil {
+		respondToButtonError(s, i, "Backup manager is not initialized")
+		return
+	}
+	if err := backupmgr.CheckBackupAvailable(manager, name); err != nil {
+		respondToButtonError(s, i, "That backup is no longer available. Run /list again.")
 		return
 	}
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("📥 Preparing backup #%d for download...", index),
+			Content: fmt.Sprintf("📥 Preparing %s for download...", name),
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
@@ -442,7 +465,7 @@ func handleDownloadButtonInteraction(s *discordgo.Session, i *discordgo.Interact
 		return
 	}
 
-	go sendBackupToChannel(s, config.GetControlChannelID(), index)
+	go sendBackupToChannel(s, config.GetControlChannelID(), manager, name)
 }
 
 func respondToButtonError(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
@@ -453,4 +476,12 @@ func respondToButtonError(s *discordgo.Session, i *discordgo.InteractionCreate, 
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
+}
+
+func shortBackupLabel(label string, limit int) string {
+	runes := []rune(label)
+	if len(runes) > limit {
+		return string(runes[:limit-1]) + "…"
+	}
+	return label
 }

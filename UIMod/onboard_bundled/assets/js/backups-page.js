@@ -67,18 +67,18 @@
 
     function createBackupRow(backup, position) {
         const summary = backup.Summary || {};
-        const index = Number(backup.Index);
-        const worldName = summary.worldName || `${text.backupIndex} ${index}`;
+        const name = backup.Name;
+        const worldName = summary.worldName || name;
         const item = document.createElement('li');
         item.className = 'backup-page-item';
-        item.dataset.backupIndex = String(index);
+        item.dataset.backupName = name;
 
         item.innerHTML = `
             <div class="backup-page-row">
                 <div class="backup-page-identity">
                     <div class="backup-page-title-line">
                         <h2>${escapeHTML(worldName)}</h2>
-                        <span>${escapeHTML(text.backupIndex)} ${index}</span>
+                        <span>${escapeHTML(name)}</span>
                     </div>
                     <div class="backup-page-meta">
                         <span><small>${escapeHTML(text.created)}</small><strong>${new Date(backup.SaveTime).toLocaleString()}</strong></span>
@@ -95,19 +95,19 @@
                     <button type="button" class="backup-restore">${escapeHTML(text.restore)}</button>
                 </div>
                 <button type="button" class="backup-page-chevron" aria-expanded="false"
-                    aria-controls="backup-page-analysis-${index}" aria-label="${escapeHTML(text.expand)}">
+                    aria-controls="backup-page-analysis-${position}" aria-label="${escapeHTML(text.expand)}">
                     <span aria-hidden="true">›</span>
                 </button>
             </div>
-            <section id="backup-page-analysis-${index}" class="backup-page-analysis" data-state="idle" hidden></section>`;
+            <section id="backup-page-analysis-${position}" class="backup-page-analysis" data-state="idle" hidden></section>`;
 
         const row = item.querySelector('.backup-page-row');
         row.addEventListener('click', event => {
             if (event.target.closest('button, a, input, select, textarea')) return;
             toggleAnalysis(item);
         });
-        item.querySelector('.backup-download').addEventListener('click', () => downloadBackup(index));
-        item.querySelector('.backup-restore').addEventListener('click', () => restoreBackup(index));
+        item.querySelector('.backup-download').addEventListener('click', () => downloadBackup(name));
+        item.querySelector('.backup-restore').addEventListener('click', () => restoreBackup(name));
         item.querySelector('.backup-page-chevron').addEventListener('click', () => toggleAnalysis(item));
         wireIconFallbacks(item);
 
@@ -130,11 +130,11 @@
         const panel = item.querySelector('.backup-page-analysis');
         if (panel.dataset.state === 'loading' || panel.dataset.state === 'loaded') return;
 
-        const index = Number(item.dataset.backupIndex);
         panel.dataset.state = 'loading';
         panel.innerHTML = `<div class="backup-analysis-message"><span class="backup-analysis-spinner"></span>${escapeHTML(text.analysisLoading)}</div>`;
 
-        fetch(`/api/v2/backups/analyze?index=${index}`)
+        const selection = new URLSearchParams({ name: item.dataset.backupName });
+        fetch(`/api/v2/backups/analyze?${selection}`)
             .then(response => {
                 if (!response.ok) return response.text().then(message => { throw new Error(message || text.analysisFailed); });
                 return response.json();
@@ -219,8 +219,9 @@
             });
     }
 
-    function restoreBackup(index) {
-        fetch(`/api/v2/backups/restore?index=${index}`)
+    function restoreBackup(name) {
+        const selection = new URLSearchParams({ name });
+        fetch(`/api/v2/backups/restore?${selection}`)
             .then(response => response.text().then(message => ({ ok: response.ok, message })))
             .then(result => {
                 if (!result.ok) throw new Error(result.message);
@@ -229,11 +230,11 @@
             .catch(error => showNotice(error.message, 'error'));
     }
 
-    function downloadBackup(index) {
+    function downloadBackup(name) {
         fetch('/api/v2/backups/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ index })
+            body: JSON.stringify({ name })
         })
             .then(async response => {
                 if (!response.ok) {
@@ -241,7 +242,7 @@
                     throw new Error(error.error || text.downloadFailed);
                 }
                 const disposition = response.headers.get('Content-Disposition') || '';
-                const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `backup_${index}.save`;
+                const filename = disposition.match(/filename="([^"]+)"/)?.[1] || name.split("/").pop();
                 return { blob: await response.blob(), filename };
             })
             .then(({ blob, filename }) => {
