@@ -13,58 +13,22 @@ import (
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
 
-// RestoreBackup restores a backup with the given index
-func (m *BackupManager) RestoreBackup(index int) error {
+// RestoreBackup restores a named archive from the current inventory.
+func (m *BackupManager) RestoreBackup(name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if err := m.ctx.Err(); err != nil {
+	path, err := backupFilePath(m, name)
+	if err != nil {
 		return err
 	}
-	logger.Backup.Infof("Restoring backup with index %d", index)
-
-	saves, err := m.getBackupSaveFiles()
-	if err != nil {
-		return fmt.Errorf("failed to get backup groups: %w", err)
-	}
-	if len(saves) == 0 {
-		return fmt.Errorf("no backups are available")
-	}
-	if index < 0 || index >= len(saves) {
-		return fmt.Errorf("backup index %d out of range (0-%d)", index, len(saves)-1)
-	}
-
-	var targetSave = saves[index]
-	return m.restoreBackupSave(targetSave)
+	logger.Backup.Infof("Restoring backup %s", name)
+	return m.restoreBackupSave(path)
 }
 
-// RestoreBackupFile restores a backup selected by its stable safe-backup path.
-// The path must still be present in the manager's current backup inventory.
-func (m *BackupManager) RestoreBackupFile(saveFile string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if err := m.ctx.Err(); err != nil {
-		return err
-	}
-
-	saves, err := m.getBackupSaveFiles()
-	if err != nil {
-		return fmt.Errorf("failed to get backup groups: %w", err)
-	}
-	for _, save := range saves {
-		if save.SaveFile == saveFile {
-			logger.Backup.Infof("Restoring backup file %s", saveFile)
-			return m.restoreBackupSave(save)
-		}
-	}
-	return fmt.Errorf("selected backup is no longer available")
-}
-
-func (m *BackupManager) restoreBackupSave(targetSave BackupSaveFile) error {
+func (m *BackupManager) restoreBackupSave(backupFile string) error {
 
 	restoredFiles := make(map[string]string)
 
-	// .save file case
-	backupFile := targetSave.SaveFile
 	destFile := filepath.Join("./saves/"+m.config.WorldName, m.config.WorldName+".save")
 
 	// This check was disabled since it was relatively unnecessary and didnt bring much benefit

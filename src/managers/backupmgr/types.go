@@ -30,8 +30,7 @@ type RetentionPolicy struct {
 }
 
 type BackupSaveFile struct {
-	Index        int
-	SaveFile     string
+	Name         string
 	SaveTime     time.Time
 	Summary      SaveSummary `json:"-"`
 	SummaryReady bool        `json:"-"`

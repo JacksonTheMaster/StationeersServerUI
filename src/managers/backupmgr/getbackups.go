@@ -1,31 +1,85 @@
 package backupmgr
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 )
 
-// New clients select a stable path. The numeric index remains supported for older clients.
-func selectBackup(m *BackupManager, index int, saveFile string) (BackupSaveFile, error) {
-	saves, err := m.getBackupSaveFiles()
-	if err != nil {
+var ErrInvalidBackupName = errors.New("invalid backup name")
+
+// Names are slash-separated paths relative to Safebackups on every platform.
+// Do not clean input: accepting aliases would give one archive several identities.
+func validateBackupName(name string) error {
+	if !fs.ValidPath(name) || !filepath.IsLocal(filepath.FromSlash(name)) ||
+		strings.ContainsAny(name, "\\:") || !isValidBackupFile(name) ||
+		strings.ContainsFunc(name, func(r rune) bool { return r < 32 || r == 127 }) {
+		return ErrInvalidBackupName
+	}
+	return nil
+}
+
+func selectBackup(m *BackupManager, name string) (BackupSaveFile, error) {
+	if err := validateBackupName(name); err != nil {
 		return BackupSaveFile{}, err
 	}
-	if saveFile != "" {
-		for _, save := range saves {
-			if save.SaveFile == saveFile {
-				return save, nil
-			}
-		}
-		return BackupSaveFile{}, fmt.Errorf("selected backup is no longer available")
+	if err := loadInventory(m); err != nil {
+		return BackupSaveFile{}, err
 	}
-	if index < 0 || index >= len(saves) {
-		return BackupSaveFile{}, fmt.Errorf("backup index %d out of range (0-%d)", index, len(saves)-1)
+	m.stateMu.RLock()
+	record, exists := m.records[name]
+	m.stateMu.RUnlock()
+	if !exists {
+		return BackupSaveFile{}, fmt.Errorf("backup %q is no longer available: %w", name, os.ErrNotExist)
 	}
-	return saves[index], nil
+	return BackupSaveFile{Name: name, SaveTime: recordTimestamp(name, record), Summary: record.Analysis.SaveSummary, SummaryReady: record.SummaryReady}, nil
+}
+
+// CheckBackupAvailable lets callers reject stale selections before stopping the game.
+// Restore and download check again when they acquire the operation lock.
+func CheckBackupAvailable(m *BackupManager, name string) error {
+	_, err := backupFilePath(m, name)
+	return err
+}
+
+func backupFilePath(m *BackupManager, name string) (string, error) {
+	if err := m.ctx.Err(); err != nil {
+		return "", err
+	}
+	if _, err := selectBackup(m, name); err != nil {
+		return "", err
+	}
+	root, err := filepath.EvalSymlinks(m.config.SafeBackupDir)
+	if err != nil {
+		return "", err
+	}
+	path, err := filepath.EvalSymlinks(filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name)))
+	if err != nil {
+		return "", err
+	}
+	relative, err := filepath.Rel(root, path)
+	if err != nil || !filepath.IsLocal(relative) {
+		return "", ErrInvalidBackupName
+	}
+	identity, err := identifySave(path)
+	if err != nil {
+		return "", err
+	}
+	m.stateMu.RLock()
+	record, exists := m.records[name]
+	m.stateMu.RUnlock()
+	if !exists {
+		return "", os.ErrNotExist
+	}
+	if identity != recordIdentity(record) {
+		return "", fmt.Errorf("backup %q changed since it was last observed", name)
+	}
+	return path, nil
 }
 
 // Unknown archives are visible immediately; metadata arrives in the background.
@@ -37,18 +91,15 @@ func (m *BackupManager) getBackupSaveFiles() ([]BackupSaveFile, error) {
 	saves := make([]BackupSaveFile, 0, len(m.records))
 	for name, record := range m.records {
 		savedAt := recordTimestamp(name, record)
-		saves = append(saves, BackupSaveFile{SaveFile: filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name)), SaveTime: savedAt, Summary: record.Analysis.SaveSummary, SummaryReady: record.SummaryReady})
+		saves = append(saves, BackupSaveFile{Name: name, SaveTime: savedAt, Summary: record.Analysis.SaveSummary, SummaryReady: record.SummaryReady})
 	}
 	m.stateMu.RUnlock()
 	sort.Slice(saves, func(i, j int) bool {
 		if saves[i].SaveTime.Equal(saves[j].SaveTime) {
-			return saves[i].SaveFile < saves[j].SaveFile
+			return saves[i].Name < saves[j].Name
 		}
 		return saves[i].SaveTime.Before(saves[j].SaveTime)
 	})
-	for i := range saves {
-		saves[i].Index = i
-	}
 	return saves, nil
 }
 

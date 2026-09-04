@@ -49,7 +49,6 @@
             "UIText_UpdateNow": "Uppdatera nu",
             "UIText_UpdateInstalling": "Uppdatering installeras, vänligen vänta...",
             "UIText_UpdateFailed": "Uppdateringen misslyckades. Försök igen senare.",
-            "UIText_BackupIndex": "Backup",
             "UIText_BackupCreated": "Skapad",
             "UIText_BackupDaysPlayed": "Speldagar",
             "UIText_BackupThings": "Föremål",

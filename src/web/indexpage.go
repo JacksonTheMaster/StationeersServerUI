@@ -67,7 +67,6 @@ func ServeIndex(w http.ResponseWriter, r *http.Request) {
 		UIText_PlayersUnavailable:       localization.GetString("UIText_PlayersUnavailable"),
 		UIText_RecentBackups:            localization.GetString("UIText_RecentBackups"),
 		UIText_BackupHistory:            localization.GetString("UIText_BackupHistory"),
-		UIText_BackupIndex:              localization.GetString("UIText_BackupIndex"),
 		UIText_BackupCreated:            localization.GetString("UIText_BackupCreated"),
 		UIText_BackupDaysPlayed:         localization.GetString("UIText_BackupDaysPlayed"),
 		UIText_BackupThings:             localization.GetString("UIText_BackupThings"),

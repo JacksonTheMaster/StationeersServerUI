@@ -153,26 +153,17 @@ func (m *BackupManager) ListBackups(limit int) ([]BackupSaveFile, error) {
 	return saves, nil
 }
 
-// AnalyzeBackup returns cached deep metadata for the backup index. Deep scans are
-// serialized by default so listing many saves cannot saturate the host.
-func (m *BackupManager) AnalyzeBackup(ctx context.Context, index int) (SaveAnalysis, error) {
-	return getBackupAnalysis(ctx, m, index, "")
-}
-
-func getBackupAnalysis(ctx context.Context, m *BackupManager, index int, saveFile string) (SaveAnalysis, error) {
+// AnalyzeBackup returns deep metadata for the named backup, scanning it if needed.
+func (m *BackupManager) AnalyzeBackup(ctx context.Context, name string) (SaveAnalysis, error) {
 	if err := m.ctx.Err(); err != nil {
 		return SaveAnalysis{}, err
 	}
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	save, err := selectBackup(m, index, saveFile)
+	_, err := selectBackup(m, name)
 	if err != nil {
 		return SaveAnalysis{}, fmt.Errorf("failed to get backup files: %w", err)
-	}
-	name, err := backupName(m.config.SafeBackupDir, save.SaveFile)
-	if err != nil {
-		return SaveAnalysis{}, err
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(m.ctx, cancel)
@@ -181,24 +172,23 @@ func getBackupAnalysis(ctx context.Context, m *BackupManager, index int, saveFil
 	return analyzeBackup(ctx, m, name)
 }
 
-// GetBackupFileData retrieves backup file data by index for download/transfer
-func (m *BackupManager) GetBackupFileData(index int) (*BackupFileData, error) {
-	return getBackupFileData(m, index, "")
-}
-
-func getBackupFileData(m *BackupManager, index int, saveFile string) (*BackupFileData, error) {
+// GetBackupFileData reads the named backup for download or transfer.
+func (m *BackupManager) GetBackupFileData(name string) (*BackupFileData, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if err := m.ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	targetSave, err := selectBackup(m, index, saveFile)
+	targetSave, err := selectBackup(m, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get backup files: %w", err)
 	}
 
-	filePath := targetSave.SaveFile
+	filePath, err := backupFilePath(m, name)
+	if err != nil {
+		return nil, err
+	}
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {

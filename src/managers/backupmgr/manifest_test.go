@@ -65,7 +65,7 @@ func TestManifestRestoresAnalysisAndRuntimeReadsUseRAM(t *testing.T) {
 	if err != nil || len(saves) != 1 || saves[0].Summary.DaysPlayed != 67 {
 		t.Fatalf("list: %+v, %v", saves, err)
 	}
-	analysis, err := next.AnalyzeBackup(context.Background(), 0)
+	analysis, err := next.AnalyzeBackup(context.Background(), filepath.Base(path))
 	if err != nil || analysis.Players != 3 || analysis.Furnaces != 2 {
 		t.Fatalf("analysis: %+v, %v", analysis, err)
 	}
@@ -334,7 +334,7 @@ func TestPendingScanCancelsAndCanResume(t *testing.T) {
 	m.scanGate <- struct{}{}
 	ctx, cancel := context.WithCancel(context.Background())
 	result := make(chan error, 1)
-	go func() { _, err := m.AnalyzeBackup(ctx, 0); result <- err }()
+	go func() { _, err := m.AnalyzeBackup(ctx, filepath.Base(path)); result <- err }()
 	cancel()
 	select {
 	case err := <-result:
@@ -369,7 +369,7 @@ func TestConcurrentListAnalysisAndPersistence(t *testing.T) {
 				if _, err := m.ListBackups(0); err != nil {
 					t.Error(err)
 				}
-				if _, err := m.AnalyzeBackup(context.Background(), 0); err != nil {
+				if _, err := m.AnalyzeBackup(context.Background(), filepath.Base(path)); err != nil {
 					t.Error(err)
 				}
 				if err := saveManifest(m); err != nil {
@@ -545,10 +545,10 @@ func TestNestedBackupDownloadAndRestore(t *testing.T) {
 	m := NewBackupManager(BackupConfig{WorldName: "restored", SafeBackupDir: safe})
 	primeBackupInventory(t, m)
 	saves, err := m.ListBackups(0)
-	if err != nil || len(saves) != 1 || saves[0].SaveFile != path {
+	if err != nil || len(saves) != 1 || saves[0].Name != "nested/130226_173454_auto.save" {
 		t.Fatalf("nested list: %+v, %v", saves, err)
 	}
-	download, err := m.GetBackupFileData(0)
+	download, err := m.GetBackupFileData("nested/130226_173454_auto.save")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -559,7 +559,7 @@ func TestNestedBackupDownloadAndRestore(t *testing.T) {
 	if sha256.Sum256(original) != sha256.Sum256(download.Data) {
 		t.Fatal("download bytes changed")
 	}
-	if err := m.RestoreBackupFile(path); err != nil {
+	if err := m.RestoreBackup("nested/130226_173454_auto.save"); err != nil {
 		t.Fatal(err)
 	}
 	restored := filepath.Join("saves", "restored", "restored.save")

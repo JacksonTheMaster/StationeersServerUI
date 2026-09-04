@@ -27,7 +27,7 @@ func TestBackupAnalysisAcceptsNilRequestContext(t *testing.T) {
 	path := analysisFixture(t)
 	m := NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})
 	primeBackupInventory(t, m)
-	analysis, err := m.AnalyzeBackup(nil, 0)
+	analysis, err := m.AnalyzeBackup(nil, filepath.Base(path))
 	if err != nil || analysis.Players != 3 {
 		t.Fatalf("nil-context analysis: %+v, %v", analysis, err)
 	}

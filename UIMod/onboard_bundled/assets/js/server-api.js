@@ -102,8 +102,8 @@ function createBackupItem(backup) {
     li.className = 'backup-item';
     const text = getBackupUIText();
     const summary = backup.Summary || {};
-    const backupIndex = Number(backup.Index);
-    const title = summary.worldName || `${text.backupIndex} ${backupIndex}`;
+    const name = backup.Name;
+    const title = summary.worldName || name;
     const gameVersion = summary.gameVersion
         ? `<span>${escapeBackupHTML(text.gameVersion)}: ${escapeBackupHTML(summary.gameVersion)}</span>`
         : '';
@@ -112,7 +112,7 @@ function createBackupItem(backup) {
             <div class="backup-info">
                 <div class="backup-header">
                     <span class="backup-name">${escapeBackupHTML(title)}</span>
-                    <span class="backup-index-label">${escapeBackupHTML(text.backupIndex)} ${backupIndex}</span>
+                    <span class="backup-filename">${escapeBackupHTML(name)}</span>
                 </div>
                 <div class="backup-date">
                     <span>${escapeBackupHTML(text.created)}: ${new Date(backup.SaveTime).toLocaleString()}</span>
@@ -126,15 +126,14 @@ function createBackupItem(backup) {
             </div>
         </div>
     `;
-    li.querySelector('.download-btn').addEventListener('click', () => downloadBackup(backupIndex, backup.SaveFile));
-    li.querySelector('.restore-btn').addEventListener('click', () => restoreBackup(backupIndex, backup.SaveFile));
+    li.querySelector('.download-btn').addEventListener('click', () => downloadBackup(name));
+    li.querySelector('.restore-btn').addEventListener('click', () => restoreBackup(name));
     return li;
 }
 
 function getBackupUIText() {
     const data = document.getElementById('backups')?.dataset || {};
     return {
-        backupIndex: data.backupIndex || 'Backup',
         created: data.created || 'Created',
         daysPlayed: data.daysPlayed || 'Days played',
         things: data.things || 'Things',
@@ -312,19 +311,18 @@ function updateLatestBackupDisplay(backup) {
     else age = `${Math.floor(elapsedSeconds / 86400)}d ago`;
 
     display.textContent = age;
-    display.title = `Backup ${backup.Index} · ${created.toLocaleString()}`;
+    display.title = `${backup.Name} · ${created.toLocaleString()}`;
 }
 
-function extractIndex(backupText) {
-    return backupText.match(/Index: (\d+)/)?.[1] || null;
-}
-
-function restoreBackup(index, saveFile) {
+function restoreBackup(name) {
     const status = document.getElementById('status');
-    const selection = new URLSearchParams({ index });
-    if (saveFile) selection.set('file', saveFile);
+    const selection = new URLSearchParams({ name });
     fetch(`/api/v2/backups/restore?${selection}`)
-        .then(response => response.text())
+        .then(async response => {
+            const message = await response.text();
+            if (!response.ok) throw new Error(message || 'Restore failed');
+            return message;
+        })
         .then(data => {
             status.hidden = false;
             typeTextWithCallback(status, data, 20, () => {
@@ -332,10 +330,13 @@ function restoreBackup(index, saveFile) {
             });
             showPopup('info', data);
         })
-        .catch(err => console.error(`Failed to restore backup ${index}:`, err));
+        .catch(err => {
+            console.error(`Failed to restore backup ${name}:`, err);
+            showPopup('error', err.message);
+        });
 }
 
-function downloadBackup(index, saveFile) {
+function downloadBackup(name) {
     const status = document.getElementById('status');
     status.hidden = false;
     typeTextWithCallback(status, 'Preparing download...', 20, () => {});
@@ -345,14 +346,14 @@ function downloadBackup(index, saveFile) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ index, saveFile })
+        body: JSON.stringify({ name })
     })
     .then(response => {
         if (!response.ok) {
             return response.json().then(err => { throw new Error(err.error || 'Download failed'); });
         }
         const disposition = response.headers.get('Content-Disposition');
-        let filename = `backup_${index}.save`;
+        let filename = name.split("/").pop();
         if (disposition) {
             const match = disposition.match(/filename="(.+)"/);
             if (match) filename = match[1];
@@ -371,7 +372,7 @@ function downloadBackup(index, saveFile) {
         status.hidden = true;
     })
     .catch(err => {
-        console.error(`Failed to download backup ${index}:`, err);
+        console.error(`Failed to download backup ${name}:`, err);
         showPopup('error', 'Download failed: ' + err.message);
         status.hidden = true;
     });

@@ -36,7 +36,6 @@ type IndexTemplateData struct {
 	UIText_PlayersUnavailable       string
 	UIText_RecentBackups            string
 	UIText_BackupHistory            string
-	UIText_BackupIndex              string
 	UIText_BackupCreated            string
 	UIText_BackupDaysPlayed         string
 	UIText_BackupThings             string

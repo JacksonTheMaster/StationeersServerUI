@@ -236,7 +236,7 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 			}
 		}
 
-		name, _ := backupName(m.config.SafeBackupDir, backup.SaveFile)
+		name := backup.Name
 		m.stateMu.RLock()
 		hasSource := m.handled[name]
 		m.stateMu.RUnlock()
@@ -255,7 +255,7 @@ func (m *BackupManager) cleanSafeBackupDir() error {
 	// need tombstones; the detector drops them when the game rotates them out.
 	m.stateMu.Lock()
 	for _, backup := range expired {
-		name, _ := backupName(m.config.SafeBackupDir, backup.SaveFile)
+		name := backup.Name
 		if m.handled[name] && !m.retired[name] {
 			m.retired[name] = true
 			m.revision++
@@ -279,7 +279,7 @@ func deleteBackup(m *BackupManager, saveFile BackupSaveFile) error {
 	if err != nil {
 		return err
 	}
-	if err := os.Remove(saveFile.SaveFile); err != nil {
+	if err := os.Remove(filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(saveFile.Name))); err != nil {
 		return err
 	}
 	m.stateMu.Lock()
@@ -290,8 +290,8 @@ func deleteBackup(m *BackupManager, saveFile BackupSaveFile) error {
 }
 
 func checkBackupIdentity(m *BackupManager, saveFile BackupSaveFile) (string, error) {
-	name, err := backupName(m.config.SafeBackupDir, saveFile.SaveFile)
-	if err != nil {
+	name := saveFile.Name
+	if err := validateBackupName(name); err != nil {
 		return "", err
 	}
 	m.stateMu.RLock()
@@ -300,7 +300,7 @@ func checkBackupIdentity(m *BackupManager, saveFile BackupSaveFile) (string, err
 	if !exists {
 		return "", fmt.Errorf("archive is no longer in the inventory: %s", name)
 	}
-	identity, err := identifySave(saveFile.SaveFile)
+	identity, err := identifySave(filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name)))
 	if err != nil {
 		return "", err
 	}

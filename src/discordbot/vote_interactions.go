@@ -2,7 +2,6 @@ package discordbot
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
@@ -55,8 +54,8 @@ func buildVoteMenuOptions() []discordgo.SelectMenuOption {
 	discordVotes.Lock()
 	if activeRestore := discordVotes.restore; activeRestore != nil {
 		option := discordgo.SelectMenuOption{
-			Label:       fmt.Sprintf("Vote to Restore Backup #%d", activeRestore.target.Index),
-			Value:       "restore:active",
+			Label:       shortBackupLabel("Vote to Restore "+activeRestore.target.Name, 100),
+			Value:       "restore:" + activeRestore.target.Name,
 			Description: fmt.Sprintf("Current result: %d/%d", len(activeRestore.voters), activeRestore.required),
 			Emoji:       &discordgo.ComponentEmoji{Name: "⏪"},
 		}
@@ -76,10 +75,13 @@ func buildVoteMenuOptions() []discordgo.SelectMenuOption {
 		return options
 	}
 	for _, backup := range backups {
+		if len("restore:"+backup.Name) > 100 {
+			continue
+		}
 		description := fmt.Sprintf("Day %d • %s", backup.Summary.DaysPlayed, backup.SaveTime.Format("Jan 02 15:04"))
 		options = append(options, discordgo.SelectMenuOption{
-			Label:       fmt.Sprintf("Restore Backup #%d", backup.Index),
-			Value:       fmt.Sprintf("restore:%d", backup.Index),
+			Label:       shortBackupLabel("Restore "+backup.Name, 100),
+			Value:       "restore:" + backup.Name,
 			Description: description,
 			Emoji:       &discordgo.ComponentEmoji{Name: "⏪"},
 		})
@@ -108,33 +110,12 @@ func handleVoteSelection(session *discordgo.Session, interaction *discordgo.Inte
 			return
 		}
 		result = castDiscordVote(voteRestart, restoreVoteTarget{}, userID)
-	case selection == "restore:active":
-		if !config.GetDiscordRestoreVoteEnabled() {
-			respondVoteInteraction(session, interaction, "Restore voting is disabled.")
-			return
-		}
-		discordVotes.Lock()
-		target := restoreVoteTarget{}
-		if discordVotes.restore != nil {
-			target = discordVotes.restore.target
-		}
-		discordVotes.Unlock()
-		if target.SaveFile == "" {
-			respondVoteInteraction(session, interaction, "That restore vote is no longer active.")
-			return
-		}
-		result = castDiscordVote(voteRestore, target, userID)
 	case strings.HasPrefix(selection, "restore:"):
 		if !config.GetDiscordRestoreVoteEnabled() {
 			respondVoteInteraction(session, interaction, "Restore voting is disabled.")
 			return
 		}
-		index, err := strconv.Atoi(strings.TrimPrefix(selection, "restore:"))
-		if err != nil {
-			respondVoteInteraction(session, interaction, "Invalid backup selection.")
-			return
-		}
-		target, err := restoreTargetForIndex(index)
+		target, err := restoreTargetForName(strings.TrimPrefix(selection, "restore:"))
 		if err != nil {
 			respondVoteInteraction(session, interaction, "The selected backup is no longer available: "+err.Error())
 			return
@@ -147,20 +128,15 @@ func handleVoteSelection(session *discordgo.Session, interaction *discordgo.Inte
 	respondVoteInteraction(session, interaction, result.message)
 }
 
-func restoreTargetForIndex(index int) (restoreVoteTarget, error) {
-	if backupmgr.CurrentBackupManager() == nil {
+func restoreTargetForName(name string) (restoreVoteTarget, error) {
+	manager := backupmgr.CurrentBackupManager()
+	if manager == nil {
 		return restoreVoteTarget{}, fmt.Errorf("backup manager is not initialized")
 	}
-	backups, err := backupmgr.CurrentBackupManager().ListBackups(0)
-	if err != nil {
+	if err := backupmgr.CheckBackupAvailable(manager, name); err != nil {
 		return restoreVoteTarget{}, err
 	}
-	for _, backup := range backups {
-		if backup.Index == index {
-			return restoreVoteTarget{Index: backup.Index, SaveFile: backup.SaveFile}, nil
-		}
-	}
-	return restoreVoteTarget{}, fmt.Errorf("backup #%d was removed", index)
+	return restoreVoteTarget{Name: name}, nil
 }
 
 func interactionUserID(interaction *discordgo.InteractionCreate) string {

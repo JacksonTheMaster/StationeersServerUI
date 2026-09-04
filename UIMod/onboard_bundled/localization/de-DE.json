@@ -49,7 +49,6 @@
             "UIText_UpdateNow": "Jetzt aktualisieren",
             "UIText_UpdateInstalling": "Aktualisierung wird installiert, bitte warten...",
             "UIText_UpdateFailed": "Aktualisierung fehlgeschlagen. Bitte versuche es später erneut.",
-            "UIText_BackupIndex": "Backup",
             "UIText_BackupCreated": "Erstellt",
             "UIText_BackupDaysPlayed": "Gespielte Tage",
             "UIText_BackupThings": "Objekte",

@@ -893,7 +893,7 @@ a.panel-link-button {
   letter-spacing: 0.25px;
 }
 
-.backup-index-label {
+.backup-filename {
   color: var(--text-dim);
   font-family: 'Share Tech Mono', monospace;
   font-size: 0.62rem;

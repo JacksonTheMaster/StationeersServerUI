@@ -22,8 +22,7 @@ const (
 )
 
 type restoreVoteTarget struct {
-	Index    int
-	SaveFile string
+	Name string
 }
 
 type activeVote struct {
@@ -101,7 +100,7 @@ func castDiscordVote(kind voteKind, target restoreVoteTarget, userID string) vot
 			expiresAt: now.Add(time.Duration(config.GetDiscordVoteDurationMinutes()) * time.Minute),
 		}
 		go expireDiscordVote(kind, (*current).id, (*current).expiresAt)
-	} else if kind == voteRestore && (*current).target.SaveFile != target.SaveFile && target.SaveFile != "" {
+	} else if kind == voteRestore && (*current).target.Name != target.Name && target.Name != "" {
 		discordVotes.Unlock()
 		return voteCastResult{message: "A restore vote for a different backup is already active."}
 	}
@@ -207,8 +206,12 @@ func executePassedVote(result voteCastResult) {
 			reportVoteExecutionFailure("restore", fmt.Errorf("backup manager is not initialized"))
 			return
 		}
-		sendVotePanelMessage(fmt.Sprintf("🗳️ **VOTE TO RESTORE BACKUP #%d CONFIRMED** — restoring backup and starting game server.", result.target.Index))
-		SendMessageToEventLogChannel(fmt.Sprintf("🗳️ Restore vote passed. Restoring backup #%d...", result.target.Index))
+		if err := backupmgr.CheckBackupAvailable(manager, result.target.Name); err != nil {
+			reportVoteExecutionFailure("restore", err)
+			return
+		}
+		sendVotePanelMessage(fmt.Sprintf("🗳️ **VOTE TO RESTORE BACKUP %s CONFIRMED** — restoring backup and starting game server.", result.target.Name))
+		SendMessageToEventLogChannel(fmt.Sprintf("🗳️ Restore vote passed. Restoring backup %s...", result.target.Name))
 		serverWasRunning := gamemgr.InternalIsServerRunning()
 		if serverWasRunning {
 			if err := gamemgr.InternalStopServer(); err != nil {
@@ -216,7 +219,7 @@ func executePassedVote(result voteCastResult) {
 				return
 			}
 		}
-		if err := manager.RestoreBackupFile(result.target.SaveFile); err != nil {
+		if err := manager.RestoreBackup(result.target.Name); err != nil {
 			reportVoteExecutionFailure("restore", err)
 			return
 		}
@@ -263,7 +266,7 @@ func activeVotesField() *discordgo.MessageEmbedField {
 		lines = append(lines, fmt.Sprintf("🔄 **VOTE FOR RESTART INITIATED** — %d/%d voted • ends <t:%d:R>", len(vote.voters), vote.required, vote.expiresAt.Unix()))
 	}
 	if vote := discordVotes.restore; vote != nil {
-		lines = append(lines, fmt.Sprintf("⏪ **VOTE TO RESTORE BACKUP #%d INITIATED** — %d/%d voted • ends <t:%d:R>", vote.target.Index, len(vote.voters), vote.required, vote.expiresAt.Unix()))
+		lines = append(lines, fmt.Sprintf("⏪ **VOTE TO RESTORE BACKUP %s INITIATED** — %d/%d voted • ends <t:%d:R>", vote.target.Name, len(vote.voters), vote.required, vote.expiresAt.Unix()))
 	}
 	if len(lines) == 0 {
 		return nil

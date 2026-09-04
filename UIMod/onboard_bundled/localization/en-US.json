@@ -49,7 +49,6 @@
             "UIText_UpdateNow": "Update Now",
             "UIText_UpdateInstalling": "Installing update, please wait...",
             "UIText_UpdateFailed": "Update failed. Please try again later.",
-            "UIText_BackupIndex": "Backup",
             "UIText_BackupCreated": "Created",
             "UIText_BackupDaysPlayed": "Days played",
             "UIText_BackupThings": "Things",

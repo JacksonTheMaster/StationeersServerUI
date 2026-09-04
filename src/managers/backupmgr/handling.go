@@ -272,7 +272,10 @@ func analyzeBackup(ctx context.Context, m *BackupManager, name string) (SaveAnal
 	if analysisReady(record) {
 		return record.Analysis, nil
 	}
-	path := filepath.Join(m.config.SafeBackupDir, filepath.FromSlash(name))
+	path, err := backupFilePath(m, name)
+	if err != nil {
+		return SaveAnalysis{}, err
+	}
 	expected := recordIdentity(record)
 	summary, summaryErr := ReadSaveSummary(path)
 	if summaryErr == nil {

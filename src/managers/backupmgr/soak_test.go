@@ -97,11 +97,11 @@ func TestBackupSoakRotationReloadAndHTTP(t *testing.T) {
 			}
 			seen := make(map[string]bool, len(rows))
 			for _, row := range rows {
-				if seen[row.SaveFile] || row.Summary != nil && row.Summary.DaysPlayed != 67 {
+				if seen[row.Name] || row.Summary != nil && row.Summary.DaysPlayed != 67 {
 					failures <- fmt.Errorf("inconsistent list row: %+v", row)
 					return
 				}
-				seen[row.SaveFile] = true
+				seen[row.Name] = true
 			}
 			requests.Add(1)
 			time.Sleep(2 * time.Millisecond)
@@ -528,11 +528,11 @@ func TestBackupSoakDefaultIntervalAndRestore(t *testing.T) {
 	if time.Since(observed) < defaultWaitTime {
 		t.Fatal("handling skipped the real 45-second stability interval")
 	}
-	download, err := m.GetBackupFileData(0)
+	download, err := m.GetBackupFileData(name)
 	if err != nil || sha256.Sum256(download.Data) != before {
 		t.Fatalf("download differs from original: %v", err)
 	}
-	if err := m.RestoreBackup(0); err != nil {
+	if err := m.RestoreBackup(name); err != nil {
 		t.Fatal(err)
 	}
 	restored := filepath.Join("saves", cfg.WorldName, cfg.WorldName+".save")
