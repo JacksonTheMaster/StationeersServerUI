@@ -7,6 +7,12 @@ type IndexTemplateData struct {
 	UIText_UpdateNow               string
 	UIText_UpdateInstalling        string
 	UIText_UpdateFailed            string
+	UIText_UpdateDescription       string
+	UIText_MajorUpdateTitle        string
+	UIText_MajorUpdateWarning      string
+	UIText_MajorUpdateConfirm      string
+	UIText_UpdateReleaseNotes      string
+	UIText_UpdateRetry             string
 	Version                        string
 	Branch                         string
 	SSUIIdentifier                 string

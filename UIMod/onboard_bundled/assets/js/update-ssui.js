@@ -1,95 +1,150 @@
-// Current known update info (populated from polling)
 let currentUpdateVersion = null;
+let currentUpdateIsMajor = false;
+let updateStarted = false;
 
-// Poll for update status every 60 seconds
+function isTrue(value) {
+    return value === true || value === 'true';
+}
+
 function pollUpdateStatus() {
-    fetch('/api/v2/update/check')
+    fetch('/api/v2/update/check', { cache: 'no-store' })
         .then(response => response.json())
         .then(data => {
-            if (data.updateAvailable === "true" && data.version) {
-                // Update available!
-                currentUpdateVersion = data.version;
-
-                // Show update button with bounce animation
-                const updateBtn = document.getElementById('update-button');
-                updateBtn.style.display = 'block';
-                updateBtn.classList.add('bounce');
-
-                // Update modal text when opened
-                document.getElementById('modal-version-text').textContent = data.version;
-            } else {
-                // No update — hide button and reset bounce
-                document.getElementById('update-button').style.display = 'none';
-                document.getElementById('update-button').classList.remove('bounce');
-                currentUpdateVersion = null;
+            if (data.operationState === 'installing') {
+                showInstallingState();
+                return;
             }
+
+            if (data.operationState === 'failed') {
+                setAvailableUpdate(data);
+                if (updateStarted) {
+                    showUpdateFailure(data.message);
+                }
+                return;
+            }
+
+            if (updateStarted && !isTrue(data.updateAvailable)) {
+                location.reload();
+                return;
+            }
+
+            setAvailableUpdate(data);
         })
-        .catch(err => {
-            console.warn('Failed to check for updates:', err);
+        .catch(error => {
+            if (!updateStarted) {
+                console.warn('Failed to check for updates:', error);
+            }
         });
 }
 
-// Open update modal
+function setAvailableUpdate(data) {
+    const updateButton = document.getElementById('update-button');
+    if (!isTrue(data.updateAvailable) || !data.version) {
+        currentUpdateVersion = null;
+        currentUpdateIsMajor = false;
+        updateButton.style.display = 'none';
+        updateButton.classList.remove('bounce');
+        return;
+    }
+
+    currentUpdateVersion = data.version;
+    currentUpdateIsMajor = isTrue(data.majorUpdate);
+    document.getElementById('modal-version-text').textContent = data.version;
+    updateButton.style.display = 'block';
+    updateButton.classList.add('bounce');
+}
+
 function openUpdateModal() {
-    if (currentUpdateVersion) {
-        document.getElementById('modal-version-text').textContent = currentUpdateVersion;
+    if (!currentUpdateVersion) {
+        return;
     }
     document.getElementById('update-modal').classList.add('show');
+    resetUpdateModal();
+}
 
-    // Reset state in case it was left in "running"
-    document.getElementById('update-status-running').classList.remove('running');
-    document.getElementById('update-now-btn').style.display = '';
+function resetUpdateModal() {
+    updateStarted = false;
+    document.getElementById('modal-version-text').textContent = currentUpdateVersion || '';
+    document.getElementById('update-status-running').className = 'update-status-message';
+    document.getElementById('update-status-failed').className = 'update-status-message';
+    document.getElementById('update-error-detail').textContent = '';
     document.getElementById('update-later-btn').style.display = '';
+    document.getElementById('update-now-btn').style.display = '';
+
+    const warning = document.getElementById('major-update-warning');
+    const confirmation = document.getElementById('major-update-confirm');
+    warning.classList.toggle('show', currentUpdateIsMajor);
+    document.querySelector('.update-modal-content').classList.toggle('major', currentUpdateIsMajor);
+    confirmation.checked = false;
+    confirmation.onchange = updateInstallButton;
+
+    const releaseLink = document.getElementById('update-release-notes');
+    releaseLink.href = 'https://github.com/SteamServerUI/StationeersServerUI/releases/tag/' + encodeURIComponent(currentUpdateVersion);
+    updateInstallButton();
 }
 
-// Close update modal
+function updateInstallButton() {
+    const confirmed = document.getElementById('major-update-confirm').checked;
+    document.getElementById('update-now-btn').disabled = currentUpdateIsMajor && !confirmed;
+}
+
 function closeUpdateModal() {
-    document.getElementById('update-modal').classList.remove('show');
+    if (!updateStarted) {
+        document.getElementById('update-modal').classList.remove('show');
+    }
 }
 
-// Start the actual update
 function startUpdate() {
-    // Hide buttons
-    document.getElementById('update-now-btn').style.display = 'none';
-    document.getElementById('update-later-btn').style.display = 'none';
+    const majorApproved = currentUpdateIsMajor && document.getElementById('major-update-confirm').checked;
+    if (currentUpdateIsMajor && !majorApproved) {
+        return;
+    }
 
-    // Show running status
-    document.getElementById('update-status-running').classList.add('running');
+    updateStarted = true;
+    showInstallingState();
 
-    // Send request to trigger update
     fetch('/api/v2/update/trigger', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ allowUpdate: true })
-    })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Update triggered:', data);
-            // Even if success/fail, we assume update is running
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            allowUpdate: true,
+            allowMajorUpdate: majorApproved,
+            version: currentUpdateVersion
         })
-        .catch(err => {
-            console.error('Failed to trigger update:', err);
-            // Optional: show failure message
-            document.getElementById('update-status-failed').classList.add('running');
-        });
-
-    // Auto-refresh after 40 seconds (gives time for update to download/apply)
-    setTimeout(() => {
-        location.reload();
-    }, 40000);
+    })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Update request failed');
+            }
+        })
+        .catch(error => showUpdateFailure(error.message));
 }
 
-// Close modal when clicking outside
-document.getElementById('update-modal').addEventListener('click', function (e) {
-    if (e.target === this) {
+function showInstallingState() {
+    updateStarted = true;
+    document.getElementById('update-modal').classList.add('show');
+    document.getElementById('update-later-btn').style.display = 'none';
+    document.getElementById('update-now-btn').style.display = 'none';
+    document.getElementById('update-status-failed').className = 'update-status-message';
+    document.getElementById('update-status-running').className = 'update-status-message running';
+}
+
+function showUpdateFailure(message) {
+    updateStarted = false;
+    document.getElementById('update-modal').classList.add('show');
+    document.getElementById('update-status-running').className = 'update-status-message';
+    document.getElementById('update-status-failed').className = 'update-status-message failed';
+    document.getElementById('update-error-detail').textContent = message || '';
+}
+
+document.getElementById('update-modal').addEventListener('click', event => {
+    if (event.target === event.currentTarget) {
         closeUpdateModal();
     }
 });
 
-// Start polling when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    pollUpdateStatus();           // Immediate check
-    setInterval(pollUpdateStatus, 60000); // Every minute after
+    pollUpdateStatus();
+    setInterval(pollUpdateStatus, 1500);
 });

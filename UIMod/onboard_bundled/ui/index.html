@@ -61,12 +61,24 @@
     <!-- Update Modal -->
     <div id="update-modal">
         <div class="update-modal-content">
-            
+
             <div class="update-modal-icon">⭳</div>
 
-            <p>{{.UIText_UpdateAvailable}}</p>
+            <h2>{{.UIText_UpdateAvailable}}</h2>
+            <p>{{.UIText_UpdateDescription}}</p>
             <div class="update-version" id="modal-version-text">v1.2.3</div>
-            
+
+            <div id="major-update-warning" class="major-update-warning">
+                <strong>{{.UIText_MajorUpdateTitle}}</strong>
+                <p>{{.UIText_MajorUpdateWarning}}</p>
+                <label class="major-update-confirmation">
+                    <input id="major-update-confirm" type="checkbox">
+                    <span>{{.UIText_MajorUpdateConfirm}}</span>
+                </label>
+            </div>
+
+            <a id="update-release-notes" class="update-release-notes" href="#" target="_blank" rel="noopener noreferrer">{{.UIText_UpdateReleaseNotes}}</a>
+
             <div class="update-modal-buttons">
                 <button id="update-later-btn" onclick="closeUpdateModal()">{{.UIText_UpdateLater}}</button>
                 <button id="update-now-btn" onclick="startUpdate()">{{.UIText_UpdateNow}}</button>
@@ -77,7 +89,9 @@
                 ⏳ {{.UIText_UpdateInstalling}}
             </div>
             <div id="update-status-failed" class="update-status-message">
-                ✗ {{.UIText_UpdateFailed}}
+                <span>✗ {{.UIText_UpdateFailed}}</span>
+                <small id="update-error-detail"></small>
+                <button type="button" onclick="resetUpdateModal()">{{.UIText_UpdateRetry}}</button>
             </div>
         </div>
     </div>
