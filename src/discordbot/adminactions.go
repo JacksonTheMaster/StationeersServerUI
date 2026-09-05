@@ -24,6 +24,8 @@ var discordAction = struct {
 	changed      time.Time
 }{}
 
+const discordActionDisplayTime = time.Hour
+
 func beginDiscordAction(name string) bool {
 	discordAction.Lock()
 	defer discordAction.Unlock()
@@ -47,9 +49,13 @@ func finishDiscordAction(err error) {
 }
 
 func discordActionStatus() string {
+	return discordActionStatusAt(time.Now())
+}
+
+func discordActionStatusAt(now time.Time) string {
 	discordAction.Lock()
 	defer discordAction.Unlock()
-	if discordAction.name == "" {
+	if discordAction.name == "" || (!discordAction.busy && now.Sub(discordAction.changed) > discordActionDisplayTime) {
 		return ""
 	}
 	return fmt.Sprintf("**%s** · %s · <t:%d:R>", discordAction.name, discordAction.result, discordAction.changed.Unix())

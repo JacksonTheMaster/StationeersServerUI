@@ -407,7 +407,7 @@ func TestStatusPanelUsesRealStateAndBoundedFields(t *testing.T) {
 	for n := range 200 {
 		players[fmt.Sprint(n)] = strings.Repeat("x", 100)
 	}
-	embed := buildStatusPanelEmbed(players, &backupmgr.SaveSummary{DaysPlayed: 42, SavedAt: time.Now()})
+	embed := buildStatusPanelEmbed(players, &backupmgr.SaveSummary{DaysPlayed: 42, Things: 100, Atmospheres: 200, Rooms: 30, PipeNetworks: 40, CableNetworks: 50, SavedAt: time.Now()})
 	if !strings.Contains(embed.Description, "Offline") || embed.Color != 0xED4245 {
 		t.Fatal("players turned a stopped server green")
 	}
@@ -416,10 +416,15 @@ func TestStatusPanelUsesRealStateAndBoundedFields(t *testing.T) {
 			t.Fatal("oversized field")
 		}
 	}
-	if !slices.ContainsFunc(embed.Fields, func(field *discordgo.MessageEmbedField) bool {
-		return strings.Contains(field.Value, "not the live world")
-	}) {
-		t.Fatal("cached save statistics masquerade as live state")
+	for _, name := range []string{"Days played", "Things"} {
+		if !slices.ContainsFunc(embed.Fields, func(field *discordgo.MessageEmbedField) bool { return strings.Contains(field.Name, name) }) {
+			t.Fatalf("hub is missing %s", name)
+		}
+	}
+	for _, name := range []string{"Atmospheres", "Rooms", "Pipe networks", "Cable networks", "Active Votes"} {
+		if slices.ContainsFunc(embed.Fields, func(field *discordgo.MessageEmbedField) bool { return strings.Contains(field.Name, name) }) {
+			t.Fatalf("hub still contains %s", name)
+		}
 	}
 	components := buildPanelComponents()
 	if len(components) > 5 {
@@ -429,6 +434,71 @@ func TestStatusPanelUsesRealStateAndBoundedFields(t *testing.T) {
 		if len(row.(discordgo.ActionsRow).Components) > 5 {
 			t.Fatal("too many buttons")
 		}
+	}
+	if !slices.ContainsFunc(components, func(component discordgo.MessageComponent) bool {
+		return slices.ContainsFunc(component.(discordgo.ActionsRow).Components, func(button discordgo.MessageComponent) bool {
+			item, ok := button.(discordgo.Button)
+			return ok && item.CustomID == ButtonSaveStats
+		})
+	}) {
+		t.Fatal("save stats button is missing")
+	}
+}
+
+func TestSaveStatsButtonShowsFullCachedSummaryPrivately(t *testing.T) {
+	hubTestConfig(t)
+	statusPanelData.Lock()
+	oldSummary := statusPanelData.summary
+	statusPanelData.summary = &backupmgr.SaveSummary{DaysPlayed: 42, Things: 100, Atmospheres: 200, Rooms: 30, PipeNetworks: 40, CableNetworks: 50, SavedAt: time.Now()}
+	statusPanelData.Unlock()
+	t.Cleanup(func() {
+		statusPanelData.Lock()
+		statusPanelData.summary = oldSummary
+		statusPanelData.Unlock()
+	})
+
+	s, requests := fakeDiscord(t)
+	i := hubInteraction(false)
+	i.Data = discordgo.MessageComponentInteractionData{CustomID: ButtonSaveStats}
+	handlePanelButtonInteraction(s, i)
+	response := lastResponse(t, requests)
+	if response.Data.Flags != discordgo.MessageFlagsEphemeral || response.Data.Embeds[0].Title != "📊 Save Stats" {
+		t.Fatal("save stats response was not private")
+	}
+	for _, name := range []string{"Days played", "Things", "Atmospheres", "Rooms", "Pipe networks", "Cable networks"} {
+		if !slices.ContainsFunc(response.Data.Embeds[0].Fields, func(field *discordgo.MessageEmbedField) bool { return strings.Contains(field.Name, name) }) {
+			t.Fatalf("save stats are missing %s", name)
+		}
+	}
+}
+
+func TestFinishedDiscordActionDisappearsAfterOneHour(t *testing.T) {
+	now := time.Now()
+	discordAction.Lock()
+	oldBusy, oldName, oldResult, oldChanged := discordAction.busy, discordAction.name, discordAction.result, discordAction.changed
+	discordAction.busy, discordAction.name, discordAction.result = false, "update", "Completed"
+	discordAction.changed = now.Add(-59 * time.Minute)
+	discordAction.Unlock()
+	t.Cleanup(func() {
+		discordAction.Lock()
+		discordAction.busy, discordAction.name, discordAction.result, discordAction.changed = oldBusy, oldName, oldResult, oldChanged
+		discordAction.Unlock()
+	})
+
+	if discordActionStatusAt(now) == "" {
+		t.Fatal("recent action disappeared")
+	}
+	discordAction.Lock()
+	discordAction.changed = now.Add(-61 * time.Minute)
+	discordAction.Unlock()
+	if discordActionStatusAt(now) != "" {
+		t.Fatal("old completed action is still visible")
+	}
+	discordAction.Lock()
+	discordAction.busy = true
+	discordAction.Unlock()
+	if discordActionStatusAt(now) == "" {
+		t.Fatal("long-running action disappeared")
 	}
 }
 

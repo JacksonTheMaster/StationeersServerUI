@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/bwmarrin/discordgo"
 )
 
 type voteKind string
@@ -252,22 +251,6 @@ func voteKindLabel(kind voteKind) string {
 		return "Restore"
 	}
 	return "Restart"
-}
-
-func activeVotesField() *discordgo.MessageEmbedField {
-	discordVotes.Lock()
-	defer discordVotes.Unlock()
-	var lines []string
-	if vote := discordVotes.restart; vote != nil {
-		lines = append(lines, fmt.Sprintf("🔄 **VOTE FOR RESTART INITIATED** - %d/%d voted • ends <t:%d:R>", len(vote.voters), vote.required, vote.expiresAt.Unix()))
-	}
-	if vote := discordVotes.restore; vote != nil {
-		lines = append(lines, fmt.Sprintf("⏪ **VOTE TO RESTORE BACKUP %s INITIATED** - %d/%d voted • ends <t:%d:R>", vote.target.Name, len(vote.voters), vote.required, vote.expiresAt.Unix()))
-	}
-	if len(lines) == 0 {
-		return nil
-	}
-	return &discordgo.MessageEmbedField{Name: "🗳️ Active Votes", Value: strings.Join(lines, "\n"), Inline: false}
 }
 
 func resetDiscordVotes() {

@@ -21,6 +21,7 @@ const (
 	ButtonGetPassword       = "ssui_get_password"
 	ButtonGetGameVersion    = "ssui_get_game_version"
 	ButtonGetNextRestart    = "ssui_get_next_restart"
+	ButtonSaveStats         = "ssui_save_stats"
 	ButtonVoteMenu          = "ssui_vote_menu"
 	ButtonDownloadBackupPfx = "ssui_download_backup_" // Prefix for download backup button
 )
@@ -136,15 +137,12 @@ func buildStatusPanelEmbed(players map[string]string, summary *backupmgr.SaveSum
 		Name: fmt.Sprintf("%s Crew online · %d", backupStatEmoji("players", "👥"), len(players)), Value: value,
 	})
 	if summary != nil {
-		appendSaveStats(embed, summary)
+		appendHubSaveStats(embed, summary)
 		if !summary.SavedAt.IsZero() {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "📦 Latest archived save", Value: fmt.Sprintf("<t:%d:f> · <t:%d:R>\nStatistics reflect this save, not the live world.", summary.SavedAt.Unix(), summary.SavedAt.Unix())})
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "📦 Latest archived save", Value: fmt.Sprintf("<t:%d:f> · <t:%d:R>", summary.SavedAt.Unix(), summary.SavedAt.Unix())})
 		}
 	} else {
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "📦 Latest archived save", Value: "Waiting for backup metadata."})
-	}
-	if voteField := activeVotesField(); voteField != nil {
-		embed.Fields = append(embed.Fields, voteField)
 	}
 	if action := discordActionStatus(); action != "" {
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "🛠️ Server actions", Value: action})
@@ -171,20 +169,28 @@ func hubServerState(state gamemgr.ServerState) (string, int) {
 	}
 }
 
+func appendHubSaveStats(embed *discordgo.MessageEmbed, summary *backupmgr.SaveSummary) {
+	appendSaveStat(embed, "Days played", "days", "🗓️", summary.DaysPlayed)
+	appendSaveStat(embed, "Things", "things", "🧱", summary.Things)
+}
+
 func appendSaveStats(embed *discordgo.MessageEmbed, summary *backupmgr.SaveSummary) {
+	appendHubSaveStats(embed, summary)
 	for _, stat := range []struct {
 		name, emoji, fallback string
 		value                 int64
 	}{
-		{"Days played", "days", "🗓️", summary.DaysPlayed},
-		{"Things", "things", "🧱", summary.Things},
 		{"Atmospheres", "atmospheres", "🌐", summary.Atmospheres},
 		{"Rooms", "rooms", "🏠", summary.Rooms},
 		{"Pipe networks", "pipe_networks", "🔧", summary.PipeNetworks},
 		{"Cable networks", "cable_networks", "⚡", summary.CableNetworks},
 	} {
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: backupStatEmoji(stat.emoji, stat.fallback) + " " + stat.name, Value: fmt.Sprintf("**%d**", stat.value), Inline: true})
+		appendSaveStat(embed, stat.name, stat.emoji, stat.fallback, stat.value)
 	}
+}
+
+func appendSaveStat(embed *discordgo.MessageEmbed, name, emoji, fallback string, value int64) {
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: backupStatEmoji(emoji, fallback) + " " + name, Value: fmt.Sprintf("**%d**", value), Inline: true})
 }
 
 // Reuse only our own hub (or the previous SSUI status panel). Never delete
@@ -238,6 +244,11 @@ func buildPanelComponents() []discordgo.MessageComponent {
 			CustomID: ButtonGetPassword,
 		})
 	}
+	buttons = append(buttons, discordgo.Button{
+		Label:    "📊 Save Stats",
+		Style:    discordgo.SecondaryButton,
+		CustomID: ButtonSaveStats,
+	})
 
 	if config.GetDiscordRestartVoteEnabled() || config.GetDiscordRestoreVoteEnabled() {
 		buttons = append(buttons, discordgo.Button{
@@ -333,7 +344,7 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 		return
 	}
 	switch customID {
-	case ButtonGetPassword, ButtonGetGameVersion, ButtonGetNextRestart, ButtonVoteMenu, voteSelectCustomID:
+	case ButtonGetPassword, ButtonGetGameVersion, ButtonGetNextRestart, ButtonSaveStats, ButtonVoteMenu, voteSelectCustomID:
 		if !requireHubInteraction(s, i) {
 			return
 		}
@@ -348,6 +359,8 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 		handleGetGameVersionButton(s, i)
 	case ButtonGetNextRestart:
 		handleGetNextRestartButton(s, i)
+	case ButtonSaveStats:
+		handleSaveStatsButton(s, i)
 	case ButtonVoteMenu:
 		handleVoteMenuButton(s, i)
 	case voteSelectCustomID:
@@ -355,6 +368,21 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 	default:
 		return
 	}
+}
+
+func handleSaveStatsButton(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	_, summary := statusPanelSnapshot()
+	if summary == nil {
+		respondHub(s, i, hubEmbed("📊 Save Stats", "No analyzed backup is available yet.", 0xFEE75C), nil)
+		return
+	}
+	description := "Statistics from the latest archived save, not the live world."
+	if !summary.SavedAt.IsZero() {
+		description = fmt.Sprintf("Latest archived save: <t:%d:f> · <t:%d:R>\n\n%s", summary.SavedAt.Unix(), summary.SavedAt.Unix(), description)
+	}
+	embed := hubEmbed("📊 Save Stats", description, 0x5865F2)
+	appendSaveStats(embed, summary)
+	respondHub(s, i, embed, nil)
 }
 
 // handleGetPasswordButton sends the current server password as an ephemeral message
