@@ -328,7 +328,7 @@ func detectDistroFamily() distroFamily {
 
 	fields := parseOSRelease(string(data))
 
-	// Check ID first — it's a single value identifying the primary distro.
+	// Check ID first - it's a single value identifying the primary distro.
 	id := strings.ToLower(fields["ID"])
 	if slices.Contains(debianIDs, id) {
 		return distroDebian
@@ -337,7 +337,7 @@ func detectDistroFamily() distroFamily {
 		return distroRHEL
 	}
 
-	// Fall back to ID_LIKE — a space-separated list of closely related distros.
+	// Fall back to ID_LIKE - a space-separated list of closely related distros.
 	for _, like := range strings.Fields(strings.ToLower(fields["ID_LIKE"])) {
 		if slices.Contains(debianIDs, like) {
 			return distroDebian

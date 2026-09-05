@@ -3,6 +3,7 @@ package discordbot
 import (
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
@@ -68,7 +69,7 @@ func TestActiveRestoreMenuRetainsItsBackupName(t *testing.T) {
 	})
 	resetDiscordVotes()
 	discordVotes.Lock()
-	discordVotes.restore = &activeVote{target: restoreVoteTarget{Name: "first.save"}, required: 3, voters: map[string]struct{}{"a": {}}}
+	discordVotes.restore = &activeVote{target: restoreVoteTarget{Name: "first.save"}, required: 3, voters: map[string]struct{}{"a": {}}, expiresAt: time.Now().Add(time.Minute)}
 	discordVotes.Unlock()
 	menu := buildVoteMenuOptions()
 	var selection string

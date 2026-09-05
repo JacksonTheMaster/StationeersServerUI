@@ -91,14 +91,13 @@ type JsonConfig struct {
 
 	// Discord Settings
 	DiscordToken                      string `json:"discordToken"`
-	ControlChannelID                  string `json:"controlChannelID"`
+	DiscordAdminRoleID                string `json:"discordAdminRoleID"`
 	EventLogChannelID                 string `json:"eventLogChannelID"`
 	StatusChannelID                   string `json:"statusChannelID,omitempty"`         // deprecated, migrated to EventLogChannelID
 	ConnectionListChannelID           string `json:"connectionListChannelID,omitempty"` // deprecated, migrated to StatusPanelChannelID
 	StatusPanelChannelID              string `json:"statusPanelChannelID"`              // replaces ConnectionListChannelID and ServerInfoPanelChannelID
 	LogChannelID                      string `json:"logChannelID"`
 	SaveChannelID                     string `json:"saveChannelID,omitempty"` // deprecated, merged into EventLogChannelID
-	ControlPanelChannelID             string `json:"controlPanelChannelID"`
 	DiscordCharBufferSize             int    `json:"DiscordCharBufferSize"`
 	BlackListFilePath                 string `json:"blackListFilePath"`
 	IsDiscordEnabled                  *bool  `json:"isDiscordEnabled"`
@@ -154,11 +153,10 @@ func LoadConfig() (*JsonConfig, error) {
 func applyConfig(cfg *JsonConfig) {
 	// Apply values with hierarchy
 	DiscordToken = getString(cfg.DiscordToken, "DISCORD_TOKEN", "")
-	ControlChannelID = getString(cfg.ControlChannelID, "CONTROL_CHANNEL_ID", "")
+	DiscordAdminRoleID = getString(cfg.DiscordAdminRoleID, "DISCORD_ADMIN_ROLE_ID", "")
 	EventLogChannelID = getString(cfg.EventLogChannelID, "GAME_EVENT_LOG_CHANNEL_ID", "")
 	StatusPanelChannelID = getString(cfg.StatusPanelChannelID, "STATUS_PANEL_CHANNEL_ID", "")
 	LogChannelID = getString(cfg.LogChannelID, "LOG_CHANNEL_ID", "")
-	ControlPanelChannelID = getString(cfg.ControlPanelChannelID, "CONTROL_PANEL_CHANNEL_ID", "")
 	DiscordCharBufferSize = getInt(cfg.DiscordCharBufferSize, "DISCORD_CHAR_BUFFER_SIZE", 1000)
 	BlackListFilePath = getString(cfg.BlackListFilePath, "BLACKLIST_FILE_PATH", "./Blacklist.txt")
 
@@ -449,11 +447,10 @@ func applyConfig(cfg *JsonConfig) {
 func safeSaveConfig() error {
 	cfg := JsonConfig{
 		DiscordToken:                             DiscordToken,
-		ControlChannelID:                         ControlChannelID,
+		DiscordAdminRoleID:                       DiscordAdminRoleID,
 		EventLogChannelID:                        EventLogChannelID,
 		StatusPanelChannelID:                     StatusPanelChannelID,
 		LogChannelID:                             LogChannelID,
-		ControlPanelChannelID:                    ControlPanelChannelID,
 		DiscordCharBufferSize:                    DiscordCharBufferSize,
 		BlackListFilePath:                        BlackListFilePath,
 		IsDiscordEnabled:                         &IsDiscordEnabled,

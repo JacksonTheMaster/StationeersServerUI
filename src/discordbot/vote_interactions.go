@@ -13,25 +13,19 @@ import (
 const voteSelectCustomID = "ssui_vote_select"
 
 func handleVoteMenuButton(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	if !deferHub(session, interaction) {
+		return
+	}
 	options := buildVoteMenuOptions()
 	if len(options) == 0 {
 		respondVoteInteraction(session, interaction, "No voting options are currently available.")
 		return
 	}
 
-	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "Choose an action to start or join a vote:",
-			Flags:   discordgo.MessageFlagsEphemeral,
-			Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{
-				discordgo.SelectMenu{CustomID: voteSelectCustomID, Placeholder: "Choose a vote", Options: options},
-			}}},
-		},
-	})
-	if err != nil {
-		logger.Discord.Error("Error opening vote menu: " + err.Error())
-	}
+	editHub(session, interaction, hubEmbed("🗳️ Community votes", "Choose an action to start or join a vote.", 0x5865F2),
+		[]discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+			discordgo.SelectMenu{CustomID: voteSelectCustomID, Placeholder: "Choose a vote", Options: options},
+		}}})
 }
 
 func buildVoteMenuOptions() []discordgo.SelectMenuOption {
@@ -66,10 +60,11 @@ func buildVoteMenuOptions() []discordgo.SelectMenuOption {
 	}
 	discordVotes.Unlock()
 
-	if backupmgr.CurrentBackupManager() == nil {
+	manager := backupmgr.CurrentBackupManager()
+	if manager == nil {
 		return options
 	}
-	backups, err := backupmgr.CurrentBackupManager().ListBackups(3)
+	backups, err := manager.ListBackups(3)
 	if err != nil {
 		logger.Discord.Debug("Could not populate restore vote menu: " + err.Error())
 		return options
@@ -90,6 +85,9 @@ func buildVoteMenuOptions() []discordgo.SelectMenuOption {
 }
 
 func handleVoteSelection(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	if !deferHub(session, interaction) {
+		return
+	}
 	values := interaction.MessageComponentData().Values
 	if len(values) != 1 {
 		respondVoteInteraction(session, interaction, "Invalid vote selection.")
@@ -154,14 +152,5 @@ func interactionUserID(interaction *discordgo.InteractionCreate) string {
 }
 
 func respondVoteInteraction(session *discordgo.Session, interaction *discordgo.InteractionCreate, message string) {
-	err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: message,
-			Flags:   discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		logger.Discord.Error("Error responding to vote interaction: " + err.Error())
-	}
+	editHub(session, interaction, hubEmbed("🗳️ Community votes", message, 0x5865F2), nil)
 }

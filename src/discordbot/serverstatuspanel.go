@@ -1,7 +1,10 @@
 package discordbot
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -9,6 +12,7 @@ import (
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/backupmgr"
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/gamemgr"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -17,12 +21,14 @@ const (
 	ButtonGetPassword       = "ssui_get_password"
 	ButtonGetGameVersion    = "ssui_get_game_version"
 	ButtonGetNextRestart    = "ssui_get_next_restart"
+	ButtonSaveStats         = "ssui_save_stats"
 	ButtonVoteMenu          = "ssui_vote_menu"
 	ButtonDownloadBackupPfx = "ssui_download_backup_" // Prefix for download backup button
 )
 
 var (
 	statusPanelMessageID string // tracks the message ID for editing the server status panel
+	statusPanelChannelID string
 	statusPanelMutex     sync.Mutex
 )
 
@@ -39,13 +45,17 @@ func sendServerStatusPanel() {
 	}
 
 	refreshStatusPanel()
-	clearMessagesAboveLastN(channelID, 1)
-	logger.Discord.Info("Server status panel sent successfully")
+	logger.Discord.Debug("Initial hub refresh requested")
 }
 
 // UpdateStatusPanelPlayerConnected updates the panel when a player connects
 func UpdateStatusPanelPlayerConnected(username, steamID string, connectionTime time.Time, players map[string]string) {
-	if !config.GetIsDiscordEnabled() || config.DiscordSession == nil {
+	session := config.GetDiscordSession()
+	if session == nil {
+		return
+	}
+
+	if !config.GetIsDiscordEnabled() {
 		logger.Discord.Debug("Discord not enabled or session not initialized")
 		return
 	}
@@ -59,7 +69,12 @@ func UpdateStatusPanelPlayerConnected(username, steamID string, connectionTime t
 
 // UpdateStatusPanelPlayerDisconnected updates the panel when a player disconnects
 func UpdateStatusPanelPlayerDisconnected(steamID string, players map[string]string) {
-	if !config.GetIsDiscordEnabled() || config.DiscordSession == nil {
+	session := config.GetDiscordSession()
+	if session == nil {
+		return
+	}
+
+	if !config.GetIsDiscordEnabled() {
 		logger.Discord.Debug("Discord not enabled or session not initialized")
 		return
 	}
@@ -71,68 +86,143 @@ func UpdateStatusPanelPlayerDisconnected(steamID string, players map[string]stri
 	refreshStatusPanel()
 }
 
-// buildStatusPanelEmbed creates a combined server info + connected players embed
+// buildStatusPanelEmbed uses cached game and backup state; rendering never scans a save.
 func buildStatusPanelEmbed(players map[string]string, summary *backupmgr.SaveSummary) *discordgo.MessageEmbed {
-	serverName := config.GetServerName()
-
+	state, color := hubServerState(gamemgr.GetServerState())
+	name := strings.TrimSpace(config.GetSSUIIdentifier())
+	if name == "" {
+		name = config.GetServerName()
+	}
 	embed := &discordgo.MessageEmbed{
-		Title:     "🎮 Server Information",
-		Timestamp: time.Now().Format(time.RFC3339),
-		Color:     0x5865F2, // Discord blurple
+		Title:       "🛰️ " + shortBackupLabel(name, 200),
+		Description: state,
+		Color:       color,
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Footer:      &discordgo.MessageEmbedFooter{Text: "SSUI Hub • v" + config.GetVersion() + " • Updated"},
 	}
-
-	// Server info in description + inline fields (matches old style)
-	//embed.Description = "Your Stationeers server is running as **" + serverName + "**"
-	embed.Fields = []*discordgo.MessageEmbedField{
-		{
-			Name:   "Server Name",
-			Value:  serverName,
-			Inline: true,
-		},
-		{
-			Name:   "SSUI Version",
-			Value:  config.GetVersion(),
-			Inline: true,
-		},
+	version := config.GetExtractedGameVersion()
+	if version == "" {
+		version = "Not detected yet"
 	}
-
-	// Connected players section
-	if len(players) == 0 {
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:  "👥 Connected Players",
-			Value: "_No players are currently connected._",
-		})
-	} else {
-		var lines strings.Builder
-		for steamID, username := range players {
-			fmt.Fprintf(&lines, "👤 [%s](https://steamcommunity.com/profiles/%s/)\n", username, steamID)
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "🎮 Game version", Value: shortBackupLabel(version, 100), Inline: true})
+	if started := gamemgr.GetServerStartTime(); !started.IsZero() {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "⏱️ Process started", Value: fmt.Sprintf("<t:%d:R>", started.Unix()), Inline: true})
+	}
+	if next := config.GetNextAutoRestartTime(); !next.IsZero() {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "🔄 Next restart", Value: fmt.Sprintf("<t:%d:R>", next.Unix()), Inline: true})
+	}
+	var names []string
+	for id := range players {
+		names = append(names, id)
+	}
+	sort.Strings(names)
+	var lines strings.Builder
+	for _, id := range names {
+		label := strings.NewReplacer("\\", "\\\\", "[", "\\[", "]", "\\]", "*", "\\*", "_", "\\_").Replace(shortBackupLabel(players[id], 50))
+		line := fmt.Sprintf("👤 %s\n", label)
+		if len(id) == 17 && !strings.ContainsFunc(id, func(r rune) bool { return r < '0' || r > '9' }) {
+			line = fmt.Sprintf("👤 [%s](https://steamcommunity.com/profiles/%s/)\n", label, id)
 		}
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:  fmt.Sprintf("👥 Connected Players — %d online", len(players)),
-			Value: lines.String(),
-		})
-		embed.Color = 0x57F287 // Green when players are online
+		if lines.Len()+len(line) > 850 {
+			lines.WriteString("…more players connected\n")
+			break
+		}
+		lines.WriteString(line)
 	}
-
+	value := lines.String()
+	if value == "" {
+		value = "_The airlock is quiet. Nobody is connected._"
+	}
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+		Name: fmt.Sprintf("%s Crew online · %d", backupStatEmoji("players", "👥"), len(players)), Value: value,
+	})
 	if summary != nil {
-		embed.Fields = append(embed.Fields,
-			&discordgo.MessageEmbedField{Name: backupStatEmoji("days", "🗓️") + " Days Played", Value: fmt.Sprintf("**%d**", summary.DaysPlayed), Inline: true},
-			&discordgo.MessageEmbedField{Name: backupStatEmoji("things", "🧱") + " Things", Value: fmt.Sprintf("**%d**", summary.Things), Inline: true},
-			&discordgo.MessageEmbedField{Name: backupStatEmoji("atmospheres", "🌐") + " Atmospheres", Value: fmt.Sprintf("**%d**", summary.Atmospheres), Inline: true},
-			&discordgo.MessageEmbedField{Name: backupStatEmoji("rooms", "🏠") + " Rooms", Value: fmt.Sprintf("**%d**", summary.Rooms), Inline: true},
-			&discordgo.MessageEmbedField{Name: backupStatEmoji("pipe_networks", "🔧") + " Pipe Networks", Value: fmt.Sprintf("**%d**", summary.PipeNetworks), Inline: true},
-			&discordgo.MessageEmbedField{Name: backupStatEmoji("cable_networks", "⚡") + " Cable Networks", Value: fmt.Sprintf("**%d**", summary.CableNetworks), Inline: true},
-		)
+		appendHubSaveStats(embed, summary)
+		if !summary.SavedAt.IsZero() {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "📦 Latest archived save", Value: fmt.Sprintf("<t:%d:f> · <t:%d:R>", summary.SavedAt.Unix(), summary.SavedAt.Unix())})
+		}
+	} else {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "📦 Latest archived save", Value: "Waiting for backup metadata."})
 	}
-	if voteField := activeVotesField(); voteField != nil {
-		embed.Fields = append(embed.Fields, voteField)
+	if action := discordActionStatus(); action != "" {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "🛠️ Server actions", Value: action})
 	}
-
 	return embed
 }
 
+func hubServerState(state gamemgr.ServerState) (string, int) {
+	switch state {
+	case gamemgr.ServerStateRunning:
+		return "🟢 **Online** · Ready for your next expedition.", 0x57F287
+	case gamemgr.ServerStateStopped:
+		return "🔴 **Offline** · The game server is stopped.", 0xED4245
+	case gamemgr.ServerStateStarting:
+		return "🟡 **Starting** · Booting the game server.", 0xFEE75C
+	case gamemgr.ServerStateLoadingMap:
+		return "🟡 **Loading world** · Preparing your station.", 0xFEE75C
+	case gamemgr.ServerStateHostingSession:
+		return "🟡 **Opening session** · Almost there.", 0xFEE75C
+	case gamemgr.ServerStateStopping:
+		return "🟠 **Stopping** · Shutting down the session.", 0xFEE75C
+	default:
+		return "⚪ **Status uncertain** · No confirmed ready state yet.", 0x95A5A6
+	}
+}
+
+func appendHubSaveStats(embed *discordgo.MessageEmbed, summary *backupmgr.SaveSummary) {
+	appendSaveStat(embed, "Days played", "days", "🗓️", summary.DaysPlayed)
+	appendSaveStat(embed, "Things", "things", "🧱", summary.Things)
+}
+
+func appendSaveStats(embed *discordgo.MessageEmbed, summary *backupmgr.SaveSummary) {
+	appendHubSaveStats(embed, summary)
+	for _, stat := range []struct {
+		name, emoji, fallback string
+		value                 int64
+	}{
+		{"Atmospheres", "atmospheres", "🌐", summary.Atmospheres},
+		{"Rooms", "rooms", "🏠", summary.Rooms},
+		{"Pipe networks", "pipe_networks", "🔧", summary.PipeNetworks},
+		{"Cable networks", "cable_networks", "⚡", summary.CableNetworks},
+	} {
+		appendSaveStat(embed, stat.name, stat.emoji, stat.fallback, stat.value)
+	}
+}
+
+func appendSaveStat(embed *discordgo.MessageEmbed, name, emoji, fallback string, value int64) {
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: backupStatEmoji(emoji, fallback) + " " + name, Value: fmt.Sprintf("**%d**", value), Inline: true})
+}
+
+// Reuse only our own hub (or the previous SSUI status panel). Never delete
+// unrelated messages when adopting a channel as the hub.
+func findExistingHub(s *discordgo.Session, channelID string) (string, error) {
+	messages, err := s.ChannelMessages(channelID, 100, "", "", "")
+	if err != nil {
+		return "", err
+	}
+	for _, message := range messages {
+		if message.Author == nil || s.State == nil || s.State.User == nil || message.Author.ID != s.State.User.ID {
+			continue
+		}
+		for _, embed := range message.Embeds {
+			if embed.Footer != nil && strings.HasPrefix(embed.Footer.Text, "SSUI Hub •") {
+				return message.ID, nil
+			}
+			if embed.Title == "🎮 Server Information" && len(message.Components) > 0 {
+				return message.ID, nil
+			}
+		}
+	}
+	return "", nil
+}
+
 func refreshStatusPanel() {
-	if !config.GetIsDiscordEnabled() || config.DiscordSession == nil {
+	session := config.GetDiscordSession()
+	if session == nil {
+		return
+	}
+
+	if !config.GetIsDiscordEnabled() {
 		return
 	}
 	channelID := config.GetStatusPanelChannelID()
@@ -154,20 +244,12 @@ func buildPanelComponents() []discordgo.MessageComponent {
 			CustomID: ButtonGetPassword,
 		})
 	}
-
 	buttons = append(buttons, discordgo.Button{
-		Label:    "🎮 Get Game Version",
+		Label:    "📊 Save Stats",
 		Style:    discordgo.SecondaryButton,
-		CustomID: ButtonGetGameVersion,
+		CustomID: ButtonSaveStats,
 	})
 
-	if config.GetAutoRestartServerTimer() != "0" && config.GetAutoRestartServerTimer() != "" {
-		buttons = append(buttons, discordgo.Button{
-			Label:    "🔄 Next Auto Restart",
-			Style:    discordgo.SecondaryButton,
-			CustomID: ButtonGetNextRestart,
-		})
-	}
 	if config.GetDiscordRestartVoteEnabled() || config.GetDiscordRestoreVoteEnabled() {
 		buttons = append(buttons, discordgo.Button{
 			Label:    "🗳️ Vote Menu",
@@ -176,24 +258,39 @@ func buildPanelComponents() []discordgo.MessageComponent {
 		})
 	}
 
-	if len(buttons) == 0 {
-		return nil
+	var rows []discordgo.MessageComponent
+	if len(buttons) > 0 {
+		rows = append(rows, discordgo.ActionsRow{Components: buttons})
 	}
-
-	return []discordgo.MessageComponent{
-		discordgo.ActionsRow{
-			Components: buttons,
-		},
-	}
+	return append(rows, discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+		discordgo.Button{CustomID: ButtonAdminActions, Label: "Server Admin Actions", Style: discordgo.PrimaryButton, Emoji: &discordgo.ComponentEmoji{Name: "🛠️"}},
+	}})
 }
 
 // sendOrEditStatusPanel sends a new message or edits the existing one
 func sendOrEditStatusPanel(channelID string, embed *discordgo.MessageEmbed, components []discordgo.MessageComponent) {
+	session := config.GetDiscordSession()
+	if session == nil {
+		return
+	}
+
 	statusPanelMutex.Lock()
 	defer statusPanelMutex.Unlock()
+	if channelID != statusPanelChannelID {
+		statusPanelMessageID = ""
+		statusPanelChannelID = channelID
+	}
 
 	if statusPanelMessageID == "" {
-		msg, err := config.DiscordSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+		var err error
+		statusPanelMessageID, err = findExistingHub(session, channelID)
+		if err != nil {
+			logger.Discord.Warnf("Could not find the existing hub; check Read Message History permission: %v", err)
+			return
+		}
+	}
+	if statusPanelMessageID == "" {
+		msg, err := session.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 			Embeds:     []*discordgo.MessageEmbed{embed},
 			Components: components,
 		})
@@ -206,7 +303,7 @@ func sendOrEditStatusPanel(channelID string, embed *discordgo.MessageEmbed, comp
 	} else {
 		embeds := []*discordgo.MessageEmbed{embed}
 		content := ""
-		_, err := config.DiscordSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		_, err := session.ChannelMessageEditComplex(&discordgo.MessageEdit{
 			Channel:    channelID,
 			ID:         statusPanelMessageID,
 			Content:    &content,
@@ -215,9 +312,13 @@ func sendOrEditStatusPanel(channelID string, embed *discordgo.MessageEmbed, comp
 		})
 		if err != nil {
 			logger.Discord.Error("Error editing server status panel in channel " + channelID + ": " + err.Error())
+			var apiError *discordgo.RESTError
+			if !errors.As(err, &apiError) || apiError.Response == nil || apiError.Response.StatusCode != http.StatusNotFound {
+				return // A rate limit or permissions failure must not create duplicate panels.
+			}
 			// If editing fails (e.g., message deleted), reset and try sending a new one
 			statusPanelMessageID = ""
-			msg, err := config.DiscordSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+			msg, err := session.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 				Embeds:     []*discordgo.MessageEmbed{embed},
 				Components: components,
 			})
@@ -238,6 +339,18 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 	}
 
 	customID := i.MessageComponentData().CustomID
+	if strings.HasPrefix(customID, voteButtonPrefix) {
+		handleVotePanelButton(s, i)
+		return
+	}
+	switch customID {
+	case ButtonGetPassword, ButtonGetGameVersion, ButtonGetNextRestart, ButtonSaveStats, ButtonVoteMenu, voteSelectCustomID:
+		if !requireHubInteraction(s, i) {
+			return
+		}
+	default:
+		return
+	}
 
 	switch customID {
 	case ButtonGetPassword:
@@ -246,6 +359,8 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 		handleGetGameVersionButton(s, i)
 	case ButtonGetNextRestart:
 		handleGetNextRestartButton(s, i)
+	case ButtonSaveStats:
+		handleSaveStatsButton(s, i)
 	case ButtonVoteMenu:
 		handleVoteMenuButton(s, i)
 	case voteSelectCustomID:
@@ -253,6 +368,21 @@ func handlePanelButtonInteraction(s *discordgo.Session, i *discordgo.Interaction
 	default:
 		return
 	}
+}
+
+func handleSaveStatsButton(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	_, summary := statusPanelSnapshot()
+	if summary == nil {
+		respondHub(s, i, hubEmbed("📊 Save Stats", "No analyzed backup is available yet.", 0xFEE75C), nil)
+		return
+	}
+	description := "Statistics from the latest archived save, not the live world."
+	if !summary.SavedAt.IsZero() {
+		description = fmt.Sprintf("Latest archived save: <t:%d:f> · <t:%d:R>\n\n%s", summary.SavedAt.Unix(), summary.SavedAt.Unix(), description)
+	}
+	embed := hubEmbed("📊 Save Stats", description, 0x5865F2)
+	appendSaveStats(embed, summary)
+	respondHub(s, i, embed, nil)
 }
 
 // handleGetPasswordButton sends the current server password as an ephemeral message

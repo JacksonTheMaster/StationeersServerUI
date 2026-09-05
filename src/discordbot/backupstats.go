@@ -4,6 +4,7 @@ import (
 	"maps"
 	"sync"
 
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/backupmgr"
 )
@@ -42,6 +43,7 @@ func disableDiscordRuntimeState() {
 }
 
 func prepareDiscordRuntimeState() {
+	resetHubDialogs()
 	backupmgr.SetBackupCopiedHandler(nil)
 	resetDiscordVotes()
 	statusPanelData.Lock()
@@ -77,5 +79,14 @@ func statusPanelSnapshot() (map[string]string, *backupmgr.SaveSummary) {
 // DisableRuntimeState stops Discord-only backup metadata work when the
 // integration is disabled.
 func DisableRuntimeState() {
+	discordRuntimeMutex.Lock()
+	defer discordRuntimeMutex.Unlock()
+	stopDiscordRuntime()
 	disableDiscordRuntimeState()
+	if session := config.GetDiscordSession(); session != nil {
+		session.Close()
+		config.ConfigMu.Lock()
+		config.DiscordSession = nil
+		config.ConfigMu.Unlock()
+	}
 }

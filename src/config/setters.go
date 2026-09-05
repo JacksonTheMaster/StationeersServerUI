@@ -516,11 +516,11 @@ func SetDiscordToken(value string) error {
 	return safeSaveConfig()
 }
 
-func SetControlChannelID(value string) error {
+func SetDiscordAdminRoleID(value string) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
-	ControlChannelID = value
+	DiscordAdminRoleID = value
 	return safeSaveConfig()
 }
 
@@ -548,15 +548,6 @@ func SetStatusPanelChannelID(value string) error {
 	defer ConfigMu.Unlock()
 
 	StatusPanelChannelID = value
-	return safeSaveConfig()
-}
-
-// SetControlPanelChannelID sets the ControlPanelChannelID
-func SetControlPanelChannelID(value string) error {
-	ConfigMu.Lock()
-	defer ConfigMu.Unlock()
-
-	ControlPanelChannelID = value
 	return safeSaveConfig()
 }
 

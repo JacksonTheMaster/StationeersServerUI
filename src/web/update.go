@@ -57,7 +57,7 @@ func TriggerUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if !update.UpdateInfo.TryLock() {
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "busy",
-			"message": "An update operation is already in progress — please try again later",
+			"message": "An update operation is already in progress - please try again later",
 		})
 		return
 	}
@@ -88,7 +88,7 @@ func TriggerUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":          "running",
 			"updateAvailable": "true",
-			"message":         "Update started — applying in background. Check logs for progress.",
+			"message":         "Update started - applying in background. Check logs for progress.",
 		})
 		return
 	}
@@ -125,7 +125,7 @@ func TriggerUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":          "success",
 			"updateAvailable": "false",
-			"message":         "No update available — you are up to date",
+			"message":         "No update available - you are up to date",
 		})
 	}
 }

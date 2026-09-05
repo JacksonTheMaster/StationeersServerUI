@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -174,6 +175,17 @@ func (m *BackupManager) AnalyzeBackup(ctx context.Context, name string) (SaveAna
 
 // GetBackupFileData reads the named backup for download or transfer.
 func (m *BackupManager) GetBackupFileData(name string) (*BackupFileData, error) {
+	return ReadBackupFileData(m, name, 0)
+}
+
+var ErrBackupTooLarge = errors.New("backup exceeds the download size limit")
+
+// ReadBackupFileData applies an optional byte limit before allocating the file
+// contents. Zero keeps the unrestricted web download behavior.
+func ReadBackupFileData(m *BackupManager, name string, maxBytes int64) (*BackupFileData, error) {
+	if maxBytes < 0 {
+		return nil, fmt.Errorf("download size limit must not be negative")
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if err := m.ctx.Err(); err != nil {
@@ -190,9 +202,35 @@ func (m *BackupManager) GetBackupFileData(name string) (*BackupFileData, error) 
 		return nil, err
 	}
 
-	data, err := os.ReadFile(filePath)
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if maxBytes > 0 && info.Size() > maxBytes {
+		return nil, ErrBackupTooLarge
+	}
+	var reader io.Reader = file
+	if maxBytes > 0 {
+		reader = io.LimitReader(file, maxBytes)
+	}
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read backup file: %w", err)
+	}
+	if maxBytes > 0 && int64(len(data)) == maxBytes {
+		var extra [1]byte
+		n, err := file.Read(extra[:])
+		if n > 0 {
+			return nil, ErrBackupTooLarge
+		}
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
 	}
 
 	filename := filepath.Base(filePath)

@@ -165,7 +165,7 @@ function escapeBackupHTML(value) {
 
 function formatBackupNumber(value) {
     const number = Number(value);
-    return Number.isFinite(number) ? number.toLocaleString() : '—';
+    return Number.isFinite(number) ? number.toLocaleString() : '-';
 }
 
 function renderBackupSummaryStrip(summary) {
@@ -283,7 +283,7 @@ function updateWorkspacePlayerState(hasPlayers) {
 function updatePlayerCount(count) {
     const display = document.getElementById('player-count-display');
     if (!display) return;
-    display.textContent = Number.isInteger(count) ? count : '—';
+    display.textContent = Number.isInteger(count) ? count : '-';
     display.title = Number.isInteger(count) ? `${count} connected player${count === 1 ? '' : 's'}` : 'Player count unavailable';
 }
 
@@ -461,7 +461,7 @@ function updateStatusIndicator(isRunning, isError = false, uptime = '', state = 
         if (isRunning && uptime && uptime !== '0s') {
             uptimeDisplay.textContent = uptime;
         } else {
-            uptimeDisplay.textContent = '—';
+            uptimeDisplay.textContent = '-';
         }
     }
 }

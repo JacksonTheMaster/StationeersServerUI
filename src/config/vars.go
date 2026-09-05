@@ -97,11 +97,10 @@ var (
 	DiscordRestoreVoteThreshold       int
 	DiscordRestoreVoteMinimum         int
 	DiscordRestoreVoteCooldownMinutes int
-	ControlChannelID                  string
+	DiscordAdminRoleID                string
 	EventLogChannelID                 string
 	LogChannelID                      string
 	StatusPanelChannelID              string
-	ControlPanelChannelID             string
 	DiscordCharBufferSize             int
 	ExceptionMessageID                string
 	BlackListFilePath                 string

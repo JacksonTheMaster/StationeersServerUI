@@ -123,7 +123,7 @@
         if (/^#[0-9a-f]{3}$/i.test(colorStr)) {
             return '#' + colorStr[1] + colorStr[1] + colorStr[2] + colorStr[2] + colorStr[3] + colorStr[3];
         }
-        // 8-char hex with alpha — just take RGB
+        // 8-char hex with alpha - just take RGB
         if (/^#[0-9a-f]{8}$/i.test(colorStr)) return colorStr.slice(0, 7);
 
         // rgb/rgba
@@ -158,7 +158,7 @@
             // Fall through to the canvas/named-color resolver.
         }
 
-        // Named colors — use a canvas to resolve
+        // Named colors - use a canvas to resolve
         try {
             const ctx = document.createElement('canvas').getContext('2d');
             ctx.fillStyle = colorStr;

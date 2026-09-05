@@ -21,6 +21,10 @@ func registerSlashCommands(s *discordgo.Session) {
 			Description: "Stop the server",
 		},
 		{
+			Name:        "restart",
+			Description: "Restart the game server (confirmation required)",
+		},
+		{
 			Name:        "status",
 			Description: "Gets the running status of the gameserver process",
 		},
@@ -75,7 +79,7 @@ func registerSlashCommands(s *discordgo.Session) {
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "limit",
-					Description: "Number of backups to list or 'all' (default: 5)",
+					Description: "Number of backups to browse or 'all' (default: all, paginated)",
 					Required:    false,
 				},
 			},
@@ -119,6 +123,10 @@ func registerSlashCommands(s *discordgo.Session) {
 	}
 
 	logger.Discord.Info("Checking and registering slash commands with Discord...")
+	for _, command := range commands {
+		dmPermission := false
+		command.DMPermission = &dmPermission
+	}
 
 	// Fetch existing commands from Discord
 	existingCmds, err := s.ApplicationCommands(s.State.User.ID, "")
@@ -146,7 +154,9 @@ func registerSlashCommands(s *discordgo.Session) {
 			commandsToRegister <- desiredCmd
 		}
 
-		logger.Discord.Debug("Command " + desiredCmd.Name + " already up-to-date, skipping")
+		if !needsUpdate {
+			logger.Discord.Debug("Command " + desiredCmd.Name + " already up-to-date, skipping")
+		}
 
 	}
 	close(commandsToRegister)
@@ -160,8 +170,9 @@ func registerSlashCommands(s *discordgo.Session) {
 
 			if err != nil {
 				logger.Discord.Error("Error registering command " + cmd.Name + ": " + err.Error())
+			} else {
+				logger.Discord.Debug("Successfully registered command " + cmd.Name + " took:" + duration.String())
 			}
-			logger.Discord.Debug("Successfully registered command " + cmd.Name + " took:" + duration.String())
 			wg.Done()
 		}
 	}()
@@ -174,6 +185,12 @@ func registerSlashCommands(s *discordgo.Session) {
 // This is used to determine if a slash command needs to be registered with the discord server we are connected to or if it already exists.
 // commandsAreEqual (helper) checks if two discrd commands are functionally identical
 func commandsAreEqual(desired, existing *discordgo.ApplicationCommand) bool {
+	if (desired.DMPermission == nil) != (existing.DMPermission == nil) {
+		return false
+	}
+	if desired.DMPermission != nil && *desired.DMPermission != *existing.DMPermission {
+		return false
+	}
 	if desired.Name != existing.Name || desired.Description != existing.Description {
 		return false
 	}
