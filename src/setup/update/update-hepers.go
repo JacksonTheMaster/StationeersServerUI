@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
+
+var githubReleasesURL = "https://api.github.com/repos/SteamServerUI/StationeersServerUI/releases?per_page=100"
+var releaseHTTPClient = &http.Client{Timeout: 30 * time.Second}
+var downloadHTTPClient = &http.Client{Timeout: 30 * time.Minute}
 
 // parseVersion parses a version string (e.g., "4.6.10") into a Version struct and tries to handle a few culprits too
 func parseVersion(v string) (Version, error) {
@@ -26,7 +31,7 @@ func parseVersion(v string) (Version, error) {
 }
 
 // shouldUpdate determines if an update should proceed, returning reason if not
-func shouldUpdate(current, latest Version, isInUpdateableState bool) (string, bool) {
+func shouldUpdate(current, latest Version, isInUpdateableState, majorUpdateApproved bool) (string, bool) {
 	// Check if already up-to-date or older
 	if latest.Major < current.Major ||
 		(latest.Major == current.Major && latest.Minor < current.Minor) ||
@@ -35,7 +40,7 @@ func shouldUpdate(current, latest Version, isInUpdateableState bool) (string, bo
 	}
 
 	// Check if it’s a major update and not allowed
-	if current.Major != latest.Major && !config.GetAllowMajorUpdates() {
+	if current.Major != latest.Major && !config.GetAllowMajorUpdates() && !majorUpdateApproved {
 		return "major-update", false
 	}
 
@@ -48,8 +53,7 @@ func shouldUpdate(current, latest Version, isInUpdateableState bool) (string, bo
 
 // getLatestRelease fetches the most recent release (or prerelease) from GitHub API
 func getLatestRelease() (*githubRelease, error) {
-	url := "https://api.github.com/repos/JacksonTheMaster/StationeersServerUI/releases"
-	resp, err := http.Get(url)
+	resp, err := releaseHTTPClient.Get(githubReleasesURL)
 	if err != nil {
 		return nil, err
 	}
@@ -68,18 +72,22 @@ func getLatestRelease() (*githubRelease, error) {
 		return nil, fmt.Errorf("no releases found")
 	}
 
-	// Find the most recent release
+	// Find the newest release allowed by the configured release channel.
 	var latestRelease *githubRelease
 	var latestVersion Version
-	for i, release := range releases {
+	for i := range releases {
+		release := &releases[i]
+		if release.Draft || (release.Prerelease && !config.GetAllowPrereleaseUpdates()) {
+			continue
+		}
 		version, err := parseVersion(release.TagName)
 		if err != nil {
 			logger.Install.Warn(fmt.Sprintf("Skipping invalid version tag %s: %v", release.TagName, err))
 			continue
 		}
-		if i == 0 || isReleaseNewerVersion(version, latestVersion) {
+		if latestRelease == nil || isReleaseNewerVersion(version, latestVersion) {
 			latestVersion = version
-			latestRelease = &releases[i]
+			latestRelease = release
 		}
 	}
 
@@ -87,36 +95,19 @@ func getLatestRelease() (*githubRelease, error) {
 		return nil, fmt.Errorf("no suitable releases found")
 	}
 
-	// Log warning if the latest release is a prerelease
-	if latestRelease.Prerelease && !config.GetAllowPrereleaseUpdates() {
-		logger.Install.Warn(fmt.Sprintf("⚠️ Pre-release Update found: Latest version %s is a pre-release. Enable 'AllowPrereleaseUpdates' in config.json to update to it.", latestRelease.TagName))
-	}
-
-	// If prerelease and AllowPrereleaseUpdates is false, find the latest stable release
-	if latestRelease.Prerelease && !config.GetAllowPrereleaseUpdates() {
-		var stableRelease *githubRelease
-		var stableVersion Version
-		for i, release := range releases {
-			if release.Prerelease {
-				continue
-			}
-			version, err := parseVersion(release.TagName)
-			if err != nil {
-				logger.Install.Warn(fmt.Sprintf("Skipping invalid version tag %s: %v", release.TagName, err))
-				continue
-			}
-			if i == 0 || isReleaseNewerVersion(version, stableVersion) {
-				stableVersion = version
-				stableRelease = &releases[i]
-			}
-		}
-		if stableRelease == nil {
-			return nil, fmt.Errorf("no stable releases found")
-		}
-		return stableRelease, nil
-	}
-
 	return latestRelease, nil
+}
+
+func IsMajorUpdate(version string) bool {
+	current, err := parseVersion(config.GetVersion())
+	if err != nil {
+		return false
+	}
+	latest, err := parseVersion(version)
+	if err != nil {
+		return false
+	}
+	return current.Major != latest.Major
 }
 
 // isNewerVersion compares two versions to determine if the first is newer

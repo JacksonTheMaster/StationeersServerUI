@@ -16,6 +16,7 @@ import (
 type githubRelease struct {
 	TagName    string `json:"tag_name"`
 	Prerelease bool   `json:"prerelease"`
+	Draft      bool   `json:"draft"`
 	Assets     []struct {
 		Name string `json:"name"`
 		URL  string `json:"browser_download_url"`
@@ -29,8 +30,21 @@ type Version struct {
 	Patch int
 }
 
-// CheckForUpdates checks for the latest release from GitHub
-func Update(isInUpdateableState bool) (err error, newVersion string) {
+func CheckForUpdates() (err error, newVersion string) {
+	return update(false, false, "")
+}
+
+func ApplyAvailableUpdate() (err error, newVersion string) {
+	return update(true, false, "")
+}
+
+// ApplyVersion installs the release an administrator saw and approved in the UI.
+// A one-time major approval does not change the persistent AllowMajorUpdates setting.
+func ApplyVersion(version string, majorUpdateApproved bool) (err error, newVersion string) {
+	return update(true, majorUpdateApproved, version)
+}
+
+func update(isInUpdateableState, majorUpdateApproved bool, expectedVersion string) (err error, newVersion string) {
 	if !config.GetIsUpdateEnabled() {
 		logger.Install.Warn("⚠️ Update check is disabled. Skipping update check. Change 'IsUpdateEnabled' in config.json to true to re-enable update checks.")
 		return nil, ""
@@ -50,6 +64,9 @@ func Update(isInUpdateableState bool) (err error, newVersion string) {
 	if err != nil {
 		return fmt.Errorf("❌ Failed to fetch latest release: %v", err), ""
 	}
+	if expectedVersion != "" && latestRelease.TagName != expectedVersion {
+		return fmt.Errorf("available update changed from %s to %s; review it before installing", expectedVersion, latestRelease.TagName), latestRelease.TagName
+	}
 
 	// Parse current and latest versions
 	currentVer, err := parseVersion(config.GetVersion())
@@ -64,7 +81,7 @@ func Update(isInUpdateableState bool) (err error, newVersion string) {
 	logger.Install.Debug(fmt.Sprintf("Current version: %s, Latest version: %s", config.GetVersion(), latestRelease.TagName))
 
 	// Check if we should update
-	updateReason, shouldUpdate := shouldUpdate(currentVer, latestVer, isInUpdateableState)
+	updateReason, shouldUpdate := shouldUpdate(currentVer, latestVer, isInUpdateableState, majorUpdateApproved)
 	if !shouldUpdate {
 		switch updateReason {
 		case "up-to-date":
@@ -150,7 +167,7 @@ func downloadNewExecutable(filename, url string) error {
 	defer os.Remove(tmpFile) // Clean up .tmp on any failure after creation
 
 	// Download from GitHub
-	resp, err := http.Get(url)
+	resp, err := downloadHTTPClient.Get(url)
 	if err != nil {
 		out.Close()
 		return fmt.Errorf("failed to fetch %s: %v", url, err)
@@ -164,10 +181,14 @@ func downloadNewExecutable(filename, url string) error {
 
 	// Show progress
 	counter := &WriteCounter{Total: resp.ContentLength}
-	_, err = io.Copy(out, io.TeeReader(resp.Body, counter))
+	written, err := io.Copy(out, io.TeeReader(resp.Body, counter))
 	if err != nil {
 		out.Close()
 		return fmt.Errorf("failed to write download to file: %v", err)
+	}
+	if written == 0 {
+		out.Close()
+		return fmt.Errorf("downloaded file is empty")
 	}
 
 	// Explicitly close the file before renaming
@@ -175,7 +196,12 @@ func downloadNewExecutable(filename, url string) error {
 		return fmt.Errorf("failed to close temp file: %v", err)
 	}
 
-	// Rename temp file to final name
+	// The destination can be left behind by an earlier failed launch. The
+	// running executable always has an older version and is not this file.
+	if err := os.Remove(filename); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to replace stale download %s: %v", filename, err)
+	}
+
 	if err := os.Rename(tmpFile, filename); err != nil {
 		return fmt.Errorf("failed to rename temp file to %s: %v", filename, err)
 	}
