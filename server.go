@@ -24,9 +24,12 @@ import (
 	"embed"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/cli"
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/loader"
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/security"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/setup"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/web"
@@ -54,6 +57,16 @@ func main() {
 	loader.HandleFlags()
 	setup.Install(&wg)
 	wg.Wait()
+	setupSecret, err := security.InitializeIdentity(config.GetUsers(), time.Now())
+	if err != nil {
+		logger.Security.Error("Failed to initialize identity store: " + err.Error())
+		os.Exit(1)
+	}
+	loader.HandleIdentityFlags()
+	if setupSecret != "" && security.SetupRequired() {
+		logger.Security.Warn("Owner setup is required. Open /setup and use this one-time setup secret:")
+		logger.Security.Warn(setupSecret)
+	}
 	logger.Main.Debug("Initializing Backend...")
 	loader.InitBackend()
 	logger.Main.Debug("Starting webserver...")

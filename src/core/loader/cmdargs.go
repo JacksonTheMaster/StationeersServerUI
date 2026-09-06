@@ -81,21 +81,6 @@ func HandleFlags() {
 		logger.Main.Info(fmt.Sprintf("Overriding GameBranch from command line: Before=%s, Now=%s", oldBranch, gameBranchFlag))
 	}
 
-	if recoveryPasswordFlag != "" {
-		recoveryPasswordFlag = strings.TrimSpace(recoveryPasswordFlag)
-		if recoveryPasswordFlag == "" {
-			logger.Main.Error("Recovery flag provided but password is empty. Skipping recovery user creation.")
-		} else {
-			hashedPassword, err := security.HashPassword(recoveryPasswordFlag)
-			if err != nil {
-				logger.Main.Error(fmt.Sprintf("Failed to hash recovery password: %v", err))
-				return
-			}
-			config.SetUsers(map[string]string{"recovery": hashedPassword})
-			logger.Main.Warn(fmt.Sprintf("Recovery user added with access level superadmin. Login with username 'recovery' and password '%s'", recoveryPasswordFlag))
-		}
-	}
-
 	if logLevelFlag != 0 {
 		oldLevel := config.GetLogLevel()
 		config.SetLogLevel(logLevelFlag)
@@ -125,6 +110,23 @@ func HandleFlags() {
 		config.SetCreateSSUILogFile(true)
 		logger.Main.Info(fmt.Sprintf("Overriding CreateSSUILogFile from command line: Before=%t, Now=true", oldCreateSSUILogFile))
 	}
+}
+
+// HandleIdentityFlags runs after the identity store has been initialized.
+func HandleIdentityFlags() {
+	password := strings.TrimSpace(recoveryPasswordFlag)
+	if recoveryPasswordFlag == "" {
+		return
+	}
+	if password == "" {
+		logger.Security.Error("Recovery flag provided but password is empty. Skipping owner recovery.")
+		return
+	}
+	if _, err := security.RecoverOwner("recovery", password, time.Now()); err != nil {
+		logger.Security.Error(fmt.Sprintf("Failed to recover owner account: %v", err))
+		return
+	}
+	logger.Security.Warn("Recovered owner account 'recovery'. Existing sessions and API tokens were revoked.")
 }
 
 // HandleSanityCheckFlag has special handling to allow usage directly at startup before other systems are initialized.
