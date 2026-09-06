@@ -12,14 +12,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/cli/dashboard"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
 
 // ANSI escape codes for green text and reset
 const (
-	cliPrompt = "\033[32m" + "SSUICLI" + " » " + "\033[0m"
+	cliPrompt = "\033[32m" + "SSCLI" + " » " + "\033[0m"
 )
 
 var isSupportMode bool
@@ -53,26 +52,15 @@ func RegisterCommand(name string, handler CommandFunc, desc string, isDevCommand
 // StartConsole starts a non-blocking console input loop in a separate goroutine.
 func StartConsole(wg *sync.WaitGroup) {
 	if !config.GetIsConsoleEnabled() {
-		logger.Core.Info("SSUICLI runtime console is disabled in config, skipping...")
+		logger.Core.Info("SSCLI runtime console is disabled in config, skipping...")
 		return
 	}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		// Auto-launch dashboard on interactive terminals if enabled in config
-		if config.GetIsCLIDashboardEnabled() && dashboard.IsInteractiveTerminal() {
-			time.Sleep(3 * time.Second) // Give other subsystems time to initialize
-			logger.Core.Info("CLI Dashboard is enabled, launching...")
-			time.Sleep(500 * time.Millisecond) // Small delay for log to be visible
-			if err := dashboard.Run(); err != nil {
-				logger.Core.Error("Dashboard exited with error: " + err.Error())
-			}
-			logger.Core.Info("Dashboard closed, returning to SSUICLI prompt...")
-		}
-
 		scanner := bufio.NewScanner(os.Stdin)
-		logger.Core.Info("SSUICLI runtime console started. Type 'help' for commands.")
+		logger.Core.Info("SSCLI runtime console started. Type 'help' for commands.")
 		time.Sleep(10 * time.Millisecond)
 
 		for {
@@ -89,9 +77,9 @@ func StartConsole(wg *sync.WaitGroup) {
 		}
 
 		if err := scanner.Err(); err != nil {
-			logger.Core.Error("SSUICLI input error:" + err.Error())
+			logger.Core.Error("SSCLI input error:" + err.Error())
 		}
-		logger.Core.Info("SSUICLI runtime console stopped.")
+		logger.Core.Info("SSCLI runtime console stopped.")
 	}()
 }
 
@@ -157,9 +145,9 @@ func helpCommand(args []string) error {
 
 	logger.Core.Cleanf("")
 	if showDev {
-		logger.Core.Cleanf("  \033[33m═══ SSUICLI Commands (including dev) ═══\033[0m")
+		logger.Core.Cleanf("  \033[33m═══ SSCLI Commands (including dev) ═══\033[0m")
 	} else {
-		logger.Core.Cleanf("  \033[32m═══ SSUICLI Commands ═══\033[0m")
+		logger.Core.Cleanf("  \033[32m═══ SSCLI Commands ═══\033[0m")
 	}
 	logger.Core.Cleanf("")
 

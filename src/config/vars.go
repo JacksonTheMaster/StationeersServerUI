@@ -59,7 +59,6 @@ var (
 	AutoRestartServerTimer                   string
 	AutoRestartCountdown                     string
 	IsConsoleEnabled                         bool
-	IsCLIDashboardEnabled                    bool
 	LogClutterToConsole                      bool // surpresses clutter mono logs from the gameserver
 	LanguageSetting                          string
 	AutoStartServerOnStartup                 bool
@@ -149,7 +148,7 @@ var (
 	ConfigPath                    = "./SSUI/config/config.json"
 	CustomDetectionsFilePath      = "./SSUI/config/customdetections.json"
 	LogFolder                     = "./SSUI/logs/"
-	SSUIFolder                   = "./SSUI/"
+	SSUIFolder                    = "./SSUI/"
 	TwoBoxFormFolder              = "./SSUI/twoboxform/"
 	ConfigHtmlPath                = "./SSUI/ui/config.html"
 	DetectionManagerHtmlPath      = "./SSUI/ui/detectionmanager.html"

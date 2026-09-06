@@ -211,6 +211,18 @@ func (m *SSEManager) AddInternalSubscriber() chan string {
 	return client.messages
 }
 
+func (m *SSEManager) RemoveInternalSubscriber(messages chan string) {
+	m.clientsMu.Lock()
+	defer m.clientsMu.Unlock()
+	for client := range m.clients {
+		if client.messages == messages {
+			delete(m.clients, client)
+			close(client.messages)
+			return
+		}
+	}
+}
+
 // removeClient safely removes a client from the manager
 func (m *SSEManager) removeClient(client *Client) {
 	m.clientsMu.Lock()

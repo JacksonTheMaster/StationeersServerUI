@@ -60,7 +60,7 @@ func main() {
 	web.StartWebServer(&wg)
 	logger.Main.Debug("Initializing after start tasks...")
 	loader.AfterStartComplete()
-	logger.Main.Debug("Initializing SSUICLI...")
+	logger.Main.Debug("Initializing SSCLI...")
 	cli.StartConsole(&wg)
 	wg.Wait()
 }

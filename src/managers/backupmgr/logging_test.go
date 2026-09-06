@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/ssestream"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
 
-// Use the logger's dashboard sink so these tests exercise level filtering and
-// actual messages without adding a second logging interface to the manager.
+// Use the backend log stream so these tests exercise the real logger without
+// adding a logging interface just for the backup manager.
 func captureBackupLogs(t *testing.T, level int, run func(string)) string {
 	t.Helper()
 	identifier := "[" + t.Name() + "]"
@@ -22,23 +22,11 @@ func captureBackupLogs(t *testing.T, level int, run func(string)) string {
 	oldLevel, oldFilters, oldFile := config.LogLevel, config.SubsystemFilters, config.CreateSSUILogFile
 	config.LogLevel, config.SubsystemFilters, config.CreateSSUILogFile = level, nil, false
 	config.ConfigMu.Unlock()
-	var mu sync.Mutex
 	var messages strings.Builder
-	flushed := make(chan struct{}, 1)
 	marker := identifier + " log capture complete"
-	logger.RegisterDashboardHooks(func() bool { return true }, func(line string) {
-		if !strings.Contains(line, identifier) {
-			return
-		}
-		mu.Lock()
-		messages.WriteString(line)
-		mu.Unlock()
-		if strings.Contains(line, marker) {
-			flushed <- struct{}{}
-		}
-	})
+	stream := ssestream.BackendLogStreamManager.AddInternalSubscriber()
 	t.Cleanup(func() {
-		logger.RegisterDashboardHooks(nil, nil)
+		ssestream.BackendLogStreamManager.RemoveInternalSubscriber(stream)
 		config.ConfigMu.Lock()
 		config.LogLevel, config.SubsystemFilters, config.CreateSSUILogFile = oldLevel, oldFilters, oldFile
 		config.ConfigMu.Unlock()
@@ -46,14 +34,21 @@ func captureBackupLogs(t *testing.T, level int, run func(string)) string {
 	run(identifier)
 	// The logger is asynchronous. A marker in the same queue gives us a barrier.
 	logger.Backup.Error(marker)
-	select {
-	case <-flushed:
-	case <-time.After(5 * time.Second):
-		t.Fatal("logger did not drain")
+	timeout := time.NewTimer(5 * time.Second)
+	defer timeout.Stop()
+	for {
+		select {
+		case line := <-stream:
+			if strings.Contains(line, identifier) {
+				messages.WriteString(line)
+			}
+			if strings.Contains(line, marker) {
+				return messages.String()
+			}
+		case <-timeout.C:
+			t.Fatal("logger did not drain")
+		}
 	}
-	mu.Lock()
-	defer mu.Unlock()
-	return messages.String()
 }
 
 func TestBackupHandlingLogs(t *testing.T) {

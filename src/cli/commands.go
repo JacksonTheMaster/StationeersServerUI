@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/cli/dashboard"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/loader"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
@@ -28,7 +27,6 @@ func init() {
 
 	// User commands
 	RegisterCommand("help", helpCommand, "Show available commands", false, "h")
-	RegisterCommand("dashboard", dashboardCommand, "Launch interactive CLI dashboard", false, "dash", "d")
 	RegisterCommand("startserver", WrapNoReturn(startServer), "Start the game server", false, "start")
 	RegisterCommand("stopserver", WrapNoReturn(stopServer), "Stop the game server", false, "stop")
 	RegisterCommand("update", WrapNoReturn(triggerUpdateCheck), "Trigger an SSUI update check", false, "u")
@@ -52,16 +50,6 @@ func init() {
 	RegisterCommand("downloadworkshopitem", downloadWorkshopItem, "Download a workshop item. When no arguments are provided, 3672138641/BlueprintMod is downloaded. Can be called like downloadworkshopitem 3505169479 or downloadworkshopitem 3505169479 3505115682 3505169479 ", true, "dwi")
 	RegisterCommand("dumpheapprofile", WrapNoReturn(dumpHeapProfile), "Dump a pprof heap profile for debugging", true, "dhp")
 	RegisterCommand("testserverstatuspaneldiscord", WrapNoReturn(testServerStatusPanelDiscord), "Send a fake player list to the Discord package to test the server status panel", true, "tsspd")
-}
-
-// dashboardCommand launches the interactive terminal dashboard
-func dashboardCommand(args []string) error {
-	logger.Core.Info("Launching interactive dashboard... (press 'q' or 'esc' to exit)")
-	if err := dashboard.Run(); err != nil {
-		return fmt.Errorf("dashboard error: %w", err)
-	}
-	logger.Core.Info("Dashboard closed, returning to SSUICLI")
-	return nil
 }
 
 // COMMAND HANDLERS WITH COMMANDS USEFUL FOR USERS

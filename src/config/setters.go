@@ -673,14 +673,6 @@ func SetIsConsoleEnabled(value bool) error {
 	return safeSaveConfig()
 }
 
-func SetIsCLIDashboardEnabled(value bool) error {
-	ConfigMu.Lock()
-	defer ConfigMu.Unlock()
-
-	IsCLIDashboardEnabled = value
-	return safeSaveConfig()
-}
-
 func SetAllowAutoGameServerUpdates(value bool) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
