@@ -59,7 +59,7 @@ func ServeTwoBoxFormTemplate(w http.ResponseWriter, r *http.Request) {
 		Steps                    []Step
 	}
 
-	twoboxformAssetsFS, err := fs.Sub(config.GetV1UIFS(), "UIMod/onboard_bundled/twoboxform")
+	twoboxformAssetsFS, err := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/twoboxform")
 	if err != nil {
 		logger.Web.Error("Failed to get bundled FS")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

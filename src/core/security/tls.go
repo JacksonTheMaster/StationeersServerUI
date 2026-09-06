@@ -31,7 +31,7 @@ func EnsureTLSCerts() error {
 	keyExists := fileExists(keyPath)
 	logger.Security.Debug(fmt.Sprintf("Cert exists: %t, Key exists: %t", certExists, keyExists))
 
-	tlsDir := config.GetUIModFolder() + "tls/"
+	tlsDir := config.GetSSUIFolder() + "tls/"
 
 	if _, err := os.Stat(tlsDir); os.IsNotExist(err) {
 		logger.Security.Debug("TLS directory doesn't exist, creating...")

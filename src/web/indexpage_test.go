@@ -10,7 +10,7 @@ import (
 )
 
 func TestIndexTemplateRendersBackupSummaryLocalization(t *testing.T) {
-	path := filepath.Join("..", "..", "UIMod", "onboard_bundled", "ui", "index.html")
+	path := filepath.Join("..", "..", "SSUI", "onboard_bundled", "ui", "index.html")
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

@@ -135,7 +135,7 @@ func PrintConfigDetails(logLevel ...string) {
 	ui := map[string]string{
 		"SSUIIdentifier":       config.GetSSUIIdentifier(),
 		"SSUIWebPort":          config.GetSSUIWebPort(),
-		"UIModFolder":          config.GetUIModFolder(),
+		"SSUIFolder":          config.GetSSUIFolder(),
 		"MaxSSEConnections":    fmt.Sprintf("%d", config.GetMaxSSEConnections()),
 		"SSEMessageBufferSize": fmt.Sprintf("%d", config.GetSSEMessageBufferSize()),
 	}

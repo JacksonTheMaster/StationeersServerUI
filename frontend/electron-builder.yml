@@ -9,8 +9,8 @@ files:
   - "package.json"
   - "main.cjs"
 extraResources:
-  - from: "../UIMod/onboard_bundled/v2/"
-    to: "UIMod/onboard_bundled/v2/"
+  - from: "../SSUI/onboard_bundled/v2/"
+    to: "SSUI/onboard_bundled/v2/"
 win:
   target: nsis
   icon: ../media/logo.png

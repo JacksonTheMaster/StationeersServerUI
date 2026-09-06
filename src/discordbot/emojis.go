@@ -12,7 +12,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const discordBackupEmojiAssetDir = "UIMod/onboard_bundled/assets/backupstats/discord"
+const discordBackupEmojiAssetDir = "SSUI/onboard_bundled/assets/backupstats/discord"
 
 var backupStatEmojiAssets = map[string]string{
 	"days":           "days.webp",

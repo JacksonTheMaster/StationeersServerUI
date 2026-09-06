@@ -11,8 +11,8 @@ import (
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
 
-func CleanUpOldUIModFolderFiles() error {
-	uiModFolder := config.GetUIModFolder()
+func CleanUpOldSSUIFolderFiles() error {
+	uiModFolder := config.GetSSUIFolder()
 	customdetectionsSourceFile := filepath.Join(uiModFolder, "detectionmanager", "customdetections.json")
 	customdetectionsDestinationFile := config.GetCustomDetectionsFilePath()
 	oldUiFolder := filepath.Join(uiModFolder, "ui") // used to test if we need clean up from a structure before v5.5 (since we now have embedded assets)

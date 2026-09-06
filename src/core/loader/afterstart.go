@@ -11,7 +11,7 @@ import (
 
 func AfterStartComplete() {
 	config.SetSaveConfig() // Save config after startup through setters
-	err := setup.CleanUpOldUIModFolderFiles()
+	err := setup.CleanUpOldSSUIFolderFiles()
 	if err != nil {
 		logger.Core.Error("AfterStartComplete: Failed to clean up old pre-v5.5 UI mod folder files: " + err.Error())
 	}

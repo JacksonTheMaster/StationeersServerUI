@@ -17,11 +17,15 @@ rocketstation_DedicatedServer*
 .github/workflows/nightly-sync.yml
 repos.md
 UIMod/*.pem
+SSUI/*.pem
 build/StationeersServerControl*
 Blacklist.txt
 UIMod/detectionmanager/customdetections.json
 UIMod/tls/cert.pem
 UIMod/tls/key.pem
+SSUI/detectionmanager/customdetections.json
+SSUI/tls/cert.pem
+SSUI/tls/key.pem
 steamapps/**
 steamcmd/**
 Steam/**
@@ -35,8 +39,10 @@ run_bepinex.sh
 debug.log
 modconfig.xml
 UIMod/config/config.json
+SSUI/config/config.json
 C:/custom/file.txt
 UIMod/config/customdetections.json
+SSUI/config/customdetections.json
 winhttp.dll
 autostart*
 __debug_bin*
@@ -45,6 +51,9 @@ frontend/dist
 frontend/build
 UIMod/onboard_bundled/v2
 UIMod/logs/*
+SSUI/onboard_bundled/v2
+SSUI/logs/*
+SSUI/savebackups/*
 .agent-context/**
 .github/copilot-instructions.md
 mods/**

@@ -10,7 +10,7 @@ COPY ./frontend/package.json ./frontend/package-lock.json* ./
 RUN npm install
 
 COPY ./frontend/ ./
-# Build Svelte UI into ../UIMod/onboard_bundled/v2 (as configured in vite.config.js)
+# Build Svelte UI into ../SSUI/onboard_bundled/v2 (as configured in vite.config.js)
 RUN npm run build
 
 ############
@@ -26,9 +26,9 @@ RUN go mod download
 
 COPY . ./
 
-COPY --from=frontend-builder /src/UIMod /src/UIMod
+COPY --from=frontend-builder /src/SSUI /src/SSUI
 
-# Build the server (embed will include UIMod/* at build time)
+# Build the server (embed will include SSUI/* at build time)
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/StationeersServerUI ./server.go
 
 ############

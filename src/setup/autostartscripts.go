@@ -10,7 +10,7 @@ import (
 )
 
 func SetupAutostartScripts() {
-	scriptFS, err := fs.Sub(config.V1UIFS, "UIMod/onboard_bundled/scripts")
+	scriptFS, err := fs.Sub(config.V1UIFS, "SSUI/onboard_bundled/scripts")
 	if err != nil {
 		return
 	}

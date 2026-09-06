@@ -10,7 +10,7 @@ import (
 )
 
 func TestBackupPageTemplateRendersLocalizedWorkspace(t *testing.T) {
-	path := filepath.Join("..", "..", "UIMod", "onboard_bundled", "ui", "backups.html")
+	path := filepath.Join("..", "..", "SSUI", "onboard_bundled", "ui", "backups.html")
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

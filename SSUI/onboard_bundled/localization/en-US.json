@@ -215,9 +215,9 @@
                 "UIText_AutoStartServerOnStartup": "Auto Start Server on Startup",
                 "UIText_AutoStartServerOnStartupInfo": "Automatically start the gameserver when the SSUI is started. Defaults to false.",
                 "UIText_CreateSSUILogFile": "Create SSUI Log Files",
-                "UIText_CreateSSUILogFileInfo": "Create log files for the SSUI log in UIMod/logs. Defaults to false.",
+                "UIText_CreateSSUILogFileInfo": "Create log files for the SSUI log in SSUI/logs. Defaults to false.",
                 "UIText_CreateGameServerLogFile": "Create Game Server Log File",
-                "UIText_CreateGameServerLogFileInfo": "Create a unique log file per server start for the gameserver in UIMod/logs. Defaults to false."
+                "UIText_CreateGameServerLogFileInfo": "Create a unique log file per server start for the gameserver in SSUI/logs. Defaults to false."
 
             },
             "terrain": {

@@ -16,7 +16,7 @@ func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
 	mux := http.NewServeMux() // Use a mux to apply middleware globally
 
 	// Unprotected auth routes
-	twoboxformAssetsFS, _ := fs.Sub(config.GetV1UIFS(), "UIMod/onboard_bundled/twoboxform")
+	twoboxformAssetsFS, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/twoboxform")
 	mux.Handle("/twoboxform/", http.StripPrefix("/twoboxform/", http.FileServer(http.FS(twoboxformAssetsFS))))
 	mux.HandleFunc("/auth/login", LoginHandler) // Token issuer
 	mux.HandleFunc("/auth/logout", LogoutHandler)
@@ -25,7 +25,7 @@ func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
 	// Protected routes (wrapped with middleware)
 	protectedMux := http.NewServeMux()
 
-	legacyAssetsFS, _ := fs.Sub(config.GetV1UIFS(), "UIMod/onboard_bundled/assets")
+	legacyAssetsFS, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/assets")
 	protectedMux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(legacyAssetsFS))))
 
 	protectedMux.HandleFunc("/config", ServeConfigPage)
@@ -35,7 +35,7 @@ func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
 
 	// --- SVELTE UI ---
 	protectedMux.HandleFunc("/v2", ServeSvelteUI)
-	svelteAssetsFS, _ := fs.Sub(config.V1UIFS, "UIMod/onboard_bundled/v2/assets")
+	svelteAssetsFS, _ := fs.Sub(config.V1UIFS, "SSUI/onboard_bundled/v2/assets")
 	protectedMux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.FS(svelteAssetsFS))))
 	protectedMux.HandleFunc("/api/v2/loader/reloadbackend", HandleReloadAll)
 

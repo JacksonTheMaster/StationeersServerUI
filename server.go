@@ -22,6 +22,7 @@ package main
 
 import (
 	"embed"
+	"os"
 	"sync"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/cli"
@@ -31,7 +32,7 @@ import (
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/web"
 )
 
-//go:embed UIMod/onboard_bundled
+//go:embed SSUI/onboard_bundled
 var v1uiFS embed.FS
 
 func main() {
@@ -40,6 +41,12 @@ func main() {
 	loader.ParseFlags()
 	loader.HandleSanityCheckFlag()
 	loader.SanityCheck()
+	if migrated, err := setup.MigrateLegacyRuntimeFolder(); err != nil {
+		logger.Main.Error("Failed to migrate UIMod to SSUI: " + err.Error())
+		os.Exit(1)
+	} else if migrated {
+		logger.Main.Info("Copied UIMod data to SSUI. The old UIMod folder was left untouched.")
+	}
 	logger.Main.Info("Initializing resources...")
 	loader.InitVirtFS(v1uiFS)
 	logger.Install.Info("Starting setup...")

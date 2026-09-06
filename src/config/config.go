@@ -434,8 +434,9 @@ func applyConfig(cfg *JsonConfig) {
 		// use old style Backups folder
 		ConfiguredBackupDir = filepath.Join("./saves/", SaveName, "Backup")
 	}
-	// use Safebackups folder either way.
-	ConfiguredSafeBackupDir = filepath.Join("./saves/", SaveName, "Safebackups")
+	// SSUI owns archived saves. The old saves/<world>/Safebackups folder is
+	// intentionally left alone when upgrading.
+	ConfiguredSafeBackupDir = filepath.Join(SSUIFolder, "savebackups", SaveName)
 
 	AdvertiserOverride = getString(cfg.AdvertiserOverride, "ADVERTISER_OVERRIDE", "")
 

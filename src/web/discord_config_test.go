@@ -11,7 +11,7 @@ import (
 )
 
 func TestDiscordHubConfigTemplate(t *testing.T) {
-	root := filepath.Join("..", "..", "UIMod", "onboard_bundled")
+	root := filepath.Join("..", "..", "SSUI", "onboard_bundled")
 	tmpl, err := template.ParseFiles(filepath.Join(root, "ui", "config.html"))
 	if err != nil {
 		t.Fatal(err)

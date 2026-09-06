@@ -5,7 +5,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 export default defineConfig({
   plugins: [svelte()],
   build: {
-    outDir: '../UIMod/onboard_bundled/v2', // Change output directory to ../dist
+    outDir: '../SSUI/onboard_bundled/v2', // Change output directory to ../dist
     rollupOptions: {
       output: {
         // Set the name of the JS bundle

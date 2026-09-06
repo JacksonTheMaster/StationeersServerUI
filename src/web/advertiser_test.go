@@ -50,7 +50,7 @@ func TestAdvertiserOverrideRejectsWrongMethod(t *testing.T) {
 }
 
 func TestConfigTemplateParses(t *testing.T) {
-	if _, err := template.ParseFiles("../../UIMod/onboard_bundled/ui/config.html"); err != nil {
+	if _, err := template.ParseFiles("../../SSUI/onboard_bundled/ui/config.html"); err != nil {
 		t.Fatalf("config template failed to parse: %v", err)
 	}
 }

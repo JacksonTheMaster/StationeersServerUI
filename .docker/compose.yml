@@ -24,7 +24,7 @@ services:
     volumes:
       - app-data:/app
       - ./saves:/app/saves:rw
-      - ./UIMod:/app/UIMod:rw
+      - ./SSUI:/app/SSUI:rw
     restart: unless-stopped
 
 volumes:

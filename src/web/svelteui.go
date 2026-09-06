@@ -15,7 +15,7 @@ import (
 var reloadMu sync.Mutex
 
 func ServeSvelteUI(w http.ResponseWriter, r *http.Request) {
-	htmlFS, err := fs.Sub(config.V1UIFS, "UIMod/onboard_bundled/v2")
+	htmlFS, err := fs.Sub(config.V1UIFS, "SSUI/onboard_bundled/v2")
 	if err != nil {
 		http.Error(w, "Error accessing Svelte UI: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -32,7 +32,7 @@ func loadTranslations() {
 	// Clear existing translations
 	translations = make(map[string]map[string]string)
 
-	virtFS, err := fs.Sub(config.V1UIFS, "UIMod/onboard_bundled/localization")
+	virtFS, err := fs.Sub(config.V1UIFS, "SSUI/onboard_bundled/localization")
 	if err != nil {
 		logger.Localization.Error("Failed to access virtual filesystem: " + err.Error())
 		return

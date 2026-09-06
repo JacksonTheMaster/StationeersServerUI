@@ -11,7 +11,7 @@ import (
 )
 
 func ServeIndex(w http.ResponseWriter, r *http.Request) {
-	htmlFS, err := fs.Sub(config.V1UIFS, "UIMod/onboard_bundled/ui")
+	htmlFS, err := fs.Sub(config.V1UIFS, "SSUI/onboard_bundled/ui")
 	if err != nil {
 		http.Error(w, "Error accessing Virt FS: "+err.Error(), http.StatusInternalServerError)
 		return
