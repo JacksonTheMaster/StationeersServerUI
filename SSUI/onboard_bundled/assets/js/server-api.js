@@ -12,9 +12,15 @@ function stopServer() {
 }
 
 function toggleServer(endpoint) {
+    const action = endpoint.endsWith('/stop') ? 'stop' : 'start';
+    if (!window.SSUIAccess.require('server.control', `You don't have permission to ${action} the server.`)) return;
     const status = document.getElementById('status');
     fetch(endpoint, { method: 'POST' })
-        .then(response => response.json())
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Server action failed');
+            return data;
+        })
         .then(data => {
             const message = data.message || 'Request completed';
             status.hidden = false;
@@ -22,10 +28,11 @@ function toggleServer(endpoint) {
                 setTimeout(() => status.hidden = true, 10000);
             });
         })
-        .catch(err => console.error(`Failed to ${endpoint}:`, err));
+        .catch(err => window.SSUIAccess.notify(err.message));
 }
 
 function triggerSteamCMD() {
+    if (!window.SSUIAccess.require('steamcmd.run', "You don't have permission to update the game server.")) return;
     const status = document.getElementById('status');
     status.hidden = false;
     typeTextWithCallback(status, 'Running SteamCMD, please wait... ', 20, () => {
@@ -47,6 +54,11 @@ function fetchBackups() {
     const requestSequence = ++backupFetchSequence;
     const limit = '3';
     const url = `/api/v3/backups?limit=${limit}&include=summary`;
+    if (!window.SSUIAccess.can('backups.view')) {
+        document.getElementById('backupList').innerHTML = '<li class="no-backups">You don\'t have permission to view backups.</li>';
+        updateLatestBackupDisplay(undefined);
+        return Promise.resolve();
+    }
     
     return fetch(url)
         .then(response => {
@@ -186,6 +198,14 @@ function fetchPlayers() {
     const playersDiv = document.getElementById('players');
     const playerList = document.getElementById('playerList');
     const emptyState = document.getElementById('players-empty');
+    if (!window.SSUIAccess.can('server.view')) {
+        playersDiv.classList.add('is-empty');
+        emptyState.textContent = "You don't have permission to view connected players.";
+        emptyState.style.display = 'block';
+        updateWorkspacePlayerState(false);
+        updatePlayerCount(null);
+        return Promise.resolve();
+    }
     
     const playerImages = [
         "/static/playerimages/anna.webp",
@@ -315,6 +335,7 @@ function updateLatestBackupDisplay(backup) {
 }
 
 function restoreBackup(name) {
+    if (!window.SSUIAccess.require('backups.restore', "You don't have permission to restore backups.")) return;
     const status = document.getElementById('status');
     const selection = new URLSearchParams({ name });
     fetch(`/api/v3/backups/restore?${selection}`, { method: 'POST' })
@@ -337,6 +358,7 @@ function restoreBackup(name) {
 }
 
 function downloadBackup(name) {
+    if (!window.SSUIAccess.require('backups.download', "You don't have permission to download backups.")) return;
     const status = document.getElementById('status');
     status.hidden = false;
     typeTextWithCallback(status, 'Preparing download...', 20, () => {});
@@ -397,24 +419,27 @@ function pollRecurringTasks() {
     };
 
     // Fetch immediately, then poll server status every 3.5 seconds
-    fetchServerStatus();
-    setInterval(fetchServerStatus, 3500);
+    if (window.SSUIAccess.can('server.view')) {
+        fetchServerStatus();
+        setInterval(fetchServerStatus, 3500);
+    } else {
+        updateStatusIndicator(false, true);
+        document.getElementById('server-state-label').textContent = 'No permission';
+    }
 
     // Poll connectred players every 10 seconds
-    const playersInterval = setInterval(() => {
-        fetchPlayers()
-            .catch(err => {
-                console.error("Failed to fetch connectedplayers:", err);
-            });
-    }, 10000);
+    if (window.SSUIAccess.can('server.view')) {
+        setInterval(() => {
+            fetchPlayers().catch(err => console.error("Failed to fetch connectedplayers:", err));
+        }, 10000);
+    }
 
     // Poll backups every 30 seconds
-    const backupsInterval = setInterval(() => {
-        fetchBackups()
-            .catch(err => {
-                console.error("Failed to fetch backups:", err);
-            });
-    }, 30000);
+    if (window.SSUIAccess.can('backups.view')) {
+        setInterval(() => {
+            fetchBackups().catch(err => console.error("Failed to fetch backups:", err));
+        }, 30000);
+    }
 }
 
 function updateStatusIndicator(isRunning, isError = false, uptime = '', state = 'uncertain') {

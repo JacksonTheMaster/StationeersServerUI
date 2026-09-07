@@ -2,6 +2,7 @@ package web
 
 // TemplateData holds data to be passed to templates
 type IndexTemplateData struct {
+	Permissions                     string
 	UIText_UpdateAvailable          string
 	UIText_UpdateLater              string
 	UIText_UpdateNow                string
@@ -75,6 +76,12 @@ type IndexTemplateData struct {
 
 // ConfigTemplateData holds data for the config page template
 type ConfigTemplateData struct {
+	Permissions         string
+	CanViewSettings     bool
+	CanManageSettings   bool
+	CanManageSLP        bool
+	CanManageDetections bool
+
 	// Config values
 	DiscordToken                            string
 	DiscordAdminRoleID                      string

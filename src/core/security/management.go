@@ -25,6 +25,28 @@ type UserUpdate struct {
 	GroupIDs *[]string
 }
 
+func ChangeOwnPassword(actor Principal, currentPassword, newPassword string, now time.Time) error {
+	hash, err := HashIdentityPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	return mutateIdentity(func(state *IdentityState) error {
+		user, ok := state.Users[actor.UserID]
+		if !ok || !user.Enabled {
+			return errors.New("user not found")
+		}
+		if !verifyIdentityPassword(user.PasswordHash, currentPassword) {
+			return errors.New("current password is incorrect")
+		}
+		user.PasswordHash = hash
+		user.UpdatedAt = now
+		state.Users[user.ID] = user
+		revokeUserCredentials(state, user.ID)
+		appendAudit(state, actor.UserID, actor.Username, "password.change", "user", user.ID, now)
+		return nil
+	})
+}
+
 func GetUser(id string) (User, bool) {
 	user, ok := identitySnapshot().Users[id]
 	return user, ok

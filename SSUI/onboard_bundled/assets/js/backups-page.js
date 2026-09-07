@@ -128,6 +128,11 @@
 
     function loadAnalysis(item) {
         const panel = item.querySelector('.backup-page-analysis');
+        if (!window.SSUIAccess.can('backups.analyze')) {
+            panel.dataset.state = 'denied';
+            panel.innerHTML = `<div class="backup-analysis-message is-error">You don't have permission to analyze backups.</div>`;
+            return;
+        }
         if (panel.dataset.state === 'loading' || panel.dataset.state === 'loaded') return;
 
         panel.dataset.state = 'loading';
@@ -190,6 +195,12 @@
     }
 
     function fetchBackups() {
+        if (!window.SSUIAccess.can('backups.view')) {
+            list.innerHTML = `<li class="backup-page-empty">You don't have permission to view backups.</li>`;
+            limit.disabled = true;
+            refresh.disabled = true;
+            return;
+        }
         const sequence = ++fetchSequence;
         const params = new URLSearchParams({ include: 'summary' });
         if (limit.value) params.set('limit', limit.value);
@@ -220,6 +231,7 @@
     }
 
     function restoreBackup(name) {
+        if (!window.SSUIAccess.require('backups.restore', "You don't have permission to restore backups.")) return;
         const selection = new URLSearchParams({ name });
         fetch(`/api/v3/backups/restore?${selection}`, { method: 'POST' })
             .then(response => response.text().then(message => ({ ok: response.ok, message })))
@@ -231,6 +243,7 @@
     }
 
     function downloadBackup(name) {
+        if (!window.SSUIAccess.require('backups.download', "You don't have permission to download backups.")) return;
         fetch('/api/v3/backups/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

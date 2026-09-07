@@ -17,7 +17,7 @@ func TestDiscordHubConfigTemplate(t *testing.T) {
 		t.Fatal(err)
 	}
 	var output bytes.Buffer
-	if err := tmpl.Execute(&output, ConfigTemplateData{DiscordAdminRoleID: "123456789012345678", StatusPanelChannelID: "987654321098765432"}); err != nil {
+	if err := tmpl.Execute(&output, ConfigTemplateData{CanViewSettings: true, DiscordAdminRoleID: "123456789012345678", StatusPanelChannelID: "987654321098765432"}); err != nil {
 		t.Fatal(err)
 	}
 	html := output.String()
@@ -30,6 +30,14 @@ func TestDiscordHubConfigTemplate(t *testing.T) {
 		if strings.Contains(html, obsolete) {
 			t.Fatalf("obsolete field %s", obsolete)
 		}
+	}
+
+	output.Reset()
+	if err := tmpl.Execute(&output, ConfigTemplateData{DiscordToken: "should-not-be-rendered"}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(output.String(), "should-not-be-rendered") {
+		t.Fatal("config values were rendered without settings.view")
 	}
 	for _, language := range []string{"en-US", "de-DE", "sv-SE"} {
 		data, err := os.ReadFile(filepath.Join(root, "localization", language+".json"))

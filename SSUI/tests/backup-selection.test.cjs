@@ -43,7 +43,11 @@ function harness(page) {
     const context = vm.createContext({
         document, URLSearchParams, console: { error() {} },
         URL: browserURL,
-        setTimeout() {}, window: { URL: browserURL, setTimeout() {} }, requestAnimationFrame: fn => fn(),
+        setTimeout() {}, window: {
+            URL: browserURL,
+            setTimeout() {},
+            SSUIAccess: { can() { return true; }, require() { return true; }, notify() {} }
+        }, requestAnimationFrame: fn => fn(),
         typeTextWithCallback(_element, _text, _delay, callback) { callback(); },
         showPopup(type, message) { popups.push({ type, message }); },
         async fetch(url, options) {

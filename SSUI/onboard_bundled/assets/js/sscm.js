@@ -92,6 +92,7 @@ async function checkSSCMEnabled() {
 
 // Send command to SSCM run endpoint (unchanged)
 async function sendSSCMCommand(command) {
+    if (!window.SSUIAccess.require('console.write', "You don't have permission to send server commands.")) return;
     try {
         // Check server status before sending command
         const statusResponse = await fetch('/api/v3/server/status');

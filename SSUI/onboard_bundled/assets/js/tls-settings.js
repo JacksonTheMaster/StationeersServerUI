@@ -19,6 +19,7 @@
         document.body.classList.remove('modal-open');
     };
     window.saveTLSCertificate = async function () {
+        if (!window.SSUIAccess.require('security.manage', "You don't have permission to change the TLS certificate.")) return;
         if (!certInput.files[0] || !keyInput.files[0]) {
             validation.textContent = 'Select both a certificate and private key file.';
             return;
@@ -31,7 +32,7 @@
         try {
             const response = await fetch('/api/v3/tls/certificate', { method: 'POST', body });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.message || 'Failed to save TLS certificate.');
+            if (!response.ok) throw new Error(result.error || result.message || 'Failed to save TLS certificate.');
             document.getElementById('tls-restarting').hidden = false;
             document.getElementById('tls-modal-actions').hidden = true;
             setTimeout(() => window.location.href = '/', 5000);

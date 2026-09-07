@@ -11,6 +11,7 @@ import (
 )
 
 type backupPageTemplateData struct {
+	Permissions                    string
 	Version                        string
 	SSUIIdentifier                 string
 	UITextBackToDashboard          string
@@ -68,6 +69,7 @@ func ServeBackupPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := backupPageTemplateData{
+		Permissions:                    pagePermissions(r),
 		Version:                        config.GetVersion(),
 		SSUIIdentifier:                 identifier,
 		UITextBackToDashboard:          localization.GetString("UIText_BackToDashboard"),

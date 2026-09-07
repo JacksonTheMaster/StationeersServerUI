@@ -54,6 +54,7 @@
     };
 
     window.saveAdvertiserOverride = async function () {
+        if (!window.SSUIAccess.require('settings.manage', "You don't have permission to change these settings.")) return;
         const mode = selectedMode();
         const validation = document.getElementById('advertiser-validation');
         const saveButton = document.getElementById('advertiser-save-button');
@@ -77,7 +78,7 @@
                 body: JSON.stringify({ mode, value })
             });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.message || 'Failed to save advertiser configuration.');
+            if (!response.ok) throw new Error(result.error || result.message || 'Failed to save advertiser configuration.');
 
             document.getElementById('advertiser-restarting').hidden = false;
             document.querySelector('.advertiser-modal-actions').hidden = true;

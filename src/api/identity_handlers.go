@@ -90,6 +90,28 @@ func SessionInfoHandler(w http.ResponseWriter, r *http.Request) {
 	WriteData(w, http.StatusOK, response)
 }
 
+func ChangeOwnPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	principal, _ := PrincipalFromContext(r.Context())
+	if principal.Credential != "session" {
+		WriteError(w, http.StatusForbidden, "session_required", "Password changes require a browser session")
+		return
+	}
+	var request struct {
+		CurrentPassword string `json:"currentPassword"`
+		NewPassword     string `json:"newPassword"`
+	}
+	if err := DecodeJSON(w, r, &request); err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
+		return
+	}
+	if err := security.ChangeOwnPassword(principal, request.CurrentPassword, request.NewPassword, time.Now()); err != nil {
+		WriteError(w, http.StatusBadRequest, "password_failed", err.Error())
+		return
+	}
+	clearSessionCookies(w)
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func UsersHandler(w http.ResponseWriter, r *http.Request) {
 	WriteData(w, http.StatusOK, map[string]any{"users": security.ListUsers()})
 }
@@ -313,6 +335,7 @@ func sessionResponse(user security.User, principal security.Principal) map[strin
 			"id": user.ID, "username": user.Username, "groupIds": user.GroupIDs,
 		},
 		"credentialType": principal.Credential,
+		"credentialId":   principal.CredentialID,
 		"permissions":    permissions,
 	}
 }

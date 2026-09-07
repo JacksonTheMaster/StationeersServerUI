@@ -34,8 +34,8 @@ func SetupRoutes() *http.ServeMux {
 	pages.HandleFunc("GET /", ServeIndex)
 	pages.HandleFunc("GET /config", ServeConfigPage)
 	pages.HandleFunc("GET /backups", ServeBackupPage)
-	pages.HandleFunc("GET /detectionmanager", ServeDetectionManager)
-	pages.HandleFunc("GET /changeuser", ServeTwoBoxFormTemplate)
+	pages.HandleFunc("GET /detectionmanager", requirePage([]string{security.PermissionDetectionsManage}, "You don't have permission to manage custom detections.", ServeDetectionManager))
+	pages.HandleFunc("GET /changeuser", requirePage([]string{security.PermissionUsersManage}, "You don't have permission to manage users.", ServeTwoBoxFormTemplate))
 	pages.HandleFunc("GET /app", ServeSvelteUI)
 	mux.Handle("/", api.PageIdentityMiddleware(pages))
 
@@ -53,13 +53,14 @@ func SetupRoutes() *http.ServeMux {
 }
 
 func registerIdentityRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/v3", api.Require(security.PermissionServerView, api.CapabilitiesHandler))
+	mux.HandleFunc("GET /api/v3", api.CapabilitiesHandler)
 	mux.HandleFunc("GET /api/v3/auth/session", api.SessionInfoHandler)
+	mux.HandleFunc("POST /api/v3/auth/password", api.ChangeOwnPasswordHandler)
 	mux.HandleFunc("GET /api/v3/auth/users", api.Require(security.PermissionUsersManage, api.UsersHandler))
 	mux.HandleFunc("POST /api/v3/auth/users", api.Require(security.PermissionUsersManage, api.CreateUserHandler))
 	mux.HandleFunc("PATCH /api/v3/auth/users/{id}", api.Require(security.PermissionUsersManage, api.UpdateUserHandler))
 	mux.HandleFunc("DELETE /api/v3/auth/users/{id}", api.Require(security.PermissionUsersManage, api.DeleteUserHandler))
-	mux.HandleFunc("GET /api/v3/auth/groups", api.Require(security.PermissionGroupsManage, api.GroupsHandler))
+	mux.HandleFunc("GET /api/v3/auth/groups", api.RequireAny([]string{security.PermissionGroupsManage, security.PermissionUsersManage}, api.GroupsHandler))
 	mux.HandleFunc("POST /api/v3/auth/groups", api.Require(security.PermissionGroupsManage, api.CreateGroupHandler))
 	mux.HandleFunc("PUT /api/v3/auth/groups/{id}", api.Require(security.PermissionGroupsManage, api.UpdateGroupHandler))
 	mux.HandleFunc("DELETE /api/v3/auth/groups/{id}", api.Require(security.PermissionGroupsManage, api.DeleteGroupHandler))
@@ -136,5 +137,10 @@ func setupPage(w http.ResponseWriter, r *http.Request) {
 		ServeTwoBoxFormTemplate(w, r)
 		return
 	}
-	api.PageIdentityMiddleware(http.HandlerFunc(ServeTwoBoxFormTemplate)).ServeHTTP(w, r)
+	page := requirePage(
+		[]string{security.PermissionSettingsView, security.PermissionSettingsManage},
+		"You don't have permission to view server settings.",
+		ServeTwoBoxFormTemplate,
+	)
+	api.PageIdentityMiddleware(http.HandlerFunc(page)).ServeHTTP(w, r)
 }

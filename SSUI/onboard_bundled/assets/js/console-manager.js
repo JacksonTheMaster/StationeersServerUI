@@ -221,6 +221,7 @@ function handleConsole() {
 
     // Dynamically create SSCM command input
     const createCommandInput = async () => {
+        if (!window.SSUIAccess.can('console.write')) return;
         try {
             // Make API call to check if SSCM is enabled
             const response = await fetch('/api/v3/sscm/status', {

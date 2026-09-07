@@ -2590,3 +2590,316 @@ body.modal-open {
 .config-tab-stack select:focus {
     border-color: var(--primary);
 }
+
+.permission-panel {
+    max-width: 760px;
+    margin: 28px auto;
+    padding: 18px 20px;
+    border: 1px solid var(--config-border);
+    border-left: 3px solid var(--danger);
+    border-radius: 7px;
+    background: var(--config-surface-inset);
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.access-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M19 8v6M22 11h-6'/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#access-config-tab {
+    width: 100%;
+    margin-inline: auto;
+}
+
+.access-intro,
+.access-card {
+    padding: 22px;
+    border: 1px solid var(--config-border);
+    border-radius: 10px;
+    background: var(--config-surface);
+    box-shadow: var(--config-shadow);
+}
+
+.access-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.access-intro h2,
+.access-card h3,
+.access-fine-tune h4 {
+    margin: 5px 0 8px;
+}
+
+.access-intro p,
+.access-card p {
+    margin: 0;
+    color: var(--text-dim);
+}
+
+.access-user-badge {
+    flex: none;
+    padding: 9px 13px;
+    border: 1px solid var(--primary-dim);
+    border-radius: 999px;
+    color: var(--primary);
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.access-nav {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+    overflow-x: auto;
+}
+
+.access-nav-button,
+.access-quiet-button {
+    padding: 9px 13px;
+    border-width: 1px;
+    box-shadow: none;
+    font: 0.72rem 'Share Tech Mono', monospace;
+}
+
+.access-nav-button.active {
+    background: var(--config-surface-raised);
+    color: var(--text-bright);
+}
+
+.access-panel {
+    display: none;
+    gap: 16px;
+}
+
+.access-panel.active {
+    display: grid;
+}
+
+#access-account-panel {
+    grid-template-columns: minmax(320px, 0.85fr) minmax(360px, 1.15fr);
+}
+
+.access-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.access-form-narrow {
+    max-width: 480px;
+}
+
+.access-form label,
+.access-group-editor-head label,
+.access-token-head label {
+    display: grid;
+    gap: 7px;
+    color: var(--text-dim);
+    font: 0.76rem 'Share Tech Mono', monospace;
+}
+
+.access-form input,
+.access-form select,
+.access-group-editor-head select,
+.access-token-head input,
+.access-token-head select {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--config-border-soft);
+    border-radius: 6px;
+    background: var(--config-surface-inset);
+    color: var(--text-bright);
+}
+
+.access-create-user,
+.access-group-editor-head,
+.access-token-head {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+}
+
+.access-group-editor-head,
+.access-token-head {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.access-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.access-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 13px 15px;
+    border: 1px solid var(--config-border-soft);
+    border-radius: 7px;
+    background: var(--config-surface-inset);
+}
+
+.access-list-item strong,
+.access-list-item small {
+    display: block;
+}
+
+.access-list-item small,
+.access-empty {
+    margin-top: 4px;
+    color: var(--text-dim);
+    font: 0.73rem 'Share Tech Mono', monospace;
+}
+
+.access-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.access-user-editor {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(180px, 0.65fr) minmax(240px, 1.35fr);
+    gap: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--config-border-soft);
+}
+
+.access-user-editor[hidden] {
+    display: none;
+}
+
+.access-user-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 12px;
+}
+
+.access-toggle {
+    display: flex !important;
+    align-items: center;
+    gap: 9px !important;
+}
+
+.access-toggle input {
+    width: auto;
+}
+
+.access-list-actions button,
+.access-form-actions button,
+.access-token-secret button {
+    padding: 8px 11px;
+    border-width: 1px;
+    box-shadow: none;
+    font: 0.68rem 'Share Tech Mono', monospace;
+}
+
+.access-danger-button {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.access-fine-tune,
+.access-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.access-permission-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.access-permission-group {
+    padding: 12px;
+    border: 1px solid var(--config-border-soft);
+    border-radius: 7px;
+    background: var(--config-surface-inset);
+}
+
+.access-permission-group h5 {
+    margin: 0 0 9px;
+    color: var(--primary);
+    text-transform: capitalize;
+}
+
+.access-permission-option {
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: center;
+    gap: 8px !important;
+    margin: 6px 0;
+}
+
+.access-permission-option input {
+    width: auto;
+    margin: 0;
+}
+
+.access-token-secret {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid var(--warning, #ffca52);
+    border-radius: 7px;
+    background: var(--config-surface-inset);
+}
+
+.access-token-secret > div {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.access-token-secret code {
+    flex: 1;
+    padding: 10px;
+    overflow: auto;
+    color: var(--primary);
+    background: rgba(0, 0, 0, 0.24);
+}
+
+@media (max-width: 900px) {
+    #access-account-panel,
+    .access-create-user,
+    .access-permission-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .access-intro,
+    .access-token-secret > div {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .access-list-item {
+        grid-template-columns: 1fr;
+    }
+
+    .access-list-actions {
+        justify-content: flex-start;
+    }
+
+    .access-group-editor-head,
+    .access-token-head,
+    .access-user-editor,
+    .access-user-groups {
+        grid-template-columns: 1fr;
+    }
+}

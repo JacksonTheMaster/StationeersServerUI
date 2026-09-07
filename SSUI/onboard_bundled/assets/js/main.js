@@ -10,20 +10,29 @@ document.addEventListener('DOMContentLoaded', () => {
     typeh1(document.querySelector('h1'), 30);
     if (window.location.pathname == '/') {
         setupTabs();
-        fetchDetectionEvents();
-        setupLogStreams({
-            consoleId: 'backendlog-console',
-            streamUrls: [
-            '/api/v3/streams/logs/info',
-            '/api/v3/streams/logs/warn',
-            '/api/v3/streams/logs/error',
-     ],
-            maxMessages: 500,
-            messageClass: 'log-console-element'
-        });
+        if (window.SSUIAccess.can('server.view')) {
+            fetchDetectionEvents();
+        } else {
+            document.getElementById('detection-console').textContent = "You don't have permission to view server events.";
+        }
+        if (window.SSUIAccess.can('console.read')) {
+            setupLogStreams({
+                consoleId: 'backendlog-console',
+                streamUrls: [
+                    '/api/v3/streams/logs/info',
+                    '/api/v3/streams/logs/warn',
+                    '/api/v3/streams/logs/error',
+                ],
+                maxMessages: 500,
+                messageClass: 'log-console-element'
+            });
+            handleConsole();
+        } else {
+            document.getElementById('console').textContent = "You don't have permission to view the server console.";
+            document.getElementById('backendlog-console').textContent = "You don't have permission to view backend logs.";
+        }
         fetchBackups();
         fetchPlayers();
-        handleConsole();
         pollRecurringTasks();
         if (animationState != 'disabled') {
         // Create planets with size, orbit radius, speed, and color

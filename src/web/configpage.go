@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/security"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/localization"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
@@ -238,6 +239,12 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := ConfigTemplateData{
+		Permissions:         pagePermissions(r),
+		CanViewSettings:     pageCan(r, security.PermissionSettingsView) || pageCan(r, security.PermissionSettingsManage),
+		CanManageSettings:   pageCan(r, security.PermissionSettingsManage),
+		CanManageSLP:        pageCan(r, security.PermissionSLPManage),
+		CanManageDetections: pageCan(r, security.PermissionDetectionsManage),
+
 		// Config values
 		DiscordToken:                            config.GetDiscordToken(),
 		DiscordAdminRoleID:                      config.GetDiscordAdminRoleID(),
@@ -556,6 +563,9 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		IsStationeersLaunchPadAutoUpdatesEnabled: fmt.Sprintf("%v", config.GetIsStationeersLaunchPadAutoUpdatesEnabled()),
 		IsStationeersLaunchPadAutoUpdatesEnabledTrueSelected:  isStationeersLaunchPadAutoUpdatesEnabledTrueSelected,
 		IsStationeersLaunchPadAutoUpdatesEnabledFalseSelected: isStationeersLaunchPadAutoUpdatesEnabledFalseSelected,
+	}
+	if !data.CanViewSettings {
+		data.AdvertiserOverride = ""
 	}
 
 	err = tmpl.Execute(w, data)

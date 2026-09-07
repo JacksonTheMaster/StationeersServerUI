@@ -19,7 +19,7 @@
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 
-<body>
+<body data-authenticated="true" data-permissions="{{.Permissions}}" data-can-manage-settings="{{.CanManageSettings}}">
     <div id="space-background"></div>
     <div id="config-save-notification" class="config-save-notification" role="status" aria-live="polite"
         data-saving="{{.UIText_ConfigSaving}}" data-success="{{.UIText_ConfigSaveSuccess}}"
@@ -141,6 +141,10 @@
                     <span class="icon detection-icon"></span>
                     <span class="tab-text">{{.UIText_DetectionManager}}</span>
                 </button>
+                <button class="sliding-tab-button" data-tab="access-config-tab">
+                    <span class="icon access-icon"></span>
+                    <span class="tab-text">People &amp; Access</span>
+                </button>
                 <button class="sliding-tab-button" data-tab="theme-config-tab">
                     <span class="icon" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: center;"></span>
                     <span class="tab-text">Themes</span>
@@ -148,7 +152,11 @@
             </div>
         </div>
 
+        {{if .CanViewSettings}}
         <div id="server-config-tab" class="tab-content active">
+            {{if not .CanManageSettings}}
+            <div class="permission-panel">You can view these settings, but you don't have permission to change them.</div>
+            {{end}}
             <div class="grid-container server-settings-shell">
                 <div class="wizard-button-container">
                     <button class="wizard-button" onclick="window.location.href = '/setup?step=game_branch'">
@@ -727,8 +735,17 @@
                 </div>
             </div>
         </div>
+        {{else}}
+        <div id="server-config-tab" class="tab-content active">
+            <div class="permission-panel">You don't have permission to view server settings.</div>
+        </div>
+        {{end}}
 
+        {{if .CanViewSettings}}
         <div id="discord-config-tab" class="tab-content config-tab-stack">
+            {{if not .CanManageSettings}}
+            <div class="permission-panel">You can view these settings, but you don't have permission to change them.</div>
+            {{end}}
             <div id="discord-config-panel" data-config-save-scope>
                 <div class="integration-status discord-integration-header config-surface">
                     <div class="discord-status-copy">
@@ -880,7 +897,13 @@
                         repository</a></p>
             </div>
         </div>
+        {{else}}
+        <div id="discord-config-tab" class="tab-content config-tab-stack">
+            <div class="permission-panel">You don't have permission to view Discord settings.</div>
+        </div>
+        {{end}}
 
+        {{if .CanManageSLP}}
         <div id="slp-config-tab" class="tab-content config-tab-stack">
             {{if eq .IsStationeersLaunchPadEnabled "false"}}
             <div class="slp-section slp-install-section">
@@ -962,7 +985,13 @@
             </div>
             {{end}}
         </div>
+        {{else}}
+        <div id="slp-config-tab" class="tab-content config-tab-stack">
+            <div class="permission-panel">You don't have permission to manage StationeersLaunchPad.</div>
+        </div>
+        {{end}}
 
+        {{if .CanManageDetections}}
         <div id="detectionmanager-config-tab" class="tab-content config-tab-stack">
             <div class="config-tab-intro">
                 <span class="panel-kicker">SSUI</span>
@@ -1052,6 +1081,135 @@
 
             <div class="notification" id="notification"></div>
         </div>
+        {{else}}
+        <div id="detectionmanager-config-tab" class="tab-content config-tab-stack">
+            <div class="permission-panel">You don't have permission to manage custom detections.</div>
+        </div>
+        {{end}}
+
+        <div id="access-config-tab" class="tab-content config-tab-stack">
+            <div class="access-intro config-surface">
+                <div>
+                    <span class="panel-kicker">SSUI Security</span>
+                    <h2>People &amp; Access</h2>
+                    <p>Manage your account, users, access groups and API tokens.</p>
+                </div>
+                <div id="access-current-user" class="access-user-badge">Loading account...</div>
+            </div>
+
+            <nav class="access-nav" aria-label="People and access sections">
+                <button type="button" class="access-nav-button active" data-access-panel="access-account-panel">My account</button>
+                <button type="button" class="access-nav-button" data-access-panel="access-people-panel">People</button>
+                <button type="button" class="access-nav-button" data-access-panel="access-groups-panel">Access groups</button>
+                <button type="button" class="access-nav-button" data-access-panel="access-api-panel">API</button>
+            </nav>
+
+            <section id="access-account-panel" class="access-panel active">
+                <div class="access-card">
+                    <span class="panel-kicker">Account security</span>
+                    <h3>Change my password</h3>
+                    <p>Changing your password signs out every browser session and revokes your API tokens.</p>
+                    <form id="own-password-form" class="access-form access-form-narrow">
+                        <label>Current password<input type="password" name="currentPassword" autocomplete="current-password" required></label>
+                        <label>New password<input type="password" name="newPassword" autocomplete="new-password" minlength="10" required></label>
+                        <label>Repeat new password<input type="password" name="confirmPassword" autocomplete="new-password" minlength="10" required></label>
+                        <button type="submit">Change password</button>
+                    </form>
+                </div>
+                <div class="access-card">
+                    <span class="panel-kicker">Signed in devices</span>
+                    <h3>Sessions</h3>
+                    <div id="access-session-list" class="access-list"><p class="access-empty">Loading sessions...</p></div>
+                </div>
+            </section>
+
+            <section id="access-people-panel" class="access-panel">
+                <div id="access-people-denied" class="permission-panel" hidden>You don't have permission to manage users.</div>
+                <div id="access-people-content" hidden>
+                    <div class="access-card">
+                        <span class="panel-kicker">New account</span>
+                        <h3>Add user</h3>
+                        <form id="access-create-user" class="access-form access-create-user">
+                            <label>Username<input type="text" name="username" minlength="3" maxlength="64" required></label>
+                            <label>Temporary password<input type="password" name="password" minlength="10" required></label>
+                            <label>Access group<select name="groupId"><option value="">No access group</option></select></label>
+                            <button type="submit">Add user</button>
+                        </form>
+                    </div>
+                    <div class="access-card">
+                        <span class="panel-kicker">Accounts</span>
+                        <h3>Users</h3>
+                        <div id="access-user-list" class="access-list"><p class="access-empty">Loading users...</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="access-groups-panel" class="access-panel">
+                <div id="access-groups-denied" class="permission-panel" hidden>You don't have permission to manage access groups.</div>
+                <div id="access-groups-content" hidden>
+                    <div class="access-card">
+                        <span class="panel-kicker">Roles</span>
+                        <h3>Access group</h3>
+                        <div class="access-group-editor-head">
+                            <label>Group<select id="access-group-select"><option value="new">Create a new group</option></select></label>
+                            <label>Preset<select id="access-preset-select">
+                                <option value="custom">Custom</option>
+                                <option value="viewer">Viewer</option>
+                                <option value="operator">Server operator</option>
+                                <option value="backups">Backup manager</option>
+                                <option value="administrator">Administrator</option>
+                            </select></label>
+                        </div>
+                        <form id="access-group-form" class="access-form">
+                            <label>Name<input type="text" name="name" maxlength="80" required></label>
+                            <label>Description<input type="text" name="description" maxlength="180"></label>
+                            <div class="access-fine-tune">
+                                <div><span class="panel-kicker">Fine tune</span><h4>Permissions</h4></div>
+                                <button type="button" id="access-clear-permissions" class="access-quiet-button">Clear all</button>
+                            </div>
+                            <div id="access-permission-grid" class="access-permission-grid"></div>
+                            <div class="access-form-actions">
+                                <button type="submit">Save group</button>
+                                <button type="button" id="access-delete-group" class="access-danger-button" hidden>Delete group</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section id="access-api-panel" class="access-panel">
+                <div id="access-api-denied" class="permission-panel" hidden>You don't have permission to create API tokens.</div>
+                <div id="access-api-content" hidden>
+                    <div class="access-card">
+                        <span class="panel-kicker">Personal access tokens</span>
+                        <h3>Create API token</h3>
+                        <p>Tokens can never receive permissions that your account does not have.</p>
+                        <form id="access-token-form" class="access-form">
+                            <div class="access-token-head">
+                                <label>Name<input type="text" name="name" maxlength="80" placeholder="Home Assistant" required></label>
+                                <label>Expires<select name="expires">
+                                    <option value="30">30 days</option>
+                                    <option value="90">90 days</option>
+                                    <option value="365">1 year</option>
+                                    <option value="never">Never</option>
+                                </select></label>
+                            </div>
+                            <div id="access-token-scopes" class="access-permission-grid"></div>
+                            <button type="submit">Create token</button>
+                        </form>
+                        <div id="access-token-secret" class="access-token-secret" hidden>
+                            <strong>Copy this token now. It will not be shown again.</strong>
+                            <div><code></code><button type="button">Copy</button></div>
+                        </div>
+                    </div>
+                    <div class="access-card">
+                        <span class="panel-kicker">Issued credentials</span>
+                        <h3>API tokens</h3>
+                        <div id="access-token-list" class="access-list"><p class="access-empty">Loading tokens...</p></div>
+                    </div>
+                </div>
+            </section>
+        </div>
 
         <div id="theme-config-tab" class="tab-content">
             <div id="theme-editor-root"></div>
@@ -1116,6 +1274,9 @@
         }
 
         async function saveConfigSection(event) {
+            if (!window.SSUIAccess?.require('settings.manage', "You don't have permission to change these settings.")) {
+                return;
+            }
             const saveButton = event.currentTarget;
             const scope = saveButton.closest('.config-section, [data-config-save-scope]');
             const notification = document.getElementById('config-save-notification');
@@ -1169,6 +1330,9 @@
         }
 
         async function saveExpertSettingsVisibility(event) {
+            if (!window.SSUIAccess?.require('settings.manage', "You don't have permission to change these settings.")) {
+                return;
+            }
             const select = event.currentTarget;
             const notification = document.getElementById('config-save-notification');
             const previousValue = select.dataset.persistedValue || (select.value === 'true' ? 'false' : 'true');
@@ -1212,6 +1376,7 @@
             discord: 'discord-config-tab',
             slp: 'slp-config-tab',
             dmgr: 'detectionmanager-config-tab',
+            access: 'access-config-tab',
             theme: 'theme-config-tab'
         };
 
@@ -1247,7 +1412,9 @@
             const requestedTab = new URLSearchParams(window.location.search).get('tab') || 'settings';
             showConfigTab(configTabs[requestedTab] || configTabs.settings, false);
             const requestedSection = new URLSearchParams(window.location.search).get('section') || 'basic-settings';
-            showConfigSection(requestedSection, false);
+            if (document.getElementById('server-config-panel')) {
+                showConfigSection(requestedSection, false);
+            }
         }
 
         function showConfigSection(sectionId, updateUrl = true) {
@@ -1276,7 +1443,7 @@
             }
         }
 
-        document.getElementById('isDiscordEnabled').addEventListener('change', function () {
+        document.getElementById('isDiscordEnabled')?.addEventListener('change', function () {
             if (this.value === 'false') {
                 document.querySelector('.discord-container').classList.add('disabled');
                 document.querySelector('.discord-integration-header').classList.add('is-disabled');
@@ -1287,7 +1454,7 @@
         });
 
         // Set initial state
-        if (document.getElementById('isDiscordEnabled').value === 'false') {
+        if (document.getElementById('isDiscordEnabled')?.value === 'false') {
             document.querySelector('.discord-container').classList.add('disabled');
             document.querySelector('.discord-integration-header').classList.add('is-disabled');
         }
@@ -1309,21 +1476,28 @@
             button.addEventListener('click', saveConfigSection);
         });
         const expertSettingsToggle = document.getElementById('ShowExpertSettings');
-        expertSettingsToggle.dataset.persistedValue = expertSettingsToggle.value;
-        expertSettingsToggle.addEventListener('change', saveExpertSettingsVisibility);
+        if (expertSettingsToggle) {
+            expertSettingsToggle.dataset.persistedValue = expertSettingsToggle.value;
+            expertSettingsToggle.addEventListener('change', saveExpertSettingsVisibility);
+        }
+        if (document.body.dataset.canManageSettings !== 'true') {
+            document.querySelectorAll('#server-config-tab input, #server-config-tab select, #server-config-tab textarea, #discord-config-tab input, #discord-config-tab select, #discord-config-tab textarea')
+                .forEach(control => control.disabled = true);
+        }
         showConfigTabFromUrl();
     </script>
     <script src="/static/js/api-client.js"></script>
     <script src="/static/js/theme-engine.js"></script>
     <script src="/static/js/theme-editor.js"></script>
     <script src="/static/js/main.js"></script>
-    <script src="/static/js/world-gen-config.js"></script>
-    <script src="/static/js/detectionmanager.js"></script>
+    {{if .CanViewSettings}}<script src="/static/js/world-gen-config.js"></script>{{end}}
+    {{if .CanManageDetections}}<script src="/static/js/detectionmanager.js"></script>{{end}}
     <script src="/static/js/xmas.js"></script>
     <script src="/static/js/popup.js"></script>
-    <script src="/static/js/slp.js"></script>
-    <script src="/static/js/advertiser-settings.js"></script>
-    <script src="/static/js/tls-settings.js"></script>
+    {{if .CanManageSLP}}<script src="/static/js/slp.js"></script>{{end}}
+    {{if .CanViewSettings}}<script src="/static/js/advertiser-settings.js"></script>
+    <script src="/static/js/tls-settings.js"></script>{{end}}
+    <script src="/static/js/identity-settings.js"></script>
 </body>
 
 </html>

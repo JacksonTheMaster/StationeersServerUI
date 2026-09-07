@@ -56,6 +56,23 @@ func Require(permission string, next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func RequireAny(permissions []string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		principal, ok := PrincipalFromContext(r.Context())
+		if !ok {
+			WriteError(w, http.StatusUnauthorized, "unauthorized", "Authentication required")
+			return
+		}
+		for _, permission := range permissions {
+			if principal.Permissions[permission] {
+				next(w, r)
+				return
+			}
+		}
+		WriteError(w, http.StatusForbidden, "forbidden", "Permission denied")
+	}
+}
+
 func PrincipalFromContext(ctx context.Context) (security.Principal, bool) {
 	principal, ok := ctx.Value(principalContextKey).(security.Principal)
 	return principal, ok

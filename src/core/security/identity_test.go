@@ -82,6 +82,36 @@ func TestOwnerBootstrapSessionAndToken(t *testing.T) {
 	}
 }
 
+func TestChangeOwnPasswordRevokesExistingCredentials(t *testing.T) {
+	useIdentityTestDirectory(t)
+	now := time.Date(2026, 9, 7, 10, 0, 0, 0, time.UTC)
+	secret, err := InitializeIdentity(nil, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner, err := BootstrapOwner(secret, "admin", "correct horse battery staple", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, credential, err := CreateSession(owner.ID, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	principal, _, err := AuthenticateSession(credential.Value, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ChangeOwnPassword(principal, "correct horse battery staple", "a much better password", now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := AuthenticateSession(credential.Value, now.Add(2*time.Minute)); err == nil {
+		t.Fatal("old session survived the password change")
+	}
+	if _, err := AuthenticateUser("admin", "a much better password"); err != nil {
+		t.Fatal("new password did not work")
+	}
+}
+
 func TestFailedIdentityMutationDoesNotLeakIntoMemory(t *testing.T) {
 	useIdentityTestDirectory(t)
 	now := time.Date(2026, 9, 7, 10, 0, 0, 0, time.UTC)

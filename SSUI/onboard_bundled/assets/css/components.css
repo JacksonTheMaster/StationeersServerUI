@@ -118,3 +118,30 @@ input[type="submit"]:hover {
     background-repeat: no-repeat;
     background-position: center;
 }
+
+.ssui-notification {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    z-index: 10000;
+    max-width: min(520px, calc(100vw - 32px));
+    padding: 12px 18px;
+    border: 1px solid var(--primary);
+    border-radius: 7px;
+    background: rgba(8, 13, 24, 0.96);
+    color: var(--text-bright, #fff);
+    font-family: 'Share Tech Mono', monospace;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -12px);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.ssui-notification.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.ssui-notification.is-error { border-color: var(--danger, #ff4d5e); }
+.ssui-notification.is-success { border-color: var(--success, #31d07c); }

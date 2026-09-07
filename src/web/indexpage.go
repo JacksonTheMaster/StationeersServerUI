@@ -33,6 +33,7 @@ func ServeIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := IndexTemplateData{
+		Permissions:                     pagePermissions(r),
 		UIText_UpdateAvailable:          localization.GetString("UIText_UpdateAvailable"),
 		UIText_UpdateLater:              localization.GetString("UIText_UpdateLater"),
 		UIText_UpdateNow:                localization.GetString("UIText_UpdateNow"),

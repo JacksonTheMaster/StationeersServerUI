@@ -1,5 +1,43 @@
 (function () {
     const nativeFetch = window.fetch.bind(window);
+    const permissions = new Set((document.body?.dataset.permissions || '').split(',').filter(Boolean));
+    const authenticatedPage = document.body?.dataset.authenticated === 'true';
+    let notificationTimer;
+
+    function notify(message, type = 'error') {
+        let notification = document.getElementById('ssui-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'ssui-notification';
+            notification.setAttribute('role', 'status');
+            notification.setAttribute('aria-live', 'polite');
+            document.body.appendChild(notification);
+        }
+        window.clearTimeout(notificationTimer);
+        notification.textContent = message;
+        notification.className = `ssui-notification is-${type} show`;
+        notificationTimer = window.setTimeout(() => notification.classList.remove('show'), type === 'error' ? 7000 : 4000);
+    }
+
+    window.SSUIAccess = {
+        can(permission) {
+            return permissions.has(permission);
+        },
+        require(permission, message) {
+            if (permissions.has(permission)) return true;
+            notify(message || "You don't have permission to use this action.");
+            return false;
+        },
+        notify
+    };
+
+    const denied = new URLSearchParams(window.location.search).get('denied');
+    if (denied) {
+        notify(denied);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('denied');
+        window.history.replaceState({}, '', url);
+    }
 
     function cookie(name) {
         const prefix = `${name}=`;
@@ -23,6 +61,12 @@
         }
 
         const response = await nativeFetch(input, next);
+        if (authenticatedPage && response.status === 401) {
+            notify('Your session has expired. Please sign in again.');
+        } else if (response.status === 403 && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+            const error = await response.clone().json().catch(() => null);
+            notify(error?.error?.message || "You don't have permission to use this action.");
+        }
         const readJSON = response.json.bind(response);
         const readText = response.text.bind(response);
         response.json = async function () {

@@ -3,6 +3,7 @@ let currentUpdateVersion = null;
 
 // Poll for update status every 60 seconds
 function pollUpdateStatus() {
+    if (!window.SSUIAccess.can('server.view')) return;
     fetch('/api/v3/update')
         .then(response => response.json())
         .then(data => {
@@ -49,6 +50,7 @@ function closeUpdateModal() {
 
 // Start the actual update
 function startUpdate() {
+    if (!window.SSUIAccess.require('update.install', "You don't have permission to update SSUI.")) return;
     // Hide buttons
     document.getElementById('update-now-btn').style.display = 'none';
     document.getElementById('update-later-btn').style.display = 'none';
