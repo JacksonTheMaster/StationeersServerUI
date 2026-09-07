@@ -40,7 +40,7 @@ jobs:
       # Verify the executable exists
       - name: Verify build output
         run: |
-          VERSION=$(sed -n 's/.*Version = "\([0-9.]*\)".*/\1/p' src/config/config.go)
+          VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' src/config/config.go)
           test -f "build/StationeersServerControlv${VERSION}.exe"
           test -f "build/StationeersServerControlv${VERSION}.x86_64"
 
@@ -76,7 +76,7 @@ jobs:
       - name: Verify release version
         if: steps.check_tag.outputs.tag != ''
         run: |
-          VERSION=$(sed -n 's/.*Version = "\([0-9.]*\)".*/\1/p' src/config/config.go)
+          VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' src/config/config.go)
           EXPECTED_TAG="v${VERSION}"
           RELEASE_TAG=${{ steps.check_tag.outputs.tag }}
           if [ "$RELEASE_TAG" != "$EXPECTED_TAG" ]; then
@@ -84,12 +84,12 @@ jobs:
             exit 1
           fi
 
-      # Create release (not prerelease) if tag exists
+      # Create a stable release or prerelease based on the version suffix
       - name: Create Release
         if: steps.check_tag.outputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
-          prerelease: false
+          prerelease: ${{ contains(steps.check_tag.outputs.tag, '-') }}
           tag_name: ${{ steps.check_tag.outputs.tag }}
           name: "Release ${{ steps.check_tag.outputs.tag }}"
           files: ./build/StationeersServerControl*

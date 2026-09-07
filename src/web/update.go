@@ -5,126 +5,67 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/setup/update"
 )
 
 type UpdateTriggerRequest struct {
-	AllowUpdate      bool   `json:"allowUpdate"`
-	AllowMajorUpdate bool   `json:"allowMajorUpdate"`
-	Version          string `json:"version"`
+	Action            string `json:"action"`
+	Version           string `json:"version"`
+	ConfirmMajor      bool   `json:"confirmMajor"`
+	ConfirmPrerelease bool   `json:"confirmPrerelease"`
 }
 
 func CheckUpdateHandler(w http.ResponseWriter, _ *http.Request) {
-	status := update.GetStatus()
-	response := map[string]any{
-		"status":          "success",
-		"operationState":  status.State,
-		"updateAvailable": boolString(status.Available),
-		"version":         status.Version,
-		"majorUpdate":     boolString(status.Major),
-	}
-	if status.Error != "" {
-		response["message"] = status.Error
-	}
-	writeUpdateJSON(w, http.StatusOK, response)
+	writeUpdateJSON(w, http.StatusOK, update.StatusSnapshot())
 }
 
 func TriggerUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeUpdateJSON(w, http.StatusMethodNotAllowed, map[string]any{"status": "error", "message": "Method not allowed"})
+		writeUpdateJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Method not allowed"})
 		return
 	}
-
 	var request UpdateTriggerRequest
-	if r.Body != http.NoBody {
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			writeUpdateJSON(w, http.StatusBadRequest, map[string]any{"status": "error", "message": "Invalid update request"})
-			return
-		}
-	}
-
-	if !update.TryStartOperation() {
-		writeUpdateJSON(w, http.StatusConflict, map[string]any{"status": "busy", "message": "An update operation is already in progress"})
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&request); err != nil {
+		writeUpdateJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid update request"})
 		return
 	}
-
-	if !request.AllowUpdate {
-		err, version := update.CheckForUpdates()
-		update.SetCheckResult(err, version)
-		update.FinishOperation()
+	if request.Action == "check" {
+		status, err := update.RefreshStatus(r.Context(), true)
+		if errors.Is(err, update.ErrUpdateBusy) {
+			writeUpdateJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+			return
+		}
 		if err != nil {
-			writeUpdateJSON(w, http.StatusBadGateway, map[string]any{"status": "failed", "message": err.Error()})
+			writeUpdateJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 			return
 		}
-		writeUpdateJSON(w, http.StatusOK, updateResponse(version))
+		writeUpdateJSON(w, http.StatusOK, status)
 		return
 	}
-
-	status := update.GetStatus()
-	if !status.Available || status.Version == "" || request.Version != status.Version {
-		update.FinishOperation()
-		writeUpdateJSON(w, http.StatusConflict, map[string]any{
-			"status":  "refresh-required",
-			"message": "The available update changed. Refresh the page and review it again",
-		})
+	if request.Action != "install" {
+		writeUpdateJSON(w, http.StatusBadRequest, map[string]string{"error": "Choose check or install"})
 		return
 	}
-	if status.Major && !request.AllowMajorUpdate {
-		update.FinishOperation()
-		writeUpdateJSON(w, http.StatusConflict, map[string]any{
-			"status":      "approval-required",
-			"message":     "This major update needs explicit approval",
-			"version":     status.Version,
-			"majorUpdate": true,
-		})
-		return
-	}
-
-	update.SetApplying(status.Version)
-	go applyUpdate(status.Version, request.AllowMajorUpdate)
-	writeUpdateJSON(w, http.StatusAccepted, map[string]any{
-		"status":  "installing",
-		"version": status.Version,
-		"message": "Update started",
+	err := update.QueueInstall(update.InstallRequest{
+		Version:           request.Version,
+		ConfirmMajor:      request.ConfirmMajor,
+		ConfirmPrerelease: request.ConfirmPrerelease,
 	})
-}
-
-func applyUpdate(version string, majorApproved bool) {
-	defer update.FinishOperation()
-
-	err, availableVersion := update.ApplyVersion(version, majorApproved)
 	if err != nil {
-		logger.Install.Error("Manual update failed: " + err.Error())
-		update.SetUpdateFailed(version, err)
+		status := http.StatusBadRequest
+		if errors.Is(err, update.ErrUpdateBusy) {
+			status = http.StatusConflict
+		}
+		writeUpdateJSON(w, status, map[string]string{"error": err.Error()})
 		return
 	}
-	if availableVersion != "" {
-		err = errors.New("update " + availableVersion + " was not applied")
-		logger.Install.Warn(err.Error())
-		update.SetUpdateFailed(availableVersion, err)
-	}
+	writeUpdateJSON(w, http.StatusAccepted, map[string]string{"status": "installing", "version": request.Version})
 }
 
-func updateResponse(version string) map[string]any {
-	return map[string]any{
-		"status":          "success",
-		"operationState":  "idle",
-		"updateAvailable": boolString(version != ""),
-		"version":         version,
-		"majorUpdate":     boolString(update.IsMajorUpdate(version)),
-	}
-}
-
-func boolString(value bool) string {
-	if value {
-		return "true"
-	}
-	return "false"
-}
-
-func writeUpdateJSON(w http.ResponseWriter, statusCode int, response map[string]any) {
+func writeUpdateJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	_ = json.NewEncoder(w).Encode(response)
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(value)
 }

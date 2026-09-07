@@ -1087,6 +1087,8 @@ body.modal-open {
   width: 90%;
   box-shadow: 0 8px 40px color-mix(in srgb, var(--accent) 25%, transparent);
   position: relative;
+  max-height: calc(100vh - 30px);
+  overflow-y: auto;
   animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -1169,6 +1171,28 @@ body.modal-open {
   margin: 10px 0 25px 0;
 }
 
+.update-version-picker {
+  display: grid;
+  gap: 7px;
+  margin: 20px 0;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.update-version-picker select {
+  width: 100%;
+  padding: 12px 14px;
+  color: var(--text-header);
+  background: var(--input-bg);
+  border: 1px solid var(--primary-glow-strong);
+  border-radius: 8px;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .update-modal-content.major .update-version {
   color: var(--danger);
 }
@@ -1180,6 +1204,19 @@ body.modal-open {
   border-radius: 10px;
   background: color-mix(in srgb, var(--danger) 12%, transparent);
   color: var(--text-header);
+}
+
+.major-update-warning + .major-update-warning {
+  margin-top: 12px;
+}
+
+.prerelease-update-warning {
+  border-color: color-mix(in srgb, var(--warning) 65%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.prerelease-update-warning > strong {
+  color: var(--warning);
 }
 
 .major-update-warning.show {

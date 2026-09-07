@@ -66,7 +66,10 @@
 
             <h2>{{.UIText_UpdateAvailable}}</h2>
             <p>{{.UIText_UpdateDescription}}</p>
-            <div class="update-version" id="modal-version-text">v1.2.3</div>
+            <label class="update-version-picker" for="update-version-select">
+                Version
+                <select id="update-version-select" onchange="selectUpdateVersion()"></select>
+            </label>
 
             <div id="major-update-warning" class="major-update-warning">
                 <strong>{{.UIText_MajorUpdateTitle}}</strong>
@@ -77,16 +80,25 @@
                 </label>
             </div>
 
+            <div id="prerelease-update-warning" class="major-update-warning prerelease-update-warning">
+                <strong>Prerelease build</strong>
+                <p>This is unfinished release-candidate software. It may contain bugs or require manual recovery.</p>
+                <label class="major-update-confirmation">
+                    <input id="prerelease-update-confirm" type="checkbox" onchange="updateInstallButton()">
+                    <span>I understand the risk and want to install this prerelease.</span>
+                </label>
+            </div>
+
             <a id="update-release-notes" class="update-release-notes" href="#" target="_blank" rel="noopener noreferrer">{{.UIText_UpdateReleaseNotes}}</a>
 
-            <div class="update-modal-buttons">
+            <div class="update-modal-buttons" id="update-modal-buttons">
                 <button id="update-later-btn" onclick="closeUpdateModal()">{{.UIText_UpdateLater}}</button>
                 <button id="update-now-btn" onclick="startUpdate()">{{.UIText_UpdateNow}}</button>
             </div>
 
             <!-- Status Messages -->
             <div id="update-status-running" class="update-status-message">
-                ⏳ {{.UIText_UpdateInstalling}}
+                <span id="update-running-text">{{.UIText_UpdateInstalling}}</span>
             </div>
             <div id="update-status-failed" class="update-status-message">
                 <span>✗ {{.UIText_UpdateFailed}}</span>

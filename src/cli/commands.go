@@ -123,7 +123,7 @@ func getBuildID() {
 }
 
 func triggerUpdateCheck() {
-	err, newVersion := update.CheckForUpdates()
+	err, newVersion := update.Update(false)
 	if err != nil {
 		logger.Install.Warn("⚠️ Update check failed: " + err.Error())
 		return
@@ -134,7 +134,7 @@ func triggerUpdateCheck() {
 }
 
 func applyUpdate() {
-	err, _ := update.ApplyAvailableUpdate()
+	err, _ := update.Update(true)
 	if err != nil {
 		logger.Install.Warn("⚠️ Update failed: " + err.Error())
 		return
