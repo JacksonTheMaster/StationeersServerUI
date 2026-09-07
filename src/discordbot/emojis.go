@@ -12,7 +12,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const discordBackupEmojiAssetDir = "SSUI/onboard_bundled/assets/backupstats/discord"
+const discordBackupEmojiAssetDir = "SSUI/onboard_bundled/assets/backupstats"
 
 var backupStatEmojiAssets = map[string]string{
 	"days":           "days.webp",
@@ -21,8 +21,8 @@ var backupStatEmojiAssets = map[string]string{
 	"rooms":          "rooms.webp",
 	"pipe_networks":  "pipe-networks.webp",
 	"cable_networks": "cable-networks.webp",
-	"players":        "../players.png",
-	"archive_size":   "../archive-size.png",
+	"players":        "players.webp",
+	"archive_size":   "archive-size.webp",
 }
 
 var applicationEmojis = struct {
@@ -66,13 +66,9 @@ func syncApplicationEmojis(session *discordgo.Session) {
 			continue
 		}
 
-		mediaType := "image/webp"
-		if path.Ext(filename) == ".png" {
-			mediaType = "image/png"
-		}
 		created, createErr := session.ApplicationEmojiCreate(appID, &discordgo.EmojiParams{
 			Name:  name,
-			Image: "data:" + mediaType + ";base64," + base64.StdEncoding.EncodeToString(data),
+			Image: "data:image/webp;base64," + base64.StdEncoding.EncodeToString(data),
 		})
 		if createErr != nil {
 			logger.Discord.Warn(fmt.Sprintf("Could not create Discord application emoji %s: %v", name, createErr))

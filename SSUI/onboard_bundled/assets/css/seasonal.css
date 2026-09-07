@@ -1,0 +1,125 @@
+body.seasonal-halloween {
+  --primary: #ff781f;
+  --primary-dim: rgba(255, 120, 31, 0.72);
+  --primary-glow: rgba(255, 79, 20, 0.32);
+  --primary-glow-soft: rgba(255, 79, 20, 0.16);
+  --primary-glow-strong: rgba(255, 120, 31, 0.58);
+  --text-header: #ffd29f;
+}
+
+body.seasonal-christmas {
+  --primary: #52d98b;
+  --primary-dim: rgba(82, 217, 139, 0.72);
+  --primary-glow: rgba(220, 45, 65, 0.30);
+  --primary-glow-soft: rgba(220, 45, 65, 0.15);
+  --primary-glow-strong: rgba(82, 217, 139, 0.58);
+  --text-header: #fff4dc;
+}
+
+.seasonal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+body.seasonal-active > header,
+body.seasonal-active > main,
+body.seasonal-active > footer,
+body.seasonal-active > discord-button,
+body.seasonal-active > .home-footer-links {
+  position: relative;
+  z-index: 2;
+}
+
+.seasonal-decoration {
+  position: absolute;
+  user-select: none;
+  will-change: transform;
+}
+
+.seasonal-layer--christmas::before {
+  content: '';
+  position: absolute;
+  inset: -100% 0 0;
+  opacity: 0.62;
+  background-image:
+    radial-gradient(2px 2px at 30px 60px, #fff, transparent),
+    radial-gradient(3px 3px at 140px 170px, #fff, transparent),
+    radial-gradient(2px 2px at 220px 90px, #fff, transparent),
+    radial-gradient(2px 2px at 330px 240px, #fff, transparent);
+  background-size: 360px 280px;
+  animation: seasonalSnow 36s linear infinite;
+}
+
+.seasonal-layer--christmas .seasonal-decoration {
+  width: clamp(52px, 7vw, 105px);
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.42));
+  animation: seasonalOrbit 38s linear infinite;
+}
+
+.seasonal-layer--christmas .seasonal-decoration--1 { top: 17%; left: -9%; animation-delay: -4s; }
+.seasonal-layer--christmas .seasonal-decoration--2 { top: 38%; left: -12%; animation-delay: -16s; animation-duration: 52s; }
+.seasonal-layer--christmas .seasonal-decoration--3 { top: 66%; left: -8%; animation-delay: -29s; animation-duration: 45s; }
+.seasonal-layer--christmas .seasonal-decoration--4 { top: 82%; left: -11%; animation-delay: -9s; animation-duration: 59s; }
+
+.seasonal-layer--halloween::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background:
+    radial-gradient(ellipse at 15% 100%, rgba(116, 35, 145, 0.42), transparent 42%),
+    radial-gradient(ellipse at 85% 100%, rgba(255, 84, 15, 0.30), transparent 38%);
+  animation: seasonalFog 14s ease-in-out infinite alternate;
+}
+
+.seasonal-layer--halloween .seasonal-decoration {
+  font-size: clamp(34px, 5vw, 72px);
+  filter: drop-shadow(0 0 15px rgba(255, 103, 23, 0.48));
+  animation: seasonalDrift 18s ease-in-out infinite alternate;
+}
+
+.seasonal-layer--halloween .seasonal-decoration--1 { top: 12%; left: 7%; }
+.seasonal-layer--halloween .seasonal-decoration--2 { top: 22%; right: 8%; animation-delay: -7s; }
+.seasonal-layer--halloween .seasonal-decoration--3 { bottom: 6%; left: 4%; animation-delay: -11s; }
+.seasonal-layer--halloween .seasonal-decoration--4 { bottom: 8%; right: 5%; animation-delay: -3s; }
+
+body.seasonal-halloween #banner {
+  filter: sepia(0.35) saturate(1.35) hue-rotate(325deg) drop-shadow(0 0 12px rgba(255, 103, 23, 0.5));
+}
+
+body.background-paused .seasonal-layer,
+body.background-paused .seasonal-layer *,
+body.seasonal-paused .seasonal-layer,
+body.seasonal-paused .seasonal-layer * {
+  animation-play-state: paused !important;
+}
+
+@keyframes seasonalSnow {
+  from { transform: translateY(0); }
+  to { transform: translateY(50%); }
+}
+
+@keyframes seasonalOrbit {
+  from { transform: translate3d(0, 0, 0) rotate(0deg); }
+  to { transform: translate3d(118vw, -8vh, 0) rotate(360deg); }
+}
+
+@keyframes seasonalFog {
+  from { transform: translate3d(-2%, 0, 0) scale(1); }
+  to { transform: translate3d(2%, -1%, 0) scale(1.06); }
+}
+
+@keyframes seasonalDrift {
+  from { transform: translate3d(-12px, 6px, 0) rotate(-6deg); }
+  to { transform: translate3d(18px, -14px, 0) rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seasonal-layer,
+  .seasonal-layer * {
+    animation-play-state: paused !important;
+  }
+}

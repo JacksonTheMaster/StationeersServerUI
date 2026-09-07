@@ -238,8 +238,22 @@ button.panel-button.is-active {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 1;
   width: 100%;
   margin: 18px auto 8px;
+}
+
+discord-button {
+  display: block;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+body > footer {
+  position: relative;
+  z-index: 1;
 }
 
 .home-community-link,

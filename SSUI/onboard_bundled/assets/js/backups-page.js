@@ -36,21 +36,13 @@
         const encodedIcon = encodeURIComponent(icon);
         return `<span class="backup-ui-icon ${escapeHTML(className)}" aria-hidden="true">
             <span class="backup-icon-letter" hidden>${escapeHTML(fallback)}</span>
-            <img src="/static/backupstats/${encodedIcon}.png"
-                data-alternate-src="/static/backupstats/${encodedIcon}.webp"
-                alt="" draggable="false">
+            <img src="/static/backupstats/${encodedIcon}.webp" alt="" draggable="false">
         </span>`;
     }
 
     function wireIconFallbacks(root) {
         root.querySelectorAll('.backup-ui-icon img').forEach(image => {
             image.addEventListener('error', () => {
-                if (image.dataset.alternateTried !== 'true') {
-                    image.dataset.alternateTried = 'true';
-                    image.src = image.dataset.alternateSrc;
-                    return;
-                }
-
                 image.hidden = true;
                 const fallback = image.previousElementSibling;
                 if (fallback) fallback.hidden = false;
