@@ -18,9 +18,21 @@ func SetupRoutes() *http.ServeMux {
 	assets, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/assets")
 	twoBoxAssets, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/twoboxform")
 	svelteAssets, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/v2/assets")
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(assets))))
-	mux.Handle("/twoboxform/", http.StripPrefix("/twoboxform/", http.FileServer(http.FS(twoBoxAssets))))
-	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.FS(svelteAssets))))
+	assetServer := http.StripPrefix("/static/", http.FileServer(http.FS(assets)))
+	twoBoxServer := http.StripPrefix("/twoboxform/", http.FileServer(http.FS(twoBoxAssets)))
+	svelteServer := http.StripPrefix("/assets/", http.FileServer(http.FS(svelteAssets)))
+
+	// Login and setup only need this small public asset set. Everything else is
+	// served after the same session check as the UI itself.
+	mux.Handle("/static/favicon.ico", assetServer)
+	mux.Handle("/static/login-background.webp", assetServer)
+	mux.Handle("/static/css/flags.css", assetServer)
+	mux.Handle("/static/js/api-client.js", assetServer)
+	mux.Handle("/static/flags/", assetServer)
+	mux.Handle("/static/", api.PageIdentityMiddleware(assetServer))
+	mux.Handle("/twoboxform/twoboxform.css", twoBoxServer)
+	mux.Handle("/twoboxform/twoboxform.js", twoBoxServer)
+	mux.Handle("/assets/", api.PageIdentityMiddleware(svelteServer))
 	mux.HandleFunc("GET /login", ServeTwoBoxFormTemplate)
 	mux.HandleFunc("GET /setup", setupPage)
 
