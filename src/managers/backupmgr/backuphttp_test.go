@@ -16,13 +16,13 @@ func TestListBackupsSummaryIsOptIn(t *testing.T) {
 
 	primeBackupInventory(t, handler.manager)
 
-	basicRequest := httptest.NewRequest(http.MethodGet, "/api/v2/backups?limit=5", nil)
+	basicRequest := httptest.NewRequest(http.MethodGet, "/api/v3/backups?limit=5", nil)
 	basicResponse := httptest.NewRecorder()
 	handler.ListBackupsHandler(basicResponse, basicRequest)
 	if basicResponse.Code != http.StatusOK {
 		t.Fatalf("basic response status %d: %s", basicResponse.Code, basicResponse.Body.String())
 	}
-	if bytes.Contains(basicResponse.Body.Bytes(), []byte(`"Summary"`)) {
+	if bytes.Contains(basicResponse.Body.Bytes(), []byte(`"summary"`)) {
 		t.Fatalf("basic response unexpectedly contains Summary: %s", basicResponse.Body.String())
 	}
 	var basicRows []map[string]any
@@ -32,19 +32,19 @@ func TestListBackupsSummaryIsOptIn(t *testing.T) {
 	if len(basicRows) != 1 || len(basicRows[0]) != 2 {
 		t.Fatalf("basic response shape changed: %#v", basicRows)
 	}
-	for _, key := range []string{"Name", "SaveTime"} {
+	for _, key := range []string{"name", "saveTime"} {
 		if _, exists := basicRows[0][key]; !exists {
 			t.Fatalf("basic response is missing %s: %#v", key, basicRows[0])
 		}
 	}
 
-	summaryRequest := httptest.NewRequest(http.MethodGet, "/api/v2/backups?limit=5&include=summary", nil)
+	summaryRequest := httptest.NewRequest(http.MethodGet, "/api/v3/backups?limit=5&include=summary", nil)
 	summaryResponse := httptest.NewRecorder()
 	handler.ListBackupsHandler(summaryResponse, summaryRequest)
 	if summaryResponse.Code != http.StatusOK {
 		t.Fatalf("summary response status %d: %s", summaryResponse.Code, summaryResponse.Body.String())
 	}
-	if !bytes.Contains(summaryResponse.Body.Bytes(), []byte(`"Summary"`)) ||
+	if !bytes.Contains(summaryResponse.Body.Bytes(), []byte(`"summary"`)) ||
 		!bytes.Contains(summaryResponse.Body.Bytes(), []byte(`"daysPlayed":67`)) {
 		t.Fatalf("summary response is missing metadata: %s", summaryResponse.Body.String())
 	}
@@ -55,7 +55,7 @@ func TestBackupHTTPSelectionUsesName(t *testing.T) {
 	m := NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})
 	handler := &HTTPHandler{manager: m}
 	query := url.Values{"name": {filepath.Base(path)}}
-	request := httptest.NewRequest(http.MethodGet, "/api/v2/backups/analyze?"+query.Encode(), nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/v3/backups/analysis?"+query.Encode(), nil)
 	response := httptest.NewRecorder()
 	handler.AnalyzeBackupHandler(response, request)
 	if response.Code != http.StatusOK {
@@ -66,7 +66,7 @@ func TestBackupHTTPSelectionUsesName(t *testing.T) {
 		t.Fatal(err)
 	}
 	response = httptest.NewRecorder()
-	handler.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/api/v2/backups/download", bytes.NewReader(body)))
+	handler.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/api/v3/backups/download", bytes.NewReader(body)))
 	if response.Code != http.StatusOK || !bytes.HasPrefix(response.Body.Bytes(), []byte("PK")) {
 		t.Fatalf("stable download: %d", response.Code)
 	}
@@ -79,8 +79,8 @@ func TestListPendingAnalysisDoesNotInventSummary(t *testing.T) {
 	path := analysisFixture(t)
 	handler := &HTTPHandler{manager: NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})}
 	response := httptest.NewRecorder()
-	handler.ListBackupsHandler(response, httptest.NewRequest(http.MethodGet, "/api/v2/backups?include=summary", nil))
-	if response.Code != http.StatusOK || bytes.Contains(response.Body.Bytes(), []byte(`"Summary"`)) {
+	handler.ListBackupsHandler(response, httptest.NewRequest(http.MethodGet, "/api/v3/backups?include=summary", nil))
+	if response.Code != http.StatusOK || bytes.Contains(response.Body.Bytes(), []byte(`"summary"`)) {
 		t.Fatalf("pending archive returned fabricated statistics: %s", response.Body.String())
 	}
 }
@@ -89,7 +89,7 @@ func TestAnalyzeBackupHandler(t *testing.T) {
 	path := analysisFixture(t)
 	manager := NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})
 	handler := &HTTPHandler{manager: manager}
-	request := httptest.NewRequest(http.MethodGet, "/api/v2/backups/analyze?name=analysis.save", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/v3/backups/analysis?name=analysis.save", nil)
 	response := httptest.NewRecorder()
 
 	handler.AnalyzeBackupHandler(response, request)
@@ -108,7 +108,7 @@ func TestAnalyzeBackupHandler(t *testing.T) {
 
 func TestAnalyzeBackupHandlerRejectsInvalidIndex(t *testing.T) {
 	handler := &HTTPHandler{manager: NewBackupManager(BackupConfig{})}
-	request := httptest.NewRequest(http.MethodGet, "/api/v2/backups/analyze?index=nope", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/v3/backups/analysis?index=nope", nil)
 	response := httptest.NewRecorder()
 
 	handler.AnalyzeBackupHandler(response, request)

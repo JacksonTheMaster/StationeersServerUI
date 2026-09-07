@@ -25,17 +25,17 @@ export async function fetchUserInfo() {
   }));
 
   try {
-    const response = await apiFetch('/api/v2/auth/whoami');
+    const response = await apiFetch('/api/v3/auth/session');
     
     // Parse the JSON from the response
     const data = await response.json();
     console.log('You are logged in as:', data);
     
-    if (data && data.username) {
+    if (data && data.user?.username) {
       // Update store with successful data
       userInfo.set({
-        username: data.username,
-        accessLevel: data.accessLevel || 'user',
+        username: data.user.username,
+        accessLevel: data.permissions?.includes('security.manage') ? 'owner' : 'user',
         isLoading: false,
         isAuthenticated: true,
         lastFetched: new Date(),

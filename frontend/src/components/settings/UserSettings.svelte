@@ -39,26 +39,26 @@
         return;
       }
       
-      if (password.length < 3) {
-        showStatus('Password must be at least 3 characters long', true);
+      if (password.length < 10) {
+        showStatus('Password must be at least 10 characters long', true);
         return;
       }
       
       try {
-        const response = await apiFetch('/api/v2/auth/adduser', {
+        const response = await apiFetch('/api/v3/auth/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             username: username.trim(), 
             password: password,
-            accessLevel: accessLevel
+            groupIds: ['system-owner']
           })
         });
         
         const result = await response.json();
         
         if (!response.ok) {
-          showStatus(`Failed to add/change user: ${result.message || 'Unknown error'}`, true);
+          showStatus(`Failed to add/change user: ${result.error || 'Unknown error'}`, true);
           return;
         }
         

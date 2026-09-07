@@ -68,7 +68,7 @@ const availableCommands = [
 
 async function checkSSCMEnabled() {
     try {
-        const response = await fetch('/api/v2/SSCM/enabled', {
+        const response = await fetch('/api/v3/sscm/status', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -94,7 +94,7 @@ async function checkSSCMEnabled() {
 async function sendSSCMCommand(command) {
     try {
         // Check server status before sending command
-        const statusResponse = await fetch('/api/v2/server/status');
+        const statusResponse = await fetch('/api/v3/server/status');
         const statusData = await statusResponse.json();
         
         if (!statusData.isRunning) {
@@ -102,7 +102,7 @@ async function sendSSCMCommand(command) {
             return;
         }
 
-        const response = await fetch('/api/v2/SSCM/run', {
+        const response = await fetch('/api/v3/sscm/commands', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ command })

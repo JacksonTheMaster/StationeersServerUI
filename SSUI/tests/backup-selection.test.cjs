@@ -29,7 +29,7 @@ function harness(page) {
     const popups = [];
     const body = element();
     const state = {
-        backups: [{ Name: 'nested/ä + # <world>.save', SaveTime: '2026-09-04T12:00:00Z' }],
+        backups: [{ name: 'nested/ä + # <world>.save', saveTime: '2026-09-04T12:00:00Z' }],
         restoreOK: true
     };
     const document = {
@@ -52,7 +52,7 @@ function harness(page) {
             return {
                 ok: target.pathname.endsWith('/restore') ? state.restoreOK : true,
                 headers: { get(name) { return name === 'Content-Type' ? 'application/json' : ''; } },
-                async json() { return target.pathname === '/api/v2/backups' ? state.backups : {}; },
+                async json() { return target.pathname === '/api/v3/backups' ? state.backups : {}; },
                 async text() { return state.restoreOK ? 'Restored' : 'Backup missing'; },
                 async blob() { return {}; }
             };
@@ -75,11 +75,11 @@ for (const page of ['dashboard', 'workspace']) {
         await h.refresh();
         await settle();
         const selected = h.rows()[0];
-        const name = h.state.backups[0].Name;
+        const name = h.state.backups[0].name;
         assert.ok(selected.innerHTML.includes('&lt;world&gt;.save'));
         assert.ok(!selected.innerHTML.includes('<world>'));
 
-        h.state.backups = [{ Name: 'other.save', SaveTime: '2026-09-05T12:00:00Z' }, ...h.state.backups];
+        h.state.backups = [{ name: 'other.save', saveTime: '2026-09-05T12:00:00Z' }, ...h.state.backups];
         await h.refresh();
         await settle();
         selected.querySelector(page === 'dashboard' ? '.download-btn' : '.backup-download').click();
@@ -92,7 +92,7 @@ for (const page of ['dashboard', 'workspace']) {
         assert.deepEqual([...new URL(restore.url, 'http://local').searchParams], [['name', name]]);
         assert.equal(h.body.children.at(-1).download, name.split('/').pop());
         if (page === 'workspace') {
-            const analysis = h.requests.find(request => request.url.includes('/analyze?'));
+            const analysis = h.requests.find(request => request.url.includes('/analysis?'));
             assert.deepEqual([...new URL(analysis.url, 'http://local').searchParams], [['name', name]]);
         }
     });

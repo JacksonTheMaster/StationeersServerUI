@@ -29,7 +29,7 @@
         saveButton.disabled = true;
         validation.textContent = '';
         try {
-            const response = await fetch('/api/v2/tls/certificate', { method: 'POST', body });
+            const response = await fetch('/api/v3/tls/certificate', { method: 'POST', body });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || 'Failed to save TLS certificate.');
             document.getElementById('tls-restarting').hidden = false;

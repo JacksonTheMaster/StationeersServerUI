@@ -34,19 +34,14 @@
 
   async function loadBackupStatus() {
     try {
-      const response = await apiFetch('/api/v2/backup/status');
+      const response = await apiFetch('/api/v3/server/status');
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
-      if (data && data.success) {
-        backupStatus = { isRunning: Boolean(data.isRunning) };
-      } else {
-        // Don't set error for status failures, just use default
-        backupStatus = { isRunning: false };
-      }
+      backupStatus = { isRunning: Boolean(data?.isRunning) };
     } catch (err) {
       console.error('Failed to load backup status:', err);
       // Silently fail for status updates to avoid UI flicker
@@ -67,7 +62,7 @@
   }
   
   try {
-    const response = await apiFetch('/api/v2/backup/list');
+    const response = await apiFetch('/api/v3/backups');
     
     // Always parse the JSON response to get detailed error messages
     const data = await response.json();
@@ -80,35 +75,14 @@
       throw new Error(errorMessage);
     }
     
-    if (data && data.success) {
-      // Safely handle the backups array
-      const backupsArray = Array.isArray(data.backups) ? data.backups : [];
-      
-      const newBackups = backupsArray
-        .filter(name => name && typeof name === 'string') // Filter out null/undefined/invalid entries
-        .map(name => {
-          // Parse backup name to extract date/time info
-          const match = name.match(/backup_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})\.tar\.gz/);
-          if (match) {
-            const [, date, time] = match;
-            const formattedTime = time.replace(/-/g, ':');
-            return {
-              name,
-              date,
-              time: formattedTime,
-              displayName: `${date} ${formattedTime}`,
-              size: 'Unknown size' // API doesn't provide size info atm, TODO
-            };
-          }
-          return {
-            name,
-            date: 'Unknown',
-            time: 'Unknown',
-            displayName: name,
-            size: 'Unknown size'
-          };
-        })
-        .sort((a, b) => b.name.localeCompare(a.name));
+    if (Array.isArray(data)) {
+      const newBackups = data.map(backup => ({
+        name: backup.name,
+        date: new Date(backup.saveTime).toLocaleDateString(),
+        time: new Date(backup.saveTime).toLocaleTimeString(),
+        displayName: backup.summary?.worldName || backup.name,
+        size: 'Unknown size'
+      }));
       
       if (JSON.stringify(newBackups) !== JSON.stringify(backups)) {
         backups = newBackups;
@@ -136,33 +110,7 @@
   }
 
   async function createBackup() {
-    isCreating = true;
-    error = null;
-    success = null;
-
-    try {
-      const response = await apiFetch('/api/v2/backup/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ mode: createMode })
-      });
-      
-      const data = await response.json();
-      
-      if (data && data.success) {
-        success = data.message || 'Backup created successfully';
-        await loadBackups();
-      } else {
-        // Show the detailed error message from the API
-        error = (data && data.message) ? data.message : `Failed to create backup (HTTP ${response.status})`;
-      }
-    } catch (err) {
-      error = 'Failed to create backup: ' + err.message;
-    } finally {
-      isCreating = false;
-    }
+    error = 'SSUI archives completed game autosaves automatically.';
   }
 
   async function restoreBackup() {
@@ -173,15 +121,9 @@
     success = null;
 
     try {
-      const response = await apiFetch('/api/v2/backup/restore', {
+      const selection = new URLSearchParams({ name: selectedBackup.name });
+      const response = await apiFetch(`/api/v3/backups/restore?${selection}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          backupName: selectedBackup.name,
-          skipPreBackup
-        })
       });
 
       if (!response.ok) {
@@ -189,8 +131,8 @@
       }
 
       const data = await response.json();
-      if (data && data.success) {
-        success = data.message || 'Backup restored successfully';
+      if (data?.message) {
+        success = data.message;
         showRestoreModal = false;
         selectedBackup = null;
         await loadBackups(); // Refresh the list

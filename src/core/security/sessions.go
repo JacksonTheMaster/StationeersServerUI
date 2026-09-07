@@ -13,6 +13,7 @@ import (
 
 const (
 	SessionCookieName       = "SSUISession"
+	CSRFCookieName          = "SSUICSRF"
 	SessionIdleLifetime     = 24 * time.Hour
 	SessionAbsoluteLifetime = 30 * 24 * time.Hour
 	sessionTouchInterval    = 5 * time.Minute

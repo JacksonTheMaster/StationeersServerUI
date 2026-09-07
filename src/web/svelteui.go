@@ -41,9 +41,8 @@ func HandleReloadAll(w http.ResponseWriter, r *http.Request) {
 	logger.Web.Debug("Received reloadbackend request from API")
 	reloadMu.Lock()
 	defer reloadMu.Unlock()
-	// accept only GET requests
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET requests are allowed", http.StatusMethodNotAllowed)
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	// Reload all loaders

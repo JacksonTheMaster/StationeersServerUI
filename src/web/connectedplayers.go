@@ -3,6 +3,7 @@ package web
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/detectionmgr"
 )
@@ -18,33 +19,15 @@ func HandleConnectedPlayersList(w http.ResponseWriter, r *http.Request) {
 	detector := detectionmgr.GetDetector()
 	players := detectionmgr.GetPlayers(detector)
 
-	// if players is empty, return an empty list
-	if len(players) == 0 {
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(players); err != nil {
-			http.Error(w, "Failed to encode player list", http.StatusInternalServerError)
-		}
-		return
+	type connectedPlayer struct {
+		Username string `json:"username"`
+		SteamID  string `json:"steamId"`
 	}
-
-	// Create a comma-separated string of SteamIDs
-	steamIDs := make([]string, 0, len(players))
-	for steamID := range players {
-		steamIDs = append(steamIDs, steamID)
-	}
-
-	// Build the response player list
-	playerList := make([]map[string]map[string]string, 0, len(players))
+	playerList := make([]connectedPlayer, 0, len(players))
 	for steamID, username := range players {
-		playerInfo := map[string]string{
-			"username": username,
-			"steamID":  steamID,
-		}
-		nestedPlayer := map[string]map[string]string{
-			username: playerInfo,
-		}
-		playerList = append(playerList, nestedPlayer)
+		playerList = append(playerList, connectedPlayer{Username: username, SteamID: steamID})
 	}
+	sort.Slice(playerList, func(i, j int) bool { return playerList[i].Username < playerList[j].Username })
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(playerList); err != nil {

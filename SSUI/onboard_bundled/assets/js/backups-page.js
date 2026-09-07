@@ -66,8 +66,8 @@
     }
 
     function createBackupRow(backup, position) {
-        const summary = backup.Summary || {};
-        const name = backup.Name;
+        const summary = backup.summary || {};
+        const name = backup.name;
         const worldName = summary.worldName || name;
         const item = document.createElement('li');
         item.className = 'backup-page-item';
@@ -81,7 +81,7 @@
                         <span>${escapeHTML(name)}</span>
                     </div>
                     <div class="backup-page-meta">
-                        <span><small>${escapeHTML(text.created)}</small><strong>${new Date(backup.SaveTime).toLocaleString()}</strong></span>
+                        <span><small>${escapeHTML(text.created)}</small><strong>${new Date(backup.saveTime).toLocaleString()}</strong></span>
                         <span><small>${escapeHTML(text.gameVersion)}</small><strong>${escapeHTML(summary.gameVersion || '-')}</strong></span>
                     </div>
                 </div>
@@ -134,7 +134,7 @@
         panel.innerHTML = `<div class="backup-analysis-message"><span class="backup-analysis-spinner"></span>${escapeHTML(text.analysisLoading)}</div>`;
 
         const selection = new URLSearchParams({ name: item.dataset.backupName });
-        fetch(`/api/v2/backups/analyze?${selection}`)
+        fetch(`/api/v3/backups/analysis?${selection}`)
             .then(response => {
                 if (!response.ok) return response.text().then(message => { throw new Error(message || text.analysisFailed); });
                 return response.json();
@@ -196,7 +196,7 @@
         list.innerHTML = `<li class="backup-page-empty">${escapeHTML(text.loading)}</li>`;
         refresh.disabled = true;
 
-        fetch(`/api/v2/backups?${params}`)
+        fetch(`/api/v3/backups?${params}`)
             .then(response => {
                 if (!response.ok) return response.text().then(message => { throw new Error(message); });
                 return response.json();
@@ -221,7 +221,7 @@
 
     function restoreBackup(name) {
         const selection = new URLSearchParams({ name });
-        fetch(`/api/v2/backups/restore?${selection}`)
+        fetch(`/api/v3/backups/restore?${selection}`, { method: 'POST' })
             .then(response => response.text().then(message => ({ ok: response.ok, message })))
             .then(result => {
                 if (!result.ok) throw new Error(result.message);
@@ -231,7 +231,7 @@
     }
 
     function downloadBackup(name) {
-        fetch('/api/v2/backups/download', {
+        fetch('/api/v3/backups/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })

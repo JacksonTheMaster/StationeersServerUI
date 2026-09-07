@@ -123,9 +123,9 @@
     connecting[source] = true;
     console.log(`Connecting to ${source} log source`);
 
-    const endpoint = source === 'all' ? '/logs/backend' :
-                    source === 'warning' ? '/logs/warn' :
-                    source === 'game' ? '/console' : `/logs/${source}`;
+    const endpoint = source === 'all' ? '/api/v3/streams/logs/backend' :
+                     source === 'warning' ? '/api/v3/streams/logs/warn' :
+                     source === 'game' ? '/api/v3/streams/console' : `/api/v3/streams/logs/${source}`;
     const systemName = systemNames[source];
     const level = source === 'all' ? 'ALL' : source.toUpperCase();
     const connectionMessage = `${systemName} Log Stream Connected`;

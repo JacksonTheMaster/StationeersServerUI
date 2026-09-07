@@ -55,7 +55,7 @@
 
     <header>
         <img src="/static/stationeers.webp" alt="Stationeers Banner" id="banner" onclick="window.location.href = 'https://www.youtube.com/watch?v=xvFZjo5PgG0'">
-        <button onclick="window.location.href = '/auth/logout';" class="logout-icon" title="Logout"></button>
+        <button onclick="fetch('/api/v3/auth/logout', { method: 'POST' }).finally(() => window.location.href = '/login');" class="logout-icon" title="Logout"></button>
         <button onclick="toggleGPUSaver()" class="gpusaver-icon"
             title="Save GPU Power by disabling background Animations. Persistent until toggled off. Options: Focus (Default), Always, Disabled. If unsure, check developer tools -> Application -> Local Storage -> animationState">
         </button>
@@ -257,6 +257,7 @@
         </div>
     </footer>
 
+    <script src="/static/js/api-client.js"></script>
     <script src="/static/js/theme-engine.js"></script>
     <script src="/static/js/sscm.js"></script>
     <script src="/static/js/ui-utils.js"></script>

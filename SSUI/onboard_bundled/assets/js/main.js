@@ -14,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setupLogStreams({
             consoleId: 'backendlog-console',
             streamUrls: [
-                '/logs/info',
-                '/logs/warn',
-                '/logs/error',
+            '/api/v3/streams/logs/info',
+            '/api/v3/streams/logs/warn',
+            '/api/v3/streams/logs/error',
      ],
             maxMessages: 500,
             messageClass: 'log-console-element'
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         flag.addEventListener('click', async () => {
             const lang = flag.dataset.lang;
             try {
-                const response = await fetch('/api/v2/saveconfig', {
+                const response = await fetch('/api/v3/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ LanguageSetting: lang })

@@ -11,8 +11,8 @@
     responseMessage = '';
 
     try {
-      const response = await apiFetch('/api/v2/loader/reloadbackend', {
-        method: 'GET'
+      const response = await apiFetch('/api/v3/backend/reload', {
+        method: 'POST'
       });
 
       let data;

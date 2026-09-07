@@ -8,7 +8,7 @@ export const backendConfig = writable({
   backends: {
     default: {
       url: '/', // Default backend URL is the current host
-      token: null // Authentication token (JWT)
+      csrf: null
     }
   }
 });
@@ -36,16 +36,15 @@ export function getCurrentBackendUrl() {
 }
 
 // Helper to get the current authentication token
-export function getCurrentAuthToken() {
-  return getCurrentBackend().token;
+export function getCurrentCSRF() {
+  return getCurrentBackend().csrf;
 }
 
 // Add or update a backend
 export function setBackend(id, url) {
   backendConfig.update(config => {
-    // If the backend already exists, preserve its token
-    const existingToken = config.backends[id]?.token || null;
-    config.backends[id] = { url, token: existingToken };
+    const csrf = config.backends[id]?.csrf || null;
+    config.backends[id] = { url, csrf };
     return config;
   });
 }
@@ -80,10 +79,10 @@ export async function setActiveBackend(id) {
 }
 
 // Update the token for a backend and persist it
-export function updateAuthToken(id, token) {
+export function updateSession(id, csrf) {
   backendConfig.update(config => {
     if (config.backends[id]) {
-      config.backends[id].token = token;
+      config.backends[id].csrf = csrf;
     }
     return config;
   });
@@ -92,32 +91,32 @@ export function updateAuthToken(id, token) {
   if (id === get(backendConfig).active) {
     authState.update(state => ({
       ...state,
-      isAuthenticated: !!token,
+      isAuthenticated: !!csrf,
       authError: null
     }));
   }
 }
 
 // Clear authentication for the current backend
-export function clearAuthentication() {
+export async function clearAuthentication() {
   const currentBackendId = get(backendConfig).active;
-  updateAuthToken(currentBackendId, null);
-  
-  // Also clear the auth cookie by making a logout request
-  apiFetch('/auth/logout', { method: 'POST' })
-    .catch(err => console.error('Error during logout:', err));
+  try {
+    await apiFetch('/api/v3/auth/logout', { method: 'POST' });
+  } finally {
+    updateSession(currentBackendId, null);
+  }
 }
 
 /**
  * Fetch wrapper that automatically adds the backend URL and handles authentication
- * @param {string} endpoint - The API endpoint (e.g., "/api/v2/whatever")
+ * @param {string} endpoint - The API endpoint (e.g., "/api/v3/server/status")
  * @param {Object} options - Fetch options
  * @returns {Promise} - The fetch promise
  */
 export async function apiFetch(endpoint, options = {}) {
   // Get the current backend configuration
   const backendUrl = getCurrentBackendUrl();
-  const token = getCurrentAuthToken();
+  const csrf = getCurrentCSRF();
   
   // Ensure endpoint starts with "/" if it's not an empty string
   const normalizedEndpoint = endpoint.startsWith('/') || endpoint === '' ? endpoint : `/${endpoint}`;
@@ -131,26 +130,37 @@ export async function apiFetch(endpoint, options = {}) {
   // Always include credentials for CORS requests
   options.credentials = 'include';
   
-  // For non-login endpoints, manually set the AuthToken cookie as well
-  // This serves as a fallback in case the HttpOnly cookie isn't being sent
-  if (token && !endpoint.includes('/auth/login')) {
-    const cookieHeader = document.cookie;
-    if (!cookieHeader.includes('AuthToken=')) {
-      // Only set cookie header if it's not already set by the browser
-      options.headers['Cookie'] = `AuthToken=${token}`;
-    }
-    
-    // Also send the token in the Authorization header as a backup method
-    options.headers['Authorization'] = `Bearer ${token}`;
+  const method = String(options.method || 'GET').toUpperCase();
+  if (csrf && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    options.headers['X-SSUI-CSRF'] = csrf;
   }
   
-  // Perform the fetch
-  return await fetch(url, options);
+  const response = await fetch(url, options);
+  const readJSON = response.json.bind(response);
+  const readText = response.text.bind(response);
+  response.json = async () => {
+    const envelope = await readJSON();
+    if (envelope && Object.prototype.hasOwnProperty.call(envelope, 'data')) return envelope.data;
+    if (envelope?.error) return { error: envelope.error.message, errorCode: envelope.error.code };
+    return envelope;
+  };
+  response.text = async () => {
+    const text = await readText();
+    try {
+      const envelope = JSON.parse(text);
+      if (envelope?.error?.message) return envelope.error.message;
+      if (envelope?.data?.message) return envelope.data.message;
+    } catch (_) {
+      // Regular text response.
+    }
+    return text;
+  };
+  return response;
 }
 
 /**
  * Fetch wrapper with timeout that automatically adds the backend URL and handles authentication
- * @param {string} endpoint - The API endpoint (e.g., "/api/v2/whatever")
+ * @param {string} endpoint - The API endpoint (e.g., "/api/v3/server/status")
  * @param {Object} options - Fetch options
  * @param {number} timeoutMs - Timeout in milliseconds
  * @returns {Promise} - The fetch promise
@@ -245,7 +255,6 @@ export async function apiText(endpoint, options = {}) {
 export function apiSSE(endpoint, onMessage, onError = console.error) {
   // Get the current backend URL
   const backendUrl = getCurrentBackendUrl();
-  const token = getCurrentAuthToken();
   
   // Ensure endpoint starts with "/" if it's not an empty string
   const normalizedEndpoint = endpoint.startsWith('/') || endpoint === '' ? endpoint : `/${endpoint}`;
@@ -253,11 +262,6 @@ export function apiSSE(endpoint, onMessage, onError = console.error) {
   // Construct the full URL 
   const baseUrl = backendUrl || window.location.origin;
   const url = new URL(`${baseUrl}${normalizedEndpoint}`);
-  
-  // Add token as query param as a fallback for EventSource which can't set headers
-  if (token) {
-    url.searchParams.set('token', token);
-  }
   
   let eventSource = null;
   let isActive = true;
@@ -321,12 +325,7 @@ export function apiSSE(endpoint, onMessage, onError = console.error) {
             try {
               // Get fresh URL and token from new backend
               const newBackendUrl = getCurrentBackendUrl();
-              const newToken = getCurrentAuthToken();
               const newUrl = new URL(`${newBackendUrl || window.location.origin}${normalizedEndpoint}`);
-              
-              if (newToken) {
-                newUrl.searchParams.set('token', newToken);
-              }
               
               // Create new EventSource
               eventSource = new EventSource(newUrl.toString(), eventSourceOptions);
@@ -378,7 +377,7 @@ export async function login(username, password) {
   }));
   
   try {
-    const response = await apiFetch('/auth/login', {
+    const response = await apiFetch('/api/v3/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -394,11 +393,7 @@ export async function login(username, password) {
     
     const data = await response.json();
     
-    // Save the token for future reference
-    updateAuthToken(get(backendConfig).active, data.token);
-    
-    // Also manually set the cookie as a fallback for SameSite restrictions
-    document.cookie = `AuthToken=${data.token}; path=/; max-age=${60*60*24}`;
+    updateSession(get(backendConfig).active, data.csrf);
     
     // Update auth state
     authState.update(state => ({
@@ -434,7 +429,7 @@ export async function syncAuthState() {
   
   try {
     // Make a simple request with 500ms timeout to verify authentication
-    const response = await apiFetchTimeout('/api/v2/auth/check', {
+    const response = await apiFetchTimeout('/api/v3/auth/session', {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -488,7 +483,7 @@ export async function syncAuthState() {
     // Sleep for 60ms, then retry once, else continue failing
     await new Promise(resolve => setTimeout(resolve, 60));
     try {
-      const retryResponse = await apiFetchTimeout('/api/v2/auth/check', {
+      const retryResponse = await apiFetchTimeout('/api/v3/auth/session', {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -535,7 +530,7 @@ export function initializeApiService() {
         backends: {
           default: {
             url: '/',
-            token: parsed.backends?.default?.token || null
+            csrf: parsed.backends?.default?.csrf || null
           }
         }
       };
@@ -546,7 +541,7 @@ export function initializeApiService() {
           if (id !== 'default') {
             validatedConfig.backends[id] = {
               url: backend.url,
-              token: backend.token || null
+              csrf: backend.csrf || null
             };
           }
         }

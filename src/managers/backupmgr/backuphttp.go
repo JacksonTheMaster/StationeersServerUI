@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/gamemgr"
 )
@@ -31,9 +32,9 @@ func handlerManager(h *HTTPHandler) *BackupManager {
 }
 
 type backupListResponse struct {
-	Name     string
-	SaveTime time.Time
-	Summary  *SaveSummary `json:",omitempty"`
+	Name     string       `json:"name"`
+	SaveTime time.Time    `json:"saveTime"`
+	Summary  *SaveSummary `json:"summary,omitempty"`
 }
 
 // NewHTTPHandler creates a new HTTP handler for backups
@@ -147,15 +148,13 @@ type DownloadBackupRequest struct {
 func (h *HTTPHandler) DownloadBackupHandler(w http.ResponseWriter, r *http.Request) {
 	manager := handlerManager(h)
 	if manager == nil {
-		http.Error(w, "backup manager is not initialized", http.StatusServiceUnavailable)
+		api.WriteError(w, http.StatusServiceUnavailable, "backup_unavailable", "Backup manager is not initialized")
 		return
 	}
 	logger.Web.Debug("Received backup download request")
 
 	if r.Method != http.MethodPost {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed, use POST"})
+		api.WriteError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method not allowed, use POST")
 		return
 	}
 
@@ -163,21 +162,17 @@ func (h *HTTPHandler) DownloadBackupHandler(w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&req); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "invalid JSON request body"})
+		api.WriteError(w, http.StatusBadRequest, "invalid_request", "Invalid JSON request body")
 		return
 	}
 
 	if err := decoder.Decode(new(any)); err != io.EOF {
-		http.Error(w, "expected one JSON object", http.StatusBadRequest)
+		api.WriteError(w, http.StatusBadRequest, "invalid_request", "Expected one JSON object")
 		return
 	}
 	backupData, err := manager.GetBackupFileData(req.Name)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(backupErrorStatus(err))
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		api.WriteError(w, backupErrorStatus(err), "backup_failed", err.Error())
 		return
 	}
 

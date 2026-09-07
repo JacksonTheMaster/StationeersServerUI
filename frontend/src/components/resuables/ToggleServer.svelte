@@ -11,7 +11,7 @@
       isError = false;
       
       try {
-        const response = await apiFetch(`/api/v2/server/${action}`, {
+        const response = await apiFetch(`/api/v3/server/${action}`, {
           method: 'POST'
         });
         

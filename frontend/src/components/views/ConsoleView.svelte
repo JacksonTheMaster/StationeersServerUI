@@ -159,7 +159,7 @@
   }
   
   // Use apiSSE instead of direct EventSource
-  outputEventSource = apiSSE('/console', 
+    outputEventSource = apiSSE('/api/v3/streams/console',
     (data) => {
       // Handle the message
       addConsoleMessage(data);
@@ -186,7 +186,7 @@ function connectDetectionEvents() {
   }
   
   // Use apiSSE instead of direct EventSource
-  detectionEventSource = apiSSE('/events',
+    detectionEventSource = apiSSE('/api/v3/streams/events',
     (data) => {
       const eventClass = getEventClassName(data);
       const timestamp = new Date().toLocaleTimeString();

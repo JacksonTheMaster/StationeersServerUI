@@ -138,9 +138,8 @@ func CommandHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleIsSSCMEnabled(w http.ResponseWriter, r *http.Request) {
-	// Only allow GET requests
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET requests are allowed", http.StatusMethodNotAllowed)
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST requests are allowed", http.StatusMethodNotAllowed)
 		return
 	}
 

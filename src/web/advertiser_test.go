@@ -41,7 +41,7 @@ func TestNormalizeAdvertiserOverride(t *testing.T) {
 }
 
 func TestAdvertiserOverrideRejectsWrongMethod(t *testing.T) {
-	request := httptest.NewRequest(http.MethodGet, "/api/v2/advertiser/override", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/v3/advertiser/override", nil)
 	response := httptest.NewRecorder()
 	SaveAdvertiserOverrideHandler(response, request)
 	if response.Code != http.StatusMethodNotAllowed {

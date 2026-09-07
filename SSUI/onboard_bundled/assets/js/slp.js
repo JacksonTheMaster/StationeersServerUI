@@ -37,7 +37,7 @@ function installSLP() {
     setButtonLoading('installSLPBtn', true);
     showPopup('info', 'Installing Stationeers Launch Pad...');
     
-    fetch('/api/v2/slp/install')
+    fetch('/api/v3/slp/install', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -62,7 +62,7 @@ function uninstallSLP() {
     setButtonLoading('uninstallSLPBtn', true);
     showPopup('info', 'Uninstalling Stationeers Launch Pad...');
 
-    fetch('/api/v2/slp/uninstall')
+    fetch('/api/v3/slp/uninstall', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -87,7 +87,7 @@ function reinstallSLP() {
     setButtonLoading('reinstallSLPBtn', true);
     showPopup('info', 'Reinstalling Stationeers Launch Pad...\n\nThis will re-download the latest version while keeping your mods intact.');
 
-    fetch('/api/v2/slp/reinstall')
+    fetch('/api/v3/slp/reinstall', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -110,7 +110,7 @@ function updateSingleMod(workshopHandle, index) {
     setButtonLoading(btnId, true);
     showPopup('info', 'Updating workshop mod ' + workshopHandle + '...\n\nPlease wait.');
 
-    fetch('/api/v2/steamcmd/updatemod', {
+    fetch('/api/v3/slp/mods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workshopHandle: workshopHandle })
@@ -135,7 +135,7 @@ function updateWorkshopMods() {
     setButtonLoading('updateWorkshopModsBtn', true);
     showPopup('info', 'Updating workshop mods...\n\nThis may take some time depending on the number of mods. Please wait.');
     
-    fetch('/api/v2/steamcmd/updatemods')
+    fetch('/api/v3/slp/mods/update', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             setButtonLoading('updateWorkshopModsBtn', false);
@@ -167,7 +167,7 @@ function installWorkshopMods() {
     setButtonLoading('installWorkshopModsBtn', true);
     showPopup('info', 'Downloading and installing ' + workshopHandles.length + ' workshop item(s)...\n\nThis can take a while.');
 
-    fetch('/api/v2/steamcmd/updatemod', {
+    fetch('/api/v3/slp/mods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workshopHandles })
@@ -268,7 +268,7 @@ function uploadModPackage() {
     reader.onload = function(e) {
         const zipData = e.target.result;
         
-        fetch('/api/v2/slp/upload', {
+        fetch('/api/v3/slp/packages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/zip'
@@ -386,7 +386,7 @@ function loadInstalledMods(reloadOnFailure = false) {
     if (loader) loader.style.display = 'block';
     if (modsList) modsList.innerHTML = '';
     
-    fetch('/api/v2/slp/mods')
+    fetch('/api/v3/slp/mods')
         .then(response => response.json())
         .then(data => {
             if (loader) loader.style.display = 'none';

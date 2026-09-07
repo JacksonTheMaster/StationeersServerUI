@@ -28,7 +28,7 @@ function loadDetections() {
 
     loader.style.display = 'block';
 
-    fetch('/api/v2/custom-detections')
+    fetch('/api/v3/detections')
         .then(response => {
             if (!response.ok) throw new Error('Failed to load detections');
             return response.json();
@@ -82,7 +82,7 @@ function submitDetection() {
         message: message
     };
 
-    fetch('/api/v2/custom-detections', {
+    fetch('/api/v3/detections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -110,7 +110,7 @@ function submitDetection() {
 // Delete detection
 function deleteDetection(id) {
 
-    fetch(`/api/v2/custom-detections/delete/?id=${id}`, { method: 'DELETE' })
+    fetch(`/api/v3/detections?id=${id}`, { method: 'DELETE' })
         .then(response => {
             if (!response.ok) {
                 return response.text().then(text => { throw new Error(text || 'Failed to delete detection'); });

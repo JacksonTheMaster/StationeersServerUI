@@ -111,7 +111,7 @@ function fetchDetectionEvents() {
     registerStreamPanel('detection-tab', 'detection-console');
     
     const connect = () => {
-        detectionEventSource = new EventSource('/events');
+        detectionEventSource = new EventSource('/api/v3/streams/events');
         
         detectionEventSource.onmessage = event => {
             const message = document.createElement('div');
@@ -136,7 +136,7 @@ function fetchDetectionEvents() {
         };
         
         detectionEventSource.onopen = () => {
-            setStreamConnection('detection-tab', '/events', 'connected');
+            setStreamConnection('detection-tab', '/api/v3/streams/events', 'connected');
             console.log("Detection events stream connected");
         };
         
@@ -144,7 +144,7 @@ function fetchDetectionEvents() {
             console.error("Detection events stream disconnected");
             detectionEventSource.close();
             detectionEventSource = null;
-            setStreamConnection('detection-tab', '/events', 'reconnecting');
+            setStreamConnection('detection-tab', '/api/v3/streams/events', 'reconnecting');
             if (window.location.pathname === '/') {
                 setTimeout(connect, 2000);
             }
@@ -223,7 +223,7 @@ function handleConsole() {
     const createCommandInput = async () => {
         try {
             // Make API call to check if SSCM is enabled
-            const response = await fetch('/api/v2/SSCM/enabled', {
+            const response = await fetch('/api/v3/sscm/status', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -280,8 +280,8 @@ function handleConsole() {
         addMessage(funMessages[messageIndex2], cssVar('--console-info'), 'italic');
 
         // Set up the persistent console stream
-        outputEventSource = new EventSource('/console');
-        setStreamConnection('console-tab', '/console', 'connecting');
+        outputEventSource = new EventSource('/api/v3/streams/console');
+        setStreamConnection('console-tab', '/api/v3/streams/console', 'connecting');
         
         // Persistent message handler
         outputEventSource.onmessage = event => {
@@ -291,7 +291,7 @@ function handleConsole() {
         };
 
         outputEventSource.onopen = () => {
-            setStreamConnection('console-tab', '/console', 'connected');
+            setStreamConnection('console-tab', '/api/v3/streams/console', 'connected');
             console.log("Console stream connected");
             finishInitialization();
         };
@@ -300,7 +300,7 @@ function handleConsole() {
             console.error("Console stream disconnected");
             outputEventSource.close();
             outputEventSource = null;
-            setStreamConnection('console-tab', '/console', 'reconnecting');
+            setStreamConnection('console-tab', '/api/v3/streams/console', 'reconnecting');
             addMessage("Warning: Console stream unavailable. Retrying...", cssVar('--console-warning'));
             if (window.location.pathname === '/') {
                 setTimeout(() => {

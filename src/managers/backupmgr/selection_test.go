@@ -146,7 +146,7 @@ func TestBackupHTTPNameRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &rows); err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1 || len(rows[0]) != 2 || rows[0]["Name"] != name || rows[0]["SaveTime"] == nil {
+	if len(rows) != 1 || len(rows[0]) != 2 || rows[0]["name"] != name || rows[0]["saveTime"] == nil {
 		t.Fatalf("list leaked paths or indices: %#v", rows)
 	}
 	response = httptest.NewRecorder()

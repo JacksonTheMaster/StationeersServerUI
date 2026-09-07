@@ -35,7 +35,7 @@
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(`${baseUrl}/api/v2/server/status`, {
+      const response = await fetch(`${baseUrl}/api/v3/server/status`, {
         method: 'GET',
         signal: controller.signal
       });

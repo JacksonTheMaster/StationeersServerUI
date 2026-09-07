@@ -30,6 +30,9 @@ func InitializeIdentity(legacyUsers map[string]string, now time.Time) (string, e
 
 	state, err := readIdentity(identityFile)
 	if err == nil {
+		if err := os.Chmod(identityFile, 0600); err != nil {
+			return "", fmt.Errorf("secure identity file: %w", err)
+		}
 		identityState = state
 		if !state.SetupRequired || state.SetupExpiresAt.After(now) {
 			return "", nil
@@ -218,7 +221,7 @@ func saveIdentity(path string, state IdentityState) error {
 	if closeErr != nil {
 		return closeErr
 	}
-	if err := os.Rename(temp, path); err != nil {
+	if err := replaceIdentityFile(temp, path); err != nil {
 		return err
 	}
 	dir, err := os.Open(directory)

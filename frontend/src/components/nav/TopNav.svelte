@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { backendConfig, setActiveBackend, apiFetch } from '../../services/api';
+  import { backendConfig, setActiveBackend, apiFetch, clearAuthentication } from '../../services/api';
   import { userInfo, initUserInfo, getUserInitials, formatAccessLevel, clearUserInfo } from '../../services/whoami';
   import themeService from '../../themes/theme';
   import UserSettings from '../settings/UserSettings.svelte';
@@ -103,7 +103,7 @@
   timeoutId = setTimeout(async () => {
     try {
       // Make the actual API call to check server status
-      const response = await apiFetch(`/api/v2/server/status`);
+      const response = await apiFetch(`/api/v3/server/status`);
       
       // Create a new status object for immutability
       const updatedStatus = {...backendStatus};
@@ -252,9 +252,7 @@
         // Clear user info from the store
         clearUserInfo();
         
-        // Clear any stored auth tokens or session data if needed
-        localStorage.removeItem('ssui-backend-config');
-        document.cookie = 'AuthToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+        await clearAuthentication();
         
         // Redirect to login page or home page
         window.location.href = '/login'; // Adjust the redirect URL as needed

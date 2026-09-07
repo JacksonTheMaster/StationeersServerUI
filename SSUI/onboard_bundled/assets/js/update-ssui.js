@@ -3,7 +3,7 @@ let currentUpdateVersion = null;
 
 // Poll for update status every 60 seconds
 function pollUpdateStatus() {
-    fetch('/api/v2/update/check')
+    fetch('/api/v3/update')
         .then(response => response.json())
         .then(data => {
             if (data.updateAvailable === "true" && data.version) {
@@ -57,7 +57,7 @@ function startUpdate() {
     document.getElementById('update-status-running').classList.add('running');
 
     // Send request to trigger update
-    fetch('/api/v2/update/trigger', {
+    fetch('/api/v3/update', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

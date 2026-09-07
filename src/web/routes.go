@@ -4,104 +4,137 @@ import (
 	"io/fs"
 	"net/http"
 
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config/configchanger"
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/security"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/backupmgr"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/detectionmgr"
 )
 
-func SetupRoutes() (*http.ServeMux, *http.ServeMux) {
+func SetupRoutes() *http.ServeMux {
+	mux := http.NewServeMux()
 
-	// Set up handlers with auth middleware
-	mux := http.NewServeMux() // Use a mux to apply middleware globally
+	assets, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/assets")
+	twoBoxAssets, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/twoboxform")
+	svelteAssets, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/v2/assets")
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(assets))))
+	mux.Handle("/twoboxform/", http.StripPrefix("/twoboxform/", http.FileServer(http.FS(twoBoxAssets))))
+	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.FS(svelteAssets))))
+	mux.HandleFunc("GET /login", ServeTwoBoxFormTemplate)
+	mux.HandleFunc("GET /setup", setupPage)
 
-	// Unprotected auth routes
-	twoboxformAssetsFS, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/twoboxform")
-	mux.Handle("/twoboxform/", http.StripPrefix("/twoboxform/", http.FileServer(http.FS(twoboxformAssetsFS))))
-	mux.HandleFunc("/auth/login", LoginHandler) // Token issuer
-	mux.HandleFunc("/auth/logout", LogoutHandler)
-	mux.HandleFunc("/login", ServeTwoBoxFormTemplate)
+	mux.HandleFunc("GET /api/v3/auth/setup", api.SetupStatusHandler)
+	mux.HandleFunc("POST /api/v3/auth/setup/bootstrap", api.BootstrapOwnerHandler)
+	mux.HandleFunc("POST /api/v3/auth/login", api.LoginHandler)
+	mux.HandleFunc("POST /api/v3/auth/logout", api.LogoutHandler)
+	mux.HandleFunc("POST /api/v3/setup/settings", setupOnly(api.JSONBoundary(configchanger.SaveConfigRestful)))
 
-	// Protected routes (wrapped with middleware)
-	protectedMux := http.NewServeMux()
+	pages := http.NewServeMux()
+	pages.HandleFunc("GET /", ServeIndex)
+	pages.HandleFunc("GET /config", ServeConfigPage)
+	pages.HandleFunc("GET /backups", ServeBackupPage)
+	pages.HandleFunc("GET /detectionmanager", ServeDetectionManager)
+	pages.HandleFunc("GET /changeuser", ServeTwoBoxFormTemplate)
+	pages.HandleFunc("GET /app", ServeSvelteUI)
+	mux.Handle("/", api.PageIdentityMiddleware(pages))
 
-	legacyAssetsFS, _ := fs.Sub(config.GetV1UIFS(), "SSUI/onboard_bundled/assets")
-	protectedMux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(legacyAssetsFS))))
+	v3 := http.NewServeMux()
+	registerIdentityRoutes(v3)
+	registerServerRoutes(v3)
+	registerBackupRoutes(v3)
+	registerSettingsRoutes(v3)
+	registerModdingRoutes(v3)
+	protectedAPI := api.IdentityMiddleware(v3)
+	mux.Handle("/api/v3", protectedAPI)
+	mux.Handle("/api/v3/", protectedAPI)
 
-	protectedMux.HandleFunc("/config", ServeConfigPage)
-	protectedMux.HandleFunc("/backups", ServeBackupPage)
-	protectedMux.HandleFunc("/detectionmanager", ServeDetectionManager)
-	protectedMux.HandleFunc("/", ServeIndex)
+	return mux
+}
 
-	// --- SVELTE UI ---
-	protectedMux.HandleFunc("/v2", ServeSvelteUI)
-	svelteAssetsFS, _ := fs.Sub(config.V1UIFS, "SSUI/onboard_bundled/v2/assets")
-	protectedMux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.FS(svelteAssetsFS))))
-	protectedMux.HandleFunc("/api/v2/loader/reloadbackend", HandleReloadAll)
+func registerIdentityRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /api/v3", api.Require(security.PermissionServerView, api.CapabilitiesHandler))
+	mux.HandleFunc("GET /api/v3/auth/session", api.SessionInfoHandler)
+	mux.HandleFunc("GET /api/v3/auth/users", api.Require(security.PermissionUsersManage, api.UsersHandler))
+	mux.HandleFunc("POST /api/v3/auth/users", api.Require(security.PermissionUsersManage, api.CreateUserHandler))
+	mux.HandleFunc("PATCH /api/v3/auth/users/{id}", api.Require(security.PermissionUsersManage, api.UpdateUserHandler))
+	mux.HandleFunc("DELETE /api/v3/auth/users/{id}", api.Require(security.PermissionUsersManage, api.DeleteUserHandler))
+	mux.HandleFunc("GET /api/v3/auth/groups", api.Require(security.PermissionGroupsManage, api.GroupsHandler))
+	mux.HandleFunc("POST /api/v3/auth/groups", api.Require(security.PermissionGroupsManage, api.CreateGroupHandler))
+	mux.HandleFunc("PUT /api/v3/auth/groups/{id}", api.Require(security.PermissionGroupsManage, api.UpdateGroupHandler))
+	mux.HandleFunc("DELETE /api/v3/auth/groups/{id}", api.Require(security.PermissionGroupsManage, api.DeleteGroupHandler))
+	mux.HandleFunc("GET /api/v3/auth/tokens", api.Require(security.PermissionTokensManage, api.TokensHandler))
+	mux.HandleFunc("POST /api/v3/auth/tokens", api.Require(security.PermissionTokensManage, api.CreateTokenHandler))
+	mux.HandleFunc("DELETE /api/v3/auth/tokens/{id}", api.Require(security.PermissionTokensManage, api.DeleteTokenHandler))
+	mux.HandleFunc("GET /api/v3/auth/sessions", api.SessionsHandler)
+	mux.HandleFunc("DELETE /api/v3/auth/sessions/{id}", api.DeleteSessionHandler)
+	mux.HandleFunc("GET /api/v3/auth/audit", api.Require(security.PermissionAuditView, api.AuditHandler))
+}
 
-	// SSE routes
-	protectedMux.HandleFunc("/console", GetLogOutput)
-	protectedMux.HandleFunc("/events", GetEventOutput)
-	protectedMux.HandleFunc("/logs/debug", GetDebugLogOutput)
-	protectedMux.HandleFunc("/logs/info", GetInfoLogOutput)
-	protectedMux.HandleFunc("/logs/warn", GetWarnLogOutput)
-	protectedMux.HandleFunc("/logs/error", GetErrorLogOutput)
-	protectedMux.HandleFunc("/logs/backend", GetBackendLogOutput)
+func registerServerRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v3/server/start", api.Require(security.PermissionServerControl, api.JSONBoundary(StartServer)))
+	mux.HandleFunc("POST /api/v3/server/stop", api.Require(security.PermissionServerControl, api.JSONBoundary(StopServer)))
+	mux.HandleFunc("GET /api/v3/server/status", api.Require(security.PermissionServerView, api.JSONBoundary(GetGameServerRunState)))
+	mux.HandleFunc("GET /api/v3/server/players", api.Require(security.PermissionServerView, api.JSONBoundary(HandleConnectedPlayersList)))
+	mux.HandleFunc("GET /api/v3/monitor/status", api.Require(security.PermissionServerView, api.JSONBoundary(HandleMonitorStatus)))
+	mux.HandleFunc("POST /api/v3/backend/reload", api.Require(security.PermissionBackendReload, api.JSONBoundary(HandleReloadAll)))
+	mux.HandleFunc("POST /api/v3/steamcmd/run", api.Require(security.PermissionSteamCMDRun, api.JSONBoundary(HandleRunSteamCMD)))
+	mux.HandleFunc("GET /api/v3/sscm/status", api.Require(security.PermissionConsoleRead, api.JSONBoundary(HandleIsSSCMEnabled)))
+	mux.HandleFunc("POST /api/v3/sscm/commands", api.Require(security.PermissionConsoleWrite, api.JSONBoundary(HandleCommand)))
+	mux.HandleFunc("GET /api/v3/streams/console", api.Require(security.PermissionConsoleRead, GetLogOutput))
+	mux.HandleFunc("GET /api/v3/streams/events", api.Require(security.PermissionServerView, GetEventOutput))
+	mux.HandleFunc("GET /api/v3/streams/logs/debug", api.Require(security.PermissionConsoleRead, GetDebugLogOutput))
+	mux.HandleFunc("GET /api/v3/streams/logs/info", api.Require(security.PermissionConsoleRead, GetInfoLogOutput))
+	mux.HandleFunc("GET /api/v3/streams/logs/warn", api.Require(security.PermissionConsoleRead, GetWarnLogOutput))
+	mux.HandleFunc("GET /api/v3/streams/logs/error", api.Require(security.PermissionConsoleRead, GetErrorLogOutput))
+	mux.HandleFunc("GET /api/v3/streams/logs/backend", api.Require(security.PermissionConsoleRead, GetBackendLogOutput))
+}
 
-	// Server Control
-	protectedMux.HandleFunc("/start", StartServer)
-	protectedMux.HandleFunc("/stop", StopServer)
-	protectedMux.HandleFunc("/api/v2/server/start", StartServer)
-	protectedMux.HandleFunc("/api/v2/server/stop", StopServer)
-	protectedMux.HandleFunc("/api/v2/server/status", GetGameServerRunState)
-	protectedMux.HandleFunc("/api/v2/server/status/connectedplayers", HandleConnectedPlayersList)
+func registerBackupRoutes(mux *http.ServeMux) {
+	handler := backupmgr.NewHTTPHandler(backupmgr.CurrentBackupManager())
+	mux.HandleFunc("GET /api/v3/backups", api.Require(security.PermissionBackupsView, api.JSONBoundary(handler.ListBackupsHandler)))
+	mux.HandleFunc("GET /api/v3/backups/analysis", api.Require(security.PermissionBackupsAnalyze, api.JSONBoundary(handler.AnalyzeBackupHandler)))
+	mux.HandleFunc("POST /api/v3/backups/restore", api.Require(security.PermissionBackupsRestore, api.JSONBoundary(handler.RestoreBackupHandler)))
+	mux.HandleFunc("POST /api/v3/backups/download", api.Require(security.PermissionBackupsDownload, handler.DownloadBackupHandler))
+}
 
-	backupHandler := backupmgr.NewHTTPHandler(backupmgr.CurrentBackupManager())
-	protectedMux.HandleFunc("/api/v2/backups", backupHandler.ListBackupsHandler)
-	protectedMux.HandleFunc("/api/v2/backups/analyze", backupHandler.AnalyzeBackupHandler)
-	protectedMux.HandleFunc("/api/v2/backups/restore", backupHandler.RestoreBackupHandler)
-	protectedMux.HandleFunc("/api/v2/backups/download", backupHandler.DownloadBackupHandler)
+func registerSettingsRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v3/settings", api.Require(security.PermissionSettingsManage, api.JSONBoundary(configchanger.SaveConfigRestful)))
+	mux.HandleFunc("GET /api/v3/worldgen/catalog", api.Require(security.PermissionSettingsView, api.JSONBoundary(HandleWorldGenerationCatalog)))
+	mux.HandleFunc("POST /api/v3/advertiser/override", api.Require(security.PermissionSettingsManage, api.JSONBoundary(SaveAdvertiserOverrideHandler)))
+	mux.HandleFunc("POST /api/v3/tls/certificate", api.Require(security.PermissionSecurityManage, api.JSONBoundary(SaveTLSCertificateHandler)))
+	mux.HandleFunc("GET /api/v3/update", api.Require(security.PermissionServerView, api.JSONBoundary(CheckUpdateHandler)))
+	mux.HandleFunc("POST /api/v3/update", api.Require(security.PermissionUpdateInstall, api.JSONBoundary(TriggerUpdateHandler)))
+	mux.HandleFunc("GET /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleCustomDetection)))
+	mux.HandleFunc("POST /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleCustomDetection)))
+	mux.HandleFunc("DELETE /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleDeleteCustomDetection)))
+	mux.HandleFunc("POST /api/v3/setup/finalize", api.Require(security.PermissionSettingsManage, api.JSONBoundary(SetupFinalizeHandler)))
+}
 
-	// Configuration
-	protectedMux.HandleFunc("/saveconfigasjson", configchanger.SaveConfigForm)     // legacy, used on config page
-	protectedMux.HandleFunc("/api/v2/saveconfig", configchanger.SaveConfigRestful) // used on twoboxform
-	protectedMux.HandleFunc("/api/v2/worldgen/catalog", HandleWorldGenerationCatalog)
-	protectedMux.HandleFunc("/api/v2/advertiser/override", SaveAdvertiserOverrideHandler)
-	protectedMux.HandleFunc("/api/v2/tls/certificate", SaveTLSCertificateHandler)
-	protectedMux.HandleFunc("/api/v2/SSCM/run", HandleCommand)           // Command execution via SSCM (needs to be enable, config.IsSSCMEnabled)
-	protectedMux.HandleFunc("/api/v2/SSCM/enabled", HandleIsSSCMEnabled) // Check if SSCM is enabled
-	protectedMux.HandleFunc("/api/v2/steamcmd/run", HandleRunSteamCMD)   // Run SteamCMD
-	// /api/v2/steamcmd/updatemods is defined in the SLP & Modding section below
+func registerModdingRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v3/slp/install", api.Require(security.PermissionSLPManage, api.JSONBoundary(InstallSLPHandler)))
+	mux.HandleFunc("POST /api/v3/slp/uninstall", api.Require(security.PermissionSLPManage, api.JSONBoundary(UninstallSLPHandler)))
+	mux.HandleFunc("POST /api/v3/slp/reinstall", api.Require(security.PermissionSLPManage, api.JSONBoundary(ReinstallSLPHandler)))
+	mux.HandleFunc("POST /api/v3/slp/packages", api.Require(security.PermissionSLPManage, api.JSONBoundary(UploadModPackageHandler)))
+	mux.HandleFunc("GET /api/v3/slp/mods", api.Require(security.PermissionSLPManage, api.JSONBoundary(GetInstalledModDetailsHandler)))
+	mux.HandleFunc("POST /api/v3/slp/mods/update", api.Require(security.PermissionSLPManage, api.JSONBoundary(UpdateWorkshopModsHandler)))
+	mux.HandleFunc("POST /api/v3/slp/mods", api.Require(security.PermissionSLPManage, api.JSONBoundary(UpdateSingleWorkshopModHandler)))
+}
 
-	// Custom Detections
-	protectedMux.HandleFunc("/api/v2/custom-detections", detectionmgr.HandleCustomDetection)
-	protectedMux.HandleFunc("/api/v2/custom-detections/delete/", detectionmgr.HandleDeleteCustomDetection)
-	// Authentication
-	protectedMux.HandleFunc("/changeuser", ServeTwoBoxFormTemplate)
-	protectedMux.HandleFunc("/api/v2/auth/adduser", RegisterUserHandler) // user registration and change password
-	protectedMux.HandleFunc("/api/v2/auth/whoami", WhoAmIHandler)
+func setupOnly(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !security.SetupRequired() {
+			api.WriteError(w, http.StatusNotFound, "not_found", "Setup is already complete")
+			return
+		}
+		next(w, r)
+	}
+}
 
-	// Setup
-	protectedMux.HandleFunc("/setup", ServeTwoBoxFormTemplate)
-	protectedMux.HandleFunc("/api/v2/auth/setup/register", RegisterUserHandler) // user registration
-	protectedMux.HandleFunc("/api/v2/auth/setup/apikey", RegisterAPIKeyHandler) // API Key registration
-	protectedMux.HandleFunc("/api/v2/auth/setup/finalize", SetupFinalizeHandler)
-
-	// Update
-	protectedMux.HandleFunc("/api/v2/update/trigger", TriggerUpdateHandler)
-	protectedMux.HandleFunc("/api/v2/update/check", CheckUpdateHandler)
-
-	// Monitoring
-	protectedMux.HandleFunc("/api/v2/monitor/gameserver/status", HandleMonitorStatus)
-
-	// SLP & Modding
-	protectedMux.HandleFunc("/api/v2/slp/install", InstallSLPHandler)
-	protectedMux.HandleFunc("/api/v2/slp/uninstall", UninstallSLPHandler)
-	protectedMux.HandleFunc("/api/v2/slp/reinstall", ReinstallSLPHandler)
-	protectedMux.HandleFunc("/api/v2/slp/upload", UploadModPackageHandler)
-	protectedMux.HandleFunc("/api/v2/slp/mods", GetInstalledModDetailsHandler)
-	protectedMux.HandleFunc("/api/v2/steamcmd/updatemods", UpdateWorkshopModsHandler)
-	protectedMux.HandleFunc("/api/v2/steamcmd/updatemod", UpdateSingleWorkshopModHandler)
-
-	return mux, protectedMux
+func setupPage(w http.ResponseWriter, r *http.Request) {
+	if security.SetupRequired() {
+		ServeTwoBoxFormTemplate(w, r)
+		return
+	}
+	api.PageIdentityMiddleware(http.HandlerFunc(ServeTwoBoxFormTemplate)).ServeHTTP(w, r)
 }

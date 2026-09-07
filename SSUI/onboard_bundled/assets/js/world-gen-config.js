@@ -240,7 +240,7 @@
 
     async function loadCatalog() {
         try {
-            const response = await fetch('/api/v2/worldgen/catalog', {
+            const response = await fetch('/api/v3/worldgen/catalog', {
                 headers: { Accept: 'application/json' }
             });
             if (!response.ok) {

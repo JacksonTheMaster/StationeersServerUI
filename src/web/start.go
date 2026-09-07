@@ -23,10 +23,7 @@ func (cl *webServerLogger) Write(p []byte) (n int, err error) {
 func StartWebServer(wg *sync.WaitGroup) {
 
 	logger.Web.Info("Starting API services...")
-	mux, protectedMux := SetupRoutes()
-
-	// Apply middleware only to protected routes
-	mux.Handle("/", AuthMiddleware(protectedMux)) // Wrap protected routes under root
+	mux := SetupRoutes()
 
 	httpLogger := log.New(&webServerLogger{}, "", 0)
 	// Start HTTP server

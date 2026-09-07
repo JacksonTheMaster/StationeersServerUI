@@ -4,20 +4,21 @@ let backupFetchSequence = 0;
 
 // Server control functions
 function startServer() {
-    toggleServer('/start');
+    toggleServer('/api/v3/server/start');
 }
 
 function stopServer() {
-    toggleServer('/stop');
+    toggleServer('/api/v3/server/stop');
 }
 
 function toggleServer(endpoint) {
     const status = document.getElementById('status');
-    fetch(endpoint)
-        .then(response => response.text())
+    fetch(endpoint, { method: 'POST' })
+        .then(response => response.json())
         .then(data => {
+            const message = data.message || 'Request completed';
             status.hidden = false;
-            typeTextWithCallback(status, data, 20, () => {
+            typeTextWithCallback(status, message, 20, () => {
                 setTimeout(() => status.hidden = true, 10000);
             });
         })
@@ -28,7 +29,7 @@ function triggerSteamCMD() {
     const status = document.getElementById('status');
     status.hidden = false;
     typeTextWithCallback(status, 'Running SteamCMD, please wait... ', 20, () => {
-        fetch('/api/v2/steamcmd/run')
+        fetch('/api/v3/steamcmd/run', { method: 'POST' })
             .then(response => response.json())
             .then(data => {
                 showPopup("info", data.message);
@@ -45,7 +46,7 @@ function triggerSteamCMD() {
 function fetchBackups() {
     const requestSequence = ++backupFetchSequence;
     const limit = '3';
-    const url = `/api/v2/backups?limit=${limit}&include=summary`;
+    const url = `/api/v3/backups?limit=${limit}&include=summary`;
     
     return fetch(url)
         .then(response => {
@@ -101,8 +102,8 @@ function createBackupItem(backup) {
     const li = document.createElement('li');
     li.className = 'backup-item';
     const text = getBackupUIText();
-    const summary = backup.Summary || {};
-    const name = backup.Name;
+    const summary = backup.summary || {};
+    const name = backup.name;
     const title = summary.worldName || name;
     const gameVersion = summary.gameVersion
         ? `<span>${escapeBackupHTML(text.gameVersion)}: ${escapeBackupHTML(summary.gameVersion)}</span>`
@@ -115,7 +116,7 @@ function createBackupItem(backup) {
                     <span class="backup-filename">${escapeBackupHTML(name)}</span>
                 </div>
                 <div class="backup-date">
-                    <span>${escapeBackupHTML(text.created)}: ${new Date(backup.SaveTime).toLocaleString()}</span>
+                    <span>${escapeBackupHTML(text.created)}: ${new Date(backup.saveTime).toLocaleString()}</span>
                     ${gameVersion}
                 </div>
                 ${renderBackupSummaryStrip(summary)}
@@ -202,7 +203,7 @@ function fetchPlayers() {
         "/static/playerimages/ronald.webp",
     ];
 
-    return fetch('/api/v2/server/status/connectedplayers')
+    return fetch('/api/v3/server/players')
         .then(response => response.json())
         .then(data => {
             playerList.innerHTML = '';
@@ -220,8 +221,7 @@ function fetchPlayers() {
             emptyState.style.display = 'none';
             updateWorkspacePlayerState(true);
             let animationCount = 0;
-            data.forEach(playerObj => {
-                const player = Object.values(playerObj)[0];
+            data.forEach(player => {
                 const li = document.createElement('li');
                 li.className = 'player-item';
                 
@@ -231,18 +231,18 @@ function fetchPlayers() {
                 
                 // Avatar
                 const avatar = document.createElement('img');
-                let persistedImage = sessionStorage.getItem(`playerImage_${player.steamID}`);
+                let persistedImage = sessionStorage.getItem(`playerImage_${player.steamId}`);
                 if (!persistedImage) {
                     // Assign rnd image and persist it until page reload
                     persistedImage = playerImages[Math.floor(Math.random() * playerImages.length)];
-                    sessionStorage.setItem(`playerImage_${player.steamID}`, persistedImage);
+                    sessionStorage.setItem(`playerImage_${player.steamId}`, persistedImage);
                 }
                 avatar.src = persistedImage;
                 avatar.alt = `${player.username}'s avatar`;
                 avatar.className = 'player-avatar';
-                avatar.title = player.steamID;
+                avatar.title = player.steamId;
                 avatar.addEventListener('click', () => {
-                    window.open(`https://steamcommunity.com/profiles/${player.steamID}`, '_blank');
+                    window.open(`https://steamcommunity.com/profiles/${player.steamId}`, '_blank');
                 });
                 
                 const name = document.createElement('span');
@@ -291,13 +291,13 @@ function updateLatestBackupDisplay(backup) {
     const display = document.getElementById('latest-backup-display');
     if (!display) return;
 
-    if (!backup || !backup.SaveTime) {
+    if (!backup || !backup.saveTime) {
         display.textContent = backup === null ? 'None found' : 'Unavailable';
         display.title = '';
         return;
     }
 
-    const created = new Date(backup.SaveTime);
+    const created = new Date(backup.saveTime);
     if (Number.isNaN(created.getTime())) {
         display.textContent = 'Available';
         return;
@@ -311,17 +311,17 @@ function updateLatestBackupDisplay(backup) {
     else age = `${Math.floor(elapsedSeconds / 86400)}d ago`;
 
     display.textContent = age;
-    display.title = `${backup.Name} · ${created.toLocaleString()}`;
+    display.title = `${backup.name} · ${created.toLocaleString()}`;
 }
 
 function restoreBackup(name) {
     const status = document.getElementById('status');
     const selection = new URLSearchParams({ name });
-    fetch(`/api/v2/backups/restore?${selection}`)
-        .then(async response => {
-            const message = await response.text();
-            if (!response.ok) throw new Error(message || 'Restore failed');
-            return message;
+    fetch(`/api/v3/backups/restore?${selection}`, { method: 'POST' })
+        .then(response => response.text().then(message => ({ ok: response.ok, message })))
+        .then(result => {
+            if (!result.ok) throw new Error(result.message || 'Restore failed');
+            return result.message || 'Backup restored successfully';
         })
         .then(data => {
             status.hidden = false;
@@ -341,7 +341,7 @@ function downloadBackup(name) {
     status.hidden = false;
     typeTextWithCallback(status, 'Preparing download...', 20, () => {});
     
-    fetch('/api/v2/backups/download', {
+    fetch('/api/v3/backups/download', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -382,7 +382,7 @@ function pollRecurringTasks() {
     window.gamserverstate = false;
 
     const fetchServerStatus = () => {
-        fetch('/api/v2/server/status')
+        fetch('/api/v3/server/status')
             .then(response => response.json())
             .then(data => {
                 updateStatusIndicator(data.isRunning, false, data.uptime, data.state);

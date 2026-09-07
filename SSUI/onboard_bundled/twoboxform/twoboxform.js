@@ -76,6 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return false; // Default to false if invalid input
     }
 
+    function settingsEndpoint() {
+        return document.cookie.includes('SSUICSRF=') ? '/api/v3/settings' : '/api/v3/setup/settings';
+    }
+
     // Form submission
     const form = document.getElementById('two-box-form');
     form.addEventListener('submit', async (e) => {
@@ -127,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Handle setup steps
         if (configField && step !== "admin_account") {
-            url = '/api/v2/saveconfig';
+            url = settingsEndpoint();
             
             // Handle boolean conversion for yes/no fields
             if (configField === "IsDiscordEnabled" || configField === "UPNPEnabled" || 
@@ -162,16 +166,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         } else if (step === "admin_account") { // User setup
-            url = '/api/v2/auth/setup/register';
+            url = '/api/v3/auth/setup/bootstrap';
             body = JSON.stringify({
+                setupSecret: document.getElementById('setup-secret').value,
                 username: document.getElementById('primary-field').value,
                 password: document.getElementById('secondary-field').value
             });
         } else { // Login or changeuser
-            url = mode === 'changeuser' ? '/api/v2/auth/adduser' : '/auth/login';
+            url = mode === 'changeuser' ? '/api/v3/auth/users' : '/api/v3/auth/login';
             body = JSON.stringify({
                 username: document.getElementById('primary-field').value,
-                password: document.getElementById('secondary-field').value
+                password: document.getElementById('secondary-field').value,
+                ...(mode === 'changeuser' ? { groupIds: ['system-owner'] } : {})
             });
         }
 
@@ -235,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (step === "finalize") {
                 // Go to login page when skipping from finalize
-                showNotification('Setup completed, Auth disabled!', 'success');
+                showNotification('Setup completed!', 'success');
                 setTimeout(() => window.location.href = '/', 1000);
                 return;
             }
@@ -256,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target && e.target.id === 'finalize-btn') {
             try {
                 showPreloader();
-                const finalizeResponse = await fetch('/api/v2/auth/setup/finalize', {
+                const finalizeResponse = await fetch('/api/v3/setup/finalize', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -285,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lang = flag.dataset.lang;
             try {
                 showPreloader();
-                const response = await fetch('/api/v2/saveconfig', {
+                const response = await fetch(settingsEndpoint(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ LanguageSetting: lang })

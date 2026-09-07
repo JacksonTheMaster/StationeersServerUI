@@ -99,7 +99,9 @@ func ResolvePermissions(user User, state IdentityState) map[string]bool {
 }
 
 func SetupRequired() bool {
-	return identitySnapshot().SetupRequired
+	identityMu.RLock()
+	defer identityMu.RUnlock()
+	return identityFile == "" || identityState.SetupRequired
 }
 
 func randomSecret(size int) (string, error) {

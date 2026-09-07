@@ -1128,7 +1128,7 @@
             showConfigNotification(notification.dataset.saving, 'info');
 
             try {
-                const response = await fetch('/api/v2/saveconfig', {
+                const response = await fetch('/api/v3/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(configScopePayload(scope))
@@ -1178,7 +1178,7 @@
             showConfigNotification(notification.dataset.saving, 'info');
 
             try {
-                const response = await fetch('/api/v2/saveconfig', {
+                const response = await fetch('/api/v3/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ShowExpertSettings: enabled })
@@ -1313,6 +1313,7 @@
         expertSettingsToggle.addEventListener('change', saveExpertSettingsVisibility);
         showConfigTabFromUrl();
     </script>
+    <script src="/static/js/api-client.js"></script>
     <script src="/static/js/theme-engine.js"></script>
     <script src="/static/js/theme-editor.js"></script>
     <script src="/static/js/main.js"></script>

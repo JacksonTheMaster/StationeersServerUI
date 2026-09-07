@@ -71,7 +71,7 @@
         saveButton.disabled = true;
         validation.textContent = '';
         try {
-            const response = await fetch('/api/v2/advertiser/override', {
+            const response = await fetch('/api/v3/advertiser/override', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode, value })
