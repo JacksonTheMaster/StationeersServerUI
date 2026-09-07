@@ -41,8 +41,18 @@ jobs:
       - name: Verify build output
         run: |
           VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' src/config/config.go)
-          test -f "build/StationeersServerControlv${VERSION}.exe"
-          test -f "build/StationeersServerControlv${VERSION}.x86_64"
+          test -f "build/StationeersServerUI_v${VERSION}_windows_amd64.exe"
+          test -f "build/StationeersServerUI_v${VERSION}_linux_amd64"
+
+      - name: Add legacy updater assets
+        run: |
+          VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' src/config/config.go)
+          case "$VERSION" in
+            5.14.1|6.0.0)
+              cp "build/StationeersServerUI_v${VERSION}_windows_amd64.exe" "build/StationeersServerControlv${VERSION}.exe"
+              cp "build/StationeersServerUI_v${VERSION}_linux_amd64" "build/StationeersServerControlv${VERSION}.x86_64"
+              ;;
+          esac
 
       # Check for git tag on any commit in the PR
       - name: Check for git tag
@@ -92,7 +102,7 @@ jobs:
           prerelease: ${{ contains(steps.check_tag.outputs.tag, '-') }}
           tag_name: ${{ steps.check_tag.outputs.tag }}
           name: "Release ${{ steps.check_tag.outputs.tag }}"
-          files: ./build/StationeersServerControl*
+          files: ./build/StationeersServer*
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
