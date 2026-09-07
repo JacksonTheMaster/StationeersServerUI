@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,60 +15,47 @@ import (
 var containerCheckWG = sync.WaitGroup{}
 
 func runSanityCheck() error {
-
-	if runtime.GOOS == "windows" {
-		return nil
-	}
-
 	if config.GetNoSanityCheck() {
 		return nil
 	}
 
-	IsInsideContainer(&containerCheckWG)
-	containerCheckWG.Wait()
+	if runtime.GOOS != "windows" {
+		IsInsideContainer(&containerCheckWG)
+		containerCheckWG.Wait()
 
-	// Check if running as root (UID 0)
-	if os.Geteuid() == 0 {
-		// Check if running inside a container
-		if !config.GetIsDockerContainer() {
+		if os.Geteuid() == 0 && !config.GetIsDockerContainer() {
 			return fmt.Errorf("root: SSUI should not be run as root")
 		}
-	}
 
-	// Get the current executable path from /proc/self/exe
-	exePath, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-	// Get the directory path of the executable
-	dirPath := filepath.Dir(exePath)
-	// Change the working directory to the executable's directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	if cwd != dirPath && !isGoRunBuildDir(dirPath) {
-		err = os.Chdir(dirPath)
+		exePath, err := os.Readlink("/proc/self/exe")
 		if err != nil {
 			return err
 		}
+		dirPath := filepath.Dir(exePath)
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		if cwd != dirPath && !isGoRunBuildDir(dirPath) {
+			if err := os.Chdir(dirPath); err != nil {
+				return err
+			}
+		}
 	}
 
-	// Check if current working directory is writable
 	workDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get working directory: %w", err)
 	}
-
-	// Try to create a temporary file to test write permissions
-	testFile := filepath.Join(workDir, ".write_test")
-	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
-		return fmt.Errorf("cannot write to working directory, please make sure your user has write permissions in %s: %w", workDir, err)
+	if err := checkDirectoryWrite(workDir); err != nil {
+		return fmt.Errorf("cannot write to working directory %s: %w", workDir, err)
 	}
-	// Clean up test file
-	if err := os.Remove(testFile); err != nil {
-		return fmt.Errorf("failed to clean up sanity check writetest file: %w", err)
+	if err := checkTreeAccess(config.GetSSUIFolder(), true); err != nil {
+		return fmt.Errorf("SSUI data directory access check failed: %w", err)
+	}
+	if err := checkTreeAccess("./saves", false); err != nil {
+		return fmt.Errorf("save directory access check failed: %w", err)
 	}
 
 	// Check if steamcmd package is installed  (requires further testing, disabled for now)
@@ -78,6 +66,72 @@ func runSanityCheck() error {
 	//}
 
 	return nil
+}
+
+func checkTreeAccess(root string, writable bool) error {
+	if _, err := os.Stat(root); errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	return filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return fmt.Errorf("cannot read %s: %w", path, walkErr)
+		}
+		if entry.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
+		if entry.IsDir() {
+			directory, err := os.Open(path)
+			if err != nil {
+				return fmt.Errorf("cannot read directory %s: %w", path, err)
+			}
+			if err := directory.Close(); err != nil {
+				return fmt.Errorf("cannot close directory %s: %w", path, err)
+			}
+			if writable {
+				if err := checkDirectoryWrite(path); err != nil {
+					return fmt.Errorf("cannot write directory %s: %w", path, err)
+				}
+			}
+			return nil
+		}
+		if !entry.Type().IsRegular() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("cannot read file %s: %w", path, err)
+		}
+		if err := file.Close(); err != nil {
+			return fmt.Errorf("cannot close file %s: %w", path, err)
+		}
+		if writable {
+			file, err = os.OpenFile(path, os.O_WRONLY, 0)
+			if err != nil {
+				return fmt.Errorf("cannot write file %s: %w", path, err)
+			}
+			if err := file.Close(); err != nil {
+				return fmt.Errorf("cannot close file %s: %w", path, err)
+			}
+		}
+		return nil
+	})
+}
+
+func checkDirectoryWrite(path string) error {
+	file, err := os.CreateTemp(path, ".ssui-write-test-*")
+	if err != nil {
+		return err
+	}
+	name := file.Name()
+	if err := file.Close(); err != nil {
+		_ = os.Remove(name)
+		return err
+	}
+	return os.Remove(name)
 }
 
 // isGoRunBuildDir reports whether executableDir belongs to a temporary or

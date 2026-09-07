@@ -518,19 +518,7 @@ func safeSaveConfig() error {
 		ShowExpertSettings:                       &ShowExpertSettings,
 	}
 
-	file, err := os.Create(ConfigPath)
-	if err != nil {
-		return fmt.Errorf("error creating config.json: %v", err)
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(cfg); err != nil {
-		return fmt.Errorf("error encoding config.json: %v", err)
-	}
-
-	return nil
+	return writeConfigFile(ConfigPath, &cfg)
 }
 
 // use SaveConfig EXCLUSIVELY though loader.SaveConfig to trigger a reload afterwards!
@@ -541,17 +529,42 @@ func SaveConfigToFile(cfg *JsonConfig) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
-	file, err := os.Create(ConfigPath)
-	if err != nil {
-		return fmt.Errorf("error creating config.json: %v", err)
-	}
-	defer file.Close()
+	return writeConfigFile(ConfigPath, cfg)
+}
 
+func writeConfigFile(path string, cfg *JsonConfig) error {
+	directory := filepath.Dir(path)
+	file, err := os.CreateTemp(directory, ".config-*.tmp")
+	if err != nil {
+		return fmt.Errorf("create temporary config file: %w", err)
+	}
+	temporary := file.Name()
+	defer os.Remove(temporary)
+
+	if err := file.Chmod(0600); err != nil {
+		file.Close()
+		return fmt.Errorf("set config file permissions: %w", err)
+	}
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(cfg); err != nil {
-		return fmt.Errorf("error encoding config.json: %v", err)
+		file.Close()
+		return fmt.Errorf("encode config.json: %w", err)
+	}
+	if err := file.Sync(); err != nil {
+		file.Close()
+		return fmt.Errorf("flush config.json: %w", err)
+	}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("close config.json: %w", err)
+	}
+	if err := replaceConfigFile(temporary, path); err != nil {
+		return fmt.Errorf("replace config.json: %w", err)
 	}
 
+	if dir, err := os.Open(directory); err == nil {
+		_ = dir.Sync()
+		_ = dir.Close()
+	}
 	return nil
 }
