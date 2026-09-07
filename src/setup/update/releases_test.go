@@ -57,6 +57,21 @@ func TestRCNeedsBothAutomaticFlags(t *testing.T) {
 	}
 }
 
+func TestFindAssetKeepsTheLegacyUpdaterBridge(t *testing.T) {
+	tag := "v5.14.1"
+	legacy := githubAsset{Name: legacyExecutable(tag), URL: "https://example.invalid/legacy"}
+	canonical := githubAsset{Name: expectedExecutable(tag), URL: "https://example.invalid/canonical"}
+
+	asset, found := findAsset(release{Tag: tag, Assets: []githubAsset{legacy, canonical}})
+	if !found || asset.Name != canonical.Name {
+		t.Fatalf("canonical asset was not preferred: %#v", asset)
+	}
+	asset, found = findAsset(release{Tag: tag, Assets: []githubAsset{legacy}})
+	if !found || asset.Name != legacy.Name {
+		t.Fatalf("legacy asset was not accepted: %#v", asset)
+	}
+}
+
 func testRelease(tag string, prerelease bool) release {
 	version, err := parseVersion(tag)
 	if err != nil {

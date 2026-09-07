@@ -23,7 +23,8 @@ func StatusSnapshot() Status {
 	updateState.RUnlock()
 	if status.CurrentVersion == "" {
 		status.CurrentVersion = config.GetVersion()
-		status.Enabled = config.GetIsUpdateEnabled()
+		status.Enabled = config.GetIsUpdateEnabled() || config.GetIsDockerContainer()
+		status.ContainerManaged = config.GetIsDockerContainer()
 	}
 	return status
 }
@@ -48,6 +49,9 @@ func RefreshStatus(ctx context.Context, manual bool) (Status, error) {
 }
 
 func InstallVersion(ctx context.Context, request InstallRequest, manual bool) error {
+	if config.GetIsDockerContainer() {
+		return ErrContainerManaged
+	}
 	if !updateOperation.TryLock() {
 		return ErrUpdateBusy
 	}
@@ -59,6 +63,9 @@ func InstallVersion(ctx context.Context, request InstallRequest, manual bool) er
 }
 
 func QueueInstall(request InstallRequest) error {
+	if config.GetIsDockerContainer() {
+		return ErrContainerManaged
+	}
 	if err := validateApproval(request, StatusSnapshot()); err != nil {
 		return err
 	}
@@ -152,12 +159,28 @@ func cloneCandidate(candidate *Candidate) *Candidate {
 }
 
 func StartUpdateCheckLoop() {
+	lastContainerNotice := ""
+	for _, candidate := range StatusSnapshot().Candidates {
+		if candidate.AssetAvailable {
+			lastContainerNotice = candidate.Version
+			break
+		}
+	}
 	for {
-		if _, err := RefreshStatus(context.Background(), false); err != nil {
+		status, err := RefreshStatus(context.Background(), false)
+		if err != nil {
 			logger.Install.Warn("Automatic SSUI update check failed: " + err.Error())
+		} else if status.ContainerManaged {
+			for _, candidate := range status.Candidates {
+				if candidate.AssetAvailable && candidate.Version != lastContainerNotice {
+					logger.Install.Infof("SSUI %s is available. This installation runs in a container; pull the new image and recreate the container to update.", candidate.Version)
+					lastContainerNotice = candidate.Version
+					break
+				}
+			}
 		}
 		delay := 6 * time.Hour
-		if !config.GetIsUpdateEnabled() {
+		if !config.GetIsUpdateEnabled() && !config.GetIsDockerContainer() {
 			delay = 30 * time.Minute
 		}
 		time.Sleep(delay)

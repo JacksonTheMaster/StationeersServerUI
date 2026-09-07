@@ -28,8 +28,11 @@ func Install(wg *sync.WaitGroup) {
 	defer wg.Done() // Signal that installation is complete
 
 	// Step 0: Check for updates
-	if err, _ := update.Update(true); err != nil {
+	updateLocally := !config.GetIsDockerContainer()
+	if err, newVersion := update.Update(updateLocally); err != nil {
 		logger.Install.Error("❌Update check went sideways: " + err.Error())
+	} else if newVersion != "" && config.GetIsDockerContainer() {
+		logger.Install.Infof("SSUI %s is available. Pull the new container image and recreate the container to update.", newVersion)
 	}
 
 	// Step 1: Check and download the SSUI folder contents

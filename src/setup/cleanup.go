@@ -72,10 +72,9 @@ func CleanUpOldExecutables() error {
 		return nil
 	}
 	currentBackendVersion := config.GetVersion()
-	pattern := `StationeersServerControlv(\d+\.\d+\.\d+)(?:\.exe|\.x86_64)$`
-	re, err := regexp.Compile(pattern)
-	if err != nil {
-		return fmt.Errorf("failed to compile regex: %w", err)
+	patterns := []*regexp.Regexp{
+		regexp.MustCompile(`^StationeersServerUI_v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)_(?:windows|linux)_[A-Za-z0-9]+(?:\.exe)?$`),
+		regexp.MustCompile(`^StationeersServerControlv(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)(?:\.exe|\.x86_64)$`),
 	}
 
 	// Get current directory
@@ -97,17 +96,20 @@ func CleanUpOldExecutables() error {
 			return err
 		}
 
-		// Skip directories, non-matching files, and files with _old prefix
-		if info.IsDir() || !re.MatchString(info.Name()) || strings.HasPrefix(info.Name(), "_old") {
+		if info.IsDir() || strings.HasPrefix(info.Name(), "_old") {
 			continue
 		}
 
-		// Extract version from filename
-		matches := re.FindStringSubmatch(info.Name())
-		if len(matches) < 2 {
+		fileVersion := ""
+		for _, pattern := range patterns {
+			if matches := pattern.FindStringSubmatch(info.Name()); len(matches) == 2 {
+				fileVersion = matches[1]
+				break
+			}
+		}
+		if fileVersion == "" {
 			continue
 		}
-		fileVersion := matches[1]
 
 		// Skip if the version matches the current backend version
 		if fileVersion == currentBackendVersion {

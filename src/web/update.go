@@ -52,6 +52,10 @@ func TriggerUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			api.WriteError(w, http.StatusConflict, "update_busy", err.Error())
 			return
 		}
+		if errors.Is(err, update.ErrContainerManaged) {
+			api.WriteError(w, http.StatusConflict, "container_managed", err.Error())
+			return
+		}
 		api.WriteError(w, http.StatusBadRequest, "update_rejected", err.Error())
 		return
 	}

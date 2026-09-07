@@ -180,6 +180,17 @@ func fetchReleases(ctx context.Context) ([]release, error) {
 }
 
 func expectedExecutable(tag string) string {
+	extension := ""
+	if runtime.GOOS == "windows" {
+		extension = ".exe"
+	}
+	if tag == "" || tag[0] != 'v' {
+		tag = "v" + tag
+	}
+	return fmt.Sprintf("StationeersServerUI_%s_%s_%s%s", tag, runtime.GOOS, runtime.GOARCH, extension)
+}
+
+func legacyExecutable(tag string) string {
 	extension := ".exe"
 	if runtime.GOOS != "windows" {
 		extension = ".x86_64"
@@ -188,10 +199,11 @@ func expectedExecutable(tag string) string {
 }
 
 func findAsset(item release) (githubAsset, bool) {
-	expected := expectedExecutable(item.Tag)
-	for _, asset := range item.Assets {
-		if asset.Name == expected && asset.URL != "" {
-			return asset, true
+	for _, expected := range []string{expectedExecutable(item.Tag), legacyExecutable(item.Tag)} {
+		for _, asset := range item.Assets {
+			if asset.Name == expected && asset.URL != "" {
+				return asset, true
+			}
 		}
 	}
 	return githubAsset{}, false

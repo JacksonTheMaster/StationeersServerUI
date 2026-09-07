@@ -23,8 +23,7 @@ services:
       - "27015:27015/tcp"
     volumes:
       - app-data:/app
-      - ./saves:/app/saves:rw
-      - ./SSUI:/app/SSUI:rw
+    stop_grace_period: 30s
     restart: unless-stopped
 
 volumes:

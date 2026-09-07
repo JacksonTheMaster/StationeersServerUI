@@ -52,6 +52,10 @@
             </label>
             <div class="update-release-flags" id="update-release-flags"></div>
             <a class="update-release-notes" id="update-release-notes" target="_blank" rel="noopener noreferrer">Read release notes</a>
+            <div class="update-warning update-container-warning" id="update-container-warning">
+                <strong>Container-managed installation</strong>
+                <p>Pull the new SSUI image and recreate this container to update. SSUI will not replace its own executable inside a container.</p>
+            </div>
 
             <div class="update-warning" id="update-major-warning">
                 <strong>Major update</strong>
@@ -66,7 +70,7 @@
 
             <div class="update-modal-buttons" id="update-modal-buttons">
                 <button id="update-later-btn" onclick="closeUpdateModal()">{{.UIText_UpdateLater}}</button>
-                <button id="update-now-btn" onclick="startUpdate()" disabled>{{.UIText_UpdateNow}}</button>
+                <button id="update-now-btn" data-default-label="{{.UIText_UpdateNow}}" onclick="startUpdate()" disabled>{{.UIText_UpdateNow}}</button>
             </div>
             <div id="update-status-running" class="update-status-message">
                 <span class="update-spinner" aria-hidden="true"></span>

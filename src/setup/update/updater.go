@@ -16,6 +16,7 @@ import (
 )
 
 var ErrUpdateBusy = errors.New("an update operation is already in progress")
+var ErrContainerManaged = errors.New("SSUI updates are managed by the container image; pull the new image and recreate the container")
 
 type Candidate struct {
 	Version        string `json:"version"`
@@ -41,6 +42,7 @@ type Status struct {
 	InstallingVersion string      `json:"installingVersion,omitempty"`
 	LastError         string      `json:"lastError,omitempty"`
 	CheckedAt         *time.Time  `json:"checkedAt,omitempty"`
+	ContainerManaged  bool        `json:"containerManaged"`
 }
 
 type InstallRequest struct {
@@ -50,7 +52,8 @@ type InstallRequest struct {
 }
 
 func discover(ctx context.Context, manual bool) (Status, error) {
-	status := Status{CurrentVersion: config.GetVersion(), Enabled: config.GetIsUpdateEnabled(), Candidates: []Candidate{}}
+	containerManaged := config.GetIsDockerContainer()
+	status := Status{CurrentVersion: config.GetVersion(), Enabled: config.GetIsUpdateEnabled() || containerManaged, ContainerManaged: containerManaged, Candidates: []Candidate{}}
 	if !manual && !status.Enabled {
 		return status, nil
 	}
@@ -107,6 +110,9 @@ func candidatePointer(candidate Candidate) *Candidate {
 }
 
 func install(ctx context.Context, request InstallRequest, manual bool) error {
+	if config.GetIsDockerContainer() {
+		return ErrContainerManaged
+	}
 	if request.Version == "" {
 		return errors.New("no update version selected")
 	}
@@ -184,6 +190,18 @@ func Update(isInUpdateableState bool) (error, string) {
 	status, err := RefreshStatus(context.Background(), false)
 	if err != nil {
 		return err, ""
+	}
+	if status.ContainerManaged {
+		for _, candidate := range status.Candidates {
+			if !candidate.AssetAvailable {
+				continue
+			}
+			if isInUpdateableState {
+				return ErrContainerManaged, candidate.Version
+			}
+			return nil, candidate.Version
+		}
+		return nil, ""
 	}
 	if status.Automatic == nil {
 		return nil, ""

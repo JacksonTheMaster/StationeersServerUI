@@ -69,6 +69,7 @@ func main() {
 	}
 	logger.Main.Debug("Initializing Backend...")
 	loader.InitBackend()
+	loader.HandleShutdownSignals()
 	logger.Main.Debug("Starting webserver...")
 	web.StartWebServer(&wg)
 	logger.Main.Debug("Initializing after start tasks...")

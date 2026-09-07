@@ -59,17 +59,14 @@ func main() {
 		// Prepare the output file name with the new version, branch, and platform
 		var outputName string
 		if config.Branch == "release" {
-			outputName = fmt.Sprintf("StationeersServerControlv%s", buildVersion)
+			outputName = fmt.Sprintf("StationeersServerUI_v%s_%s_%s", buildVersion, platform.os, platform.arch)
 		} else {
-			outputName = fmt.Sprintf("StationeersServerControlv%s_%s", buildVersion, config.Branch)
+			outputName = fmt.Sprintf("StationeersServerUI_v%s_%s_%s_%s", buildVersion, config.Branch, platform.os, platform.arch)
 		}
 
 		// Append appropriate extension based on platform
 		if platform.os == "windows" {
 			outputName += ".exe"
-		}
-		if platform.os == "linux" {
-			outputName += ".x86_64"
 		}
 
 		// Output to /build
@@ -113,19 +110,17 @@ func cleanupOldExecutables(buildVersion string) {
 	deletedCount := 0
 	for _, file := range files {
 		filename := file.Name()
-		if filepath.Ext(filename) == ".exe" || filepath.Ext(filename) == ".x86_64" {
-			match, _ := filepath.Match("StationeersServerControl*", filename)
-			if match && !strings.Contains(filename, currentVersion) {
-				exePath := filepath.Join(dir, filename)
-				fmt.Printf("%s- Removing: %s%s%s\n", colorMagenta, colorYellow, exePath, colorReset)
+		isSSUIBuild := strings.HasPrefix(filename, "StationeersServerUI_") || strings.HasPrefix(filename, "StationeersServerControl")
+		if isSSUIBuild && !strings.Contains(filename, currentVersion) {
+			exePath := filepath.Join(dir, filename)
+			fmt.Printf("%s- Removing: %s%s%s\n", colorMagenta, colorYellow, exePath, colorReset)
 
-				err := os.Remove(exePath)
-				if err != nil {
-					fmt.Printf("%s✗ Failed to delete %s: %s%s\n", colorRed, exePath, err, colorReset)
-				} else {
-					fmt.Printf("%s✓ Deleted successfully%s\n", colorGreen, colorReset)
-					deletedCount++
-				}
+			err := os.Remove(exePath)
+			if err != nil {
+				fmt.Printf("%s✗ Failed to delete %s: %s%s\n", colorRed, exePath, err, colorReset)
+			} else {
+				fmt.Printf("%s✓ Deleted successfully%s\n", colorGreen, colorReset)
+				deletedCount++
 			}
 		}
 	}

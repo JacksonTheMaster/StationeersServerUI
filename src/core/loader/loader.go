@@ -173,7 +173,7 @@ func LoadAdvertiser() {
 }
 
 func StartUpdateCheckLoop() {
-	if config.GetIsUpdateEnabled() {
+	if config.GetIsUpdateEnabled() || config.GetIsDockerContainer() {
 		go update.StartUpdateCheckLoop()
 	}
 }

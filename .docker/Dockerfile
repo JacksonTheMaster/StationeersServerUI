@@ -39,6 +39,7 @@ FROM debian:13-slim AS runner
 WORKDIR /app
 
 ENV HOME=/app
+ENV SSUI_CONTAINER=1
 
 # Minimal runtime dependencies. SteamCMD needs 32-bit runtime.
 RUN dpkg --add-architecture i386 \
@@ -47,7 +48,8 @@ RUN dpkg --add-architecture i386 \
     ca-certificates \
     locales \
     lib32gcc-s1 \
-   file \
+    file \
+    wget \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy compiled binary and license
@@ -60,5 +62,8 @@ RUN chmod +x /entrypoint.sh
 
 
 EXPOSE 8443/tcp 27016/udp 27015/udp
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15m --retries=3 \
+  CMD wget --no-check-certificate --spider "https://127.0.0.1:${SSUI_WEB_PORT:-8443}/healthz" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]

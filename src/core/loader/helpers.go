@@ -135,7 +135,7 @@ func PrintConfigDetails(logLevel ...string) {
 	ui := map[string]string{
 		"SSUIIdentifier":       config.GetSSUIIdentifier(),
 		"SSUIWebPort":          config.GetSSUIWebPort(),
-		"SSUIFolder":          config.GetSSUIFolder(),
+		"SSUIFolder":           config.GetSSUIFolder(),
 		"MaxSSEConnections":    fmt.Sprintf("%d", config.GetMaxSSEConnections()),
 		"SSEMessageBufferSize": fmt.Sprintf("%d", config.GetSSEMessageBufferSize()),
 	}
@@ -160,6 +160,10 @@ func PrintConfigDetails(logLevel ...string) {
 func IsInsideContainer(wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
+	if value := strings.TrimSpace(os.Getenv("SSUI_CONTAINER")); value == "1" || strings.EqualFold(value, "true") {
+		config.SetIsDockerContainer(true)
+		return
+	}
 	// Check .dockerenv file (Docker-specific)
 	if _, err := os.Stat("/.dockerenv"); err == nil {
 		config.SetIsDockerContainer(true)

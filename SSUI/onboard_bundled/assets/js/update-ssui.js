@@ -80,9 +80,11 @@
         const candidate = selectedCandidate();
         const major = Boolean(candidate?.major);
         const prerelease = Boolean(candidate?.prerelease);
+        const containerManaged = Boolean(updateStatus?.containerManaged);
 
-        document.getElementById('update-major-warning').classList.toggle('show', major);
-        document.getElementById('update-prerelease-warning').classList.toggle('show', prerelease);
+        document.getElementById('update-container-warning').classList.toggle('show', containerManaged);
+        document.getElementById('update-major-warning').classList.toggle('show', major && !containerManaged);
+        document.getElementById('update-prerelease-warning').classList.toggle('show', prerelease && !containerManaged);
         document.getElementById('confirm-major').checked = false;
         document.getElementById('confirm-prerelease').checked = false;
 
@@ -97,8 +99,12 @@
         notes.hidden = !candidate?.releaseNotes;
         notes.href = candidate?.releaseNotes || '#';
         document.getElementById('update-summary').textContent = candidate
-            ? `${candidate.version} is available. Choose the version you want SSUI to install.`
+            ? containerManaged
+                ? `${candidate.version} is available as a new container image.`
+                : `${candidate.version} is available. Choose the version you want SSUI to install.`
             : 'No installable update is currently available.';
+        const installButton = document.getElementById('update-now-btn');
+        installButton.textContent = containerManaged ? 'Managed by Docker' : installButton.dataset.defaultLabel;
         updateInstallButton();
     };
 
@@ -106,7 +112,7 @@
         const candidate = selectedCandidate();
         const confirmedMajor = !candidate?.major || document.getElementById('confirm-major').checked;
         const confirmedPrerelease = !candidate?.prerelease || document.getElementById('confirm-prerelease').checked;
-        document.getElementById('update-now-btn').disabled = !candidate || !confirmedMajor || !confirmedPrerelease;
+        document.getElementById('update-now-btn').disabled = !candidate || Boolean(updateStatus?.containerManaged) || !confirmedMajor || !confirmedPrerelease;
     };
 
     window.openUpdateModal = function () {
@@ -145,6 +151,7 @@
     }
 
     window.startUpdate = async function () {
+        if (updateStatus?.containerManaged) return;
         if (!window.SSUIAccess.require('update.install', "You don't have permission to update SSUI.")) return;
         const candidate = selectedCandidate();
         if (!candidate) return;

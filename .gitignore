@@ -19,6 +19,7 @@ repos.md
 UIMod/*.pem
 SSUI/*.pem
 build/StationeersServerControl*
+build/StationeersServerUI_*
 Blacklist.txt
 UIMod/detectionmanager/customdetections.json
 UIMod/tls/cert.pem
@@ -31,6 +32,7 @@ steamcmd/**
 Steam/**
 rocketstation_BurstDebugInformation_DoNotShip/**
 StationeersServerControlv*
+StationeersServerUI_v*
 UnityPlayer.so
 BepInEx/**
 *doorstep*

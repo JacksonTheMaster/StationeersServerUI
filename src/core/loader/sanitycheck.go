@@ -54,7 +54,9 @@ func runSanityCheck() error {
 	if err := checkTreeAccess(config.GetSSUIFolder(), true); err != nil {
 		return fmt.Errorf("SSUI data directory access check failed: %w", err)
 	}
-	if err := checkTreeAccess("./saves", false); err != nil {
+	// A separately managed server only needs readable saves. Inside the image,
+	// Stationeers itself runs below /app and must be able to update them.
+	if err := checkTreeAccess("./saves", config.GetIsDockerContainer()); err != nil {
 		return fmt.Errorf("save directory access check failed: %w", err)
 	}
 
