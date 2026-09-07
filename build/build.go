@@ -11,8 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
@@ -36,8 +34,7 @@ func main() {
 	config.LoadConfig()
 	fmt.Printf("%s✓ Configuration loaded%s\n", colorGreen, colorReset)
 
-	// Increment the version
-	newVersion := incrementVersion("./src/config/config.go")
+	buildVersion := config.Version
 
 	// Platforms to build for
 	platforms := []struct {
@@ -49,7 +46,7 @@ func main() {
 	}
 
 	// Clean up old executables
-	cleanupOldExecutables(newVersion)
+	cleanupOldExecutables(buildVersion)
 
 	// Build for each platform
 	for _, platform := range platforms {
@@ -62,9 +59,9 @@ func main() {
 		// Prepare the output file name with the new version, branch, and platform
 		var outputName string
 		if config.Branch == "release" {
-			outputName = fmt.Sprintf("StationeersServerControlv%s", newVersion)
+			outputName = fmt.Sprintf("StationeersServerControlv%s", buildVersion)
 		} else {
-			outputName = fmt.Sprintf("StationeersServerControlv%s_%s", newVersion, config.Branch)
+			outputName = fmt.Sprintf("StationeersServerControlv%s_%s", buildVersion, config.Branch)
 		}
 
 		// Append appropriate extension based on platform
@@ -93,53 +90,6 @@ func main() {
 			colorGreen, colorReset, colorYellow, outputPath, colorReset)
 	}
 	fmt.Printf("%s\n=== Build Pipeline Completed ===%s\n", colorCyan, colorReset)
-}
-
-// incrementVersion function to increment the version in config.go
-func incrementVersion(configFile string) string {
-	fmt.Printf("%sUpdating version...%s\n", colorBlue, colorReset)
-
-	// Read the content of the config.go file
-	content, err := os.ReadFile(configFile)
-	if err != nil {
-		log.Fatalf("Failed to read config.go: %s", err)
-	}
-
-	// Use regex to find and increment the version (assuming version format is x.y.z)
-	versionRegex := regexp.MustCompile(`Version\s*=\s*"(\d+)\.(\d+)\.(\d+)"`)
-	matches := versionRegex.FindStringSubmatch(string(content))
-	if len(matches) != 4 {
-		log.Fatalf("Failed to find version in config.go")
-	}
-
-	major, _ := strconv.Atoi(matches[1])
-	minor, _ := strconv.Atoi(matches[2])
-	patch, _ := strconv.Atoi(matches[3])
-
-	// Check if patch is 999, if so, increment minor and reset patch
-	var newVersion string
-	if patch == 999 {
-		minor++
-		patch = 0
-		newVersion = fmt.Sprintf("%d.%d.%d", major, minor, patch)
-	} else {
-		// Increment the patch version
-		patch++
-		newVersion = fmt.Sprintf("%d.%d.%d", major, minor, patch)
-	}
-
-	// Replace the old version with the new version
-	newContent := versionRegex.ReplaceAllString(string(content), fmt.Sprintf(`Version = "%s"`, newVersion))
-
-	// Write the updated content back to config.go
-	err = os.WriteFile(configFile, []byte(newContent), 0644)
-	if err != nil {
-		log.Fatalf("Failed to write updated version to config.go: %s", err)
-	}
-
-	fmt.Printf("%s✓ Version updated from %s.%s.%s to %s%s\n",
-		colorGreen, matches[1], matches[2], matches[3], newVersion, colorReset)
-	return newVersion
 }
 
 // Modified cleanupOldExecutables to handle both Windows and Linux executables in /build
