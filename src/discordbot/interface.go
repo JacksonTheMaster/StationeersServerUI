@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -68,13 +69,19 @@ func InitializeDiscordBot() {
 		logger.Discord.Error("Error opening Discord connection: " + err.Error())
 		return
 	}
+	applicationID, err := discordApplicationID(session)
+	if err != nil {
+		logger.Discord.Error("Discord connection did not provide a bot identity: " + err.Error())
+		session.Close()
+		return
+	}
 	config.ConfigMu.Lock()
 	config.DiscordSession = session
 	config.ConfigMu.Unlock()
 	syncApplicationEmojis(session)
 	initializeDiscordBackupSummary()
 
-	registerSlashCommands(session)
+	registerSlashCommands(session, applicationID)
 
 	logger.Discord.Info("Bot is now running.")
 	SendMessageToEventLogChannel("🤖 SSUI Version " + config.GetVersion() + " connected to Discord.")
@@ -100,6 +107,40 @@ func InitializeDiscordBot() {
 			}
 		}
 	}()
+}
+
+func discordApplicationID(session *discordgo.Session) (string, error) {
+	if session == nil {
+		return "", fmt.Errorf("session is nil")
+	}
+
+	if session.State != nil {
+		session.State.RLock()
+		user := session.State.User
+		session.State.RUnlock()
+		if user != nil && user.ID != "" {
+			return user.ID, nil
+		}
+	}
+
+	user, err := session.User("@me")
+	if err != nil {
+		return "", err
+	}
+	if user == nil || user.ID == "" {
+		return "", fmt.Errorf("Discord returned an empty bot identity")
+	}
+
+	session.Lock()
+	if session.State == nil {
+		session.State = discordgo.NewState()
+	}
+	state := session.State
+	session.Unlock()
+	state.Lock()
+	state.User = user
+	state.Unlock()
+	return user.ID, nil
 }
 
 // Caller holds discordRuntimeMutex. Stopping a ticker alone would leave its

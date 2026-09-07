@@ -4,6 +4,7 @@ package loader
 import (
 	"embed"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/advertiser"
@@ -23,6 +24,12 @@ import (
 var reloadDiscordBotFunc = func() {
 	ReloadDiscordBot()
 }
+
+var discordReload = struct {
+	sync.Mutex
+	running bool
+	pending bool
+}{}
 
 // only call this once at startup
 func InitBackend() {
@@ -77,6 +84,36 @@ func ReloadBackupManager() {
 }
 
 func ReloadDiscordBot() {
+	discordReload.Lock()
+	if discordReload.running {
+		discordReload.pending = true
+		discordReload.Unlock()
+		logger.Discord.Debug("Discord bot reload already running; keeping one pending reload")
+		return
+	}
+	discordReload.running = true
+	discordReload.Unlock()
+
+	go runDiscordReloads()
+	logger.Discord.Info("Discord bot reload requested")
+}
+
+func runDiscordReloads() {
+	for {
+		reloadDiscordBot()
+
+		discordReload.Lock()
+		if !discordReload.pending {
+			discordReload.running = false
+			discordReload.Unlock()
+			return
+		}
+		discordReload.pending = false
+		discordReload.Unlock()
+	}
+}
+
+func reloadDiscordBot() {
 	if !config.GetIsDiscordEnabled() {
 		discordbot.DisableRuntimeState()
 		return
@@ -84,11 +121,11 @@ func ReloadDiscordBot() {
 
 	if config.GetDiscordToken() == "" {
 		logger.Discord.Warn("Discord is enabled but no token is configured")
+		discordbot.DisableRuntimeState()
 		return
 	}
 
-	go discordbot.InitializeDiscordBot()
-	logger.Discord.Info("Discord bot reload requested")
+	discordbot.InitializeDiscordBot()
 }
 
 // The detector should NOT be reloaded, as it is a singleton. Instead, dynamic changes come in via the custom detections manager.

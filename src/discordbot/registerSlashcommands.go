@@ -1,7 +1,6 @@
 package discordbot
 
 import (
-	"sync"
 	"time"
 
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
@@ -10,7 +9,7 @@ import (
 )
 
 // registerSlashCommands defines and registers slash commands if they have not been registered already.
-func registerSlashCommands(s *discordgo.Session) {
+func registerSlashCommands(s *discordgo.Session, applicationID string) {
 	commands := []*discordgo.ApplicationCommand{
 		{
 			Name:        "start",
@@ -129,7 +128,7 @@ func registerSlashCommands(s *discordgo.Session) {
 	}
 
 	// Fetch existing commands from Discord
-	existingCmds, err := s.ApplicationCommands(s.State.User.ID, "")
+	existingCmds, err := s.ApplicationCommands(applicationID, "")
 	if err != nil {
 		logger.Discord.Error("Failed to fetch existing commands: " + err.Error())
 		return
@@ -142,43 +141,25 @@ func registerSlashCommands(s *discordgo.Session) {
 	}
 
 	// Compare and register only what’s necessary
-	var wg sync.WaitGroup
-	commandsToRegister := make(chan *discordgo.ApplicationCommand, len(commands))
-
 	for _, desiredCmd := range commands {
 		existing, exists := existingMap[desiredCmd.Name]
 		needsUpdate := !exists || !commandsAreEqual(desiredCmd, existing)
 
-		if needsUpdate {
-			wg.Add(1)
-			commandsToRegister <- desiredCmd
-		}
-
 		if !needsUpdate {
 			logger.Discord.Debug("Command " + desiredCmd.Name + " already up-to-date, skipping")
+			continue
 		}
 
+		startTime := time.Now()
+		_, err := s.ApplicationCommandCreate(applicationID, "", desiredCmd)
+		duration := time.Since(startTime)
+		if err != nil {
+			logger.Discord.Error("Error registering command " + desiredCmd.Name + ": " + err.Error())
+		} else {
+			logger.Discord.Debug("Successfully registered command " + desiredCmd.Name + " took:" + duration.String())
+		}
 	}
-	close(commandsToRegister)
 
-	// Worker to process api registrations
-	go func() {
-		for cmd := range commandsToRegister {
-			startTime := time.Now()
-			_, err := s.ApplicationCommandCreate(s.State.User.ID, "", cmd)
-			duration := time.Since(startTime)
-
-			if err != nil {
-				logger.Discord.Error("Error registering command " + cmd.Name + ": " + err.Error())
-			} else {
-				logger.Discord.Debug("Successfully registered command " + cmd.Name + " took:" + duration.String())
-			}
-			wg.Done()
-		}
-	}()
-
-	// Wait for all registrations to finish
-	wg.Wait()
 	logger.Discord.Info("Finished processing slash commands.")
 }
 
