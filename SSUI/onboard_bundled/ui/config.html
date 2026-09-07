@@ -531,21 +531,21 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="AllowPrereleaseUpdates">Allow Prerelease Updates:</label>
+                                        <label for="AllowPrereleaseUpdates">Auto-install Prereleases:</label>
                                         <select id="AllowPrereleaseUpdates" name="AllowPrereleaseUpdates" required>
                                             <option value="true" {{.AllowPrereleaseUpdatesTrueSelected}}>TRUE</option>
                                             <option value="false" {{.AllowPrereleaseUpdatesFalseSelected}}>FALSE</option>
                                         </select>
-                                        <div class="input-info">Include beta/prerelease versions in update checks</div>
+                                        <div class="input-info">Allow automatic updates to beta and release-candidate builds. They remain visible for manual installation when disabled.</div>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="AllowMajorUpdates">Allow Major Updates:</label>
+                                        <label for="AllowMajorUpdates">Auto-install Major Updates:</label>
                                         <select id="AllowMajorUpdates" name="AllowMajorUpdates" required>
                                             <option value="true" {{.AllowMajorUpdatesTrueSelected}}>TRUE</option>
                                             <option value="false" {{.AllowMajorUpdatesFalseSelected}}>FALSE</option>
                                         </select>
-                                        <div class="input-info">Allow automatic major version upgrades (may have breaking changes)</div>
+                                        <div class="input-info">Allow automatic major version upgrades. They remain visible for manual installation when disabled.</div>
                                     </div>
 
                                     <div class="form-group">

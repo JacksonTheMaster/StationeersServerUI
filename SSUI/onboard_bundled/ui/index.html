@@ -41,23 +41,41 @@
     <!-- Update Modal -->
     <div id="update-modal">
         <div class="update-modal-content">
-            
+            <button type="button" class="update-modal-close" onclick="closeUpdateModal()" aria-label="Close">&times;</button>
             <div class="update-modal-icon">⭳</div>
+            <h2>SSUI update</h2>
+            <p id="update-summary">{{.UIText_UpdateAvailable}}</p>
 
-            <p>{{.UIText_UpdateAvailable}}</p>
-            <div class="update-version" id="modal-version-text">v1.2.3</div>
-            
-            <div class="update-modal-buttons">
-                <button id="update-later-btn" onclick="closeUpdateModal()">{{.UIText_UpdateLater}}</button>
-                <button id="update-now-btn" onclick="startUpdate()">{{.UIText_UpdateNow}}</button>
+            <label class="update-version-picker" for="update-version-select">
+                Version
+                <select id="update-version-select" onchange="selectUpdateVersion()"></select>
+            </label>
+            <div class="update-release-flags" id="update-release-flags"></div>
+            <a class="update-release-notes" id="update-release-notes" target="_blank" rel="noopener noreferrer">Read release notes</a>
+
+            <div class="update-warning" id="update-major-warning">
+                <strong>Major update</strong>
+                <p>This version can contain breaking changes. Read its release notes and make sure your server folder is backed up.</p>
+                <label><input type="checkbox" id="confirm-major" onchange="updateInstallButton()"> I want to install this major version.</label>
+            </div>
+            <div class="update-warning is-prerelease" id="update-prerelease-warning">
+                <strong>Prerelease build</strong>
+                <p>This is unfinished release-candidate software. It may contain bugs or require manual recovery.</p>
+                <label><input type="checkbox" id="confirm-prerelease" onchange="updateInstallButton()"> I understand the risk and want the prerelease.</label>
             </div>
 
-            <!-- Status Messages -->
+            <div class="update-modal-buttons" id="update-modal-buttons">
+                <button id="update-later-btn" onclick="closeUpdateModal()">{{.UIText_UpdateLater}}</button>
+                <button id="update-now-btn" onclick="startUpdate()" disabled>{{.UIText_UpdateNow}}</button>
+            </div>
             <div id="update-status-running" class="update-status-message">
-                ⏳ {{.UIText_UpdateInstalling}}
+                <span class="update-spinner" aria-hidden="true"></span>
+                <span id="update-running-text">{{.UIText_UpdateInstalling}}</span>
             </div>
             <div id="update-status-failed" class="update-status-message">
-                ✗ {{.UIText_UpdateFailed}}
+                <strong>{{.UIText_UpdateFailed}}</strong>
+                <span id="update-failure-text"></span>
+                <button type="button" onclick="resetUpdateModal()">Try again</button>
             </div>
         </div>
     </div>

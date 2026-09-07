@@ -1110,6 +1110,8 @@ a.panel-link-button {
   width: 90%;
   box-shadow: 0 20px 80px rgba(0, 0, 0, 0.65), 0 0 28px color-mix(in srgb, var(--danger) 25%, transparent);
   position: relative;
+  max-height: calc(100vh - 30px);
+  overflow-y: auto;
   animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -1183,6 +1185,101 @@ a.panel-link-button {
   margin: 10px 0 25px 0;
 }
 
+.update-version-picker {
+  display: grid;
+  gap: 7px;
+  margin-top: 22px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.update-version-picker select {
+  width: 100%;
+  padding: 12px 14px;
+  color: var(--text-header);
+  background: var(--input-bg);
+  border: 1px solid var(--ui-frame);
+  border-radius: var(--ui-radius-small);
+  font: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.update-release-flags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin: 13px 0 4px;
+}
+
+.update-release-flags span {
+  padding: 4px 9px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.update-release-notes {
+  display: block;
+  width: max-content;
+  margin: 10px auto 0;
+  color: var(--accent);
+  font-size: 0.82rem;
+}
+
+.update-release-notes[hidden] {
+  display: none;
+}
+
+.update-warning {
+  display: none;
+  margin-top: 16px;
+  padding: 14px;
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--warning) 10%, var(--ui-surface));
+  border: 1px solid color-mix(in srgb, var(--warning) 60%, transparent);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--ui-radius-small);
+}
+
+.update-warning.show {
+  display: block;
+}
+
+.update-warning.is-prerelease {
+  background: color-mix(in srgb, var(--danger) 10%, var(--ui-surface));
+  border-color: color-mix(in srgb, var(--danger) 65%, transparent);
+  border-left-color: var(--danger);
+}
+
+.update-warning p {
+  margin: 5px 0 11px;
+  text-align: left;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.update-warning label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--text-header);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.update-warning input {
+  margin-top: 3px;
+}
+
 .update-modal-buttons {
   display: flex;
   gap: 15px;
@@ -1208,6 +1305,13 @@ a.panel-link-button {
 #update-now-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+#update-now-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 #update-later-btn {
@@ -1250,6 +1354,30 @@ a.panel-link-button {
   background: color-mix(in srgb, var(--danger) 20%, transparent);
   border: 2px solid var(--danger);
   color: var(--danger);
+}
+
+.update-status-message span,
+.update-status-message strong {
+  display: block;
+}
+
+.update-status-message button {
+  margin-top: 12px;
+  padding: 8px 14px;
+}
+
+.update-spinner {
+  width: 18px;
+  height: 18px;
+  margin: 0 auto 9px;
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: update-spin 0.8s linear infinite;
+}
+
+@keyframes update-spin {
+  to { transform: rotate(360deg); }
 }
 
 #update-button {
