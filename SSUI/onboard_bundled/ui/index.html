@@ -5,11 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSUI v{{.Version}}{{.SSUIIdentifier}}</title>
+    <link rel="stylesheet" href="/static/css/page-loader.css">
+    <script src="/static/js/page-loader.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/base.css">
     <link rel="stylesheet" href="/static/css/components.css">
     <link rel="stylesheet" href="/static/css/tabs.css">
-    <link rel="stylesheet" href="/static/css/background.css">
+    <link rel="stylesheet" href="/static/css/background.css?v=6">
     <link rel="stylesheet" href="/static/css/mobile.css">
     <link rel="stylesheet" href="/static/css/home.css">
     <link rel="stylesheet" href="/static/css/popup.css">
@@ -19,6 +21,12 @@
 </head>
 
 <body data-authenticated="true" data-permissions="{{.Permissions}}">
+    <div id="page-loader" role="status" aria-label="Loading Stationeers Server UI">
+        <div class="page-loader-content">
+            <div class="page-loader-mark">SSUI</div>
+            <div class="page-loader-line" aria-hidden="true"></div>
+        </div>
+    </div>
     <div id="space-background"></div>
     <div id="planet-container"></div>
     <div id="universalPopup" class="popup">
@@ -56,8 +64,7 @@
     <header>
         <img src="/static/stationeers.webp" alt="Stationeers Banner" id="banner" onclick="window.location.href = 'https://www.youtube.com/watch?v=xvFZjo5PgG0'">
         <button onclick="fetch('/api/v3/auth/logout', { method: 'POST' }).finally(() => window.location.href = '/login');" class="logout-icon" title="Logout"></button>
-        <button onclick="toggleGPUSaver()" class="gpusaver-icon"
-            title="Save GPU Power by disabling background Animations. Persistent until toggled off. Options: Focus (Default), Always, Disabled. If unsure, check developer tools -> Application -> Local Storage -> animationState">
+        <button onclick="toggleGPUSaver()" class="gpusaver-icon" title="Background settings">
         </button>
     </header>
     <main>
@@ -259,11 +266,12 @@
 
     <script src="/static/js/api-client.js"></script>
     <script src="/static/js/theme-engine.js"></script>
+    <script src="/static/js/background.js"></script>
     <script src="/static/js/sscm.js"></script>
     <script src="/static/js/ui-utils.js"></script>
     <script src="/static/js/server-api.js"></script>
     <script src="/static/js/console-manager.js"></script>
-    <script src="/static/js/main.js"></script>
+    <script src="/static/js/main.js?v=6"></script>
     <script src="/static/js/popup.js"></script>
     <script src="/static/js/xmas.js"></script>
     <script src="/static/js/dynamic-announcement.js"></script>

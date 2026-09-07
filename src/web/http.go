@@ -55,6 +55,7 @@ func GetGameServerRunState(w http.ResponseWriter, r *http.Request) {
 		"state":     gamemgr.GetServerState(),
 		"uptime":    prettyUptime(gamemgr.GetServerUptime()),
 		"uuid":      gamemgr.GameServerUUID.String(),
+		"worldID":   config.GetWorldID(),
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {

@@ -1,34 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Planet creation (unchanged)
-    const planetContainer = document.getElementById('planet-container');
-    function createPlanet(container, size, orbitRadius, speed, color) {
-        const orbit = document.createElement('div');
-        orbit.classList.add('orbit');
-        orbit.style.width = `${orbitRadius * 2}px`;
-        orbit.style.height = `${orbitRadius * 2}px`;
-        orbit.style.position = 'absolute';
-        orbit.style.left = '50%';
-        orbit.style.top = '50%';
-        orbit.style.transform = 'translate(-50%, -50%)';
-        const randomDelay = -(Math.random() * speed);
-        orbit.style.animation = `orbit ${speed}s linear infinite ${randomDelay}s`;
-        const planet = document.createElement('div');
-        planet.classList.add('planet');
-        planet.style.width = `${size}px`;
-        planet.style.height = `${size}px`;
-        planet.style.position = 'absolute';
-        planet.style.left = '0%';
-        planet.style.top = '50%';
-        planet.style.backgroundColor = color;
-        planet.style.borderRadius = '50%';
-        planet.style.boxShadow = `0 0 20px ${color}`;
-        orbit.appendChild(planet);
-        container.appendChild(orbit);
+    const formBackground = document.querySelector('.form-background');
+    if (formBackground) {
+        const image = new Image();
+        const revealBackground = () => document.body.classList.add('form-background-ready');
+        image.addEventListener('load', revealBackground, { once: true });
+        image.addEventListener('error', revealBackground, { once: true });
+        image.src = '/static/login-background.webp';
+        if (image.complete) revealBackground();
     }
-    createPlanet(planetContainer, 80, 650, 30, 'rgba(200, 100, 50, 0.7)');
-    createPlanet(planetContainer, 50, 1000, 50, 'rgba(100, 200, 150, 0.5)');
-    createPlanet(planetContainer, 30, 1250, 60, 'rgba(50, 150, 250, 0.6)');
-    createPlanet(planetContainer, 70, 350, 30, 'rgba(200, 150, 200, 0.7)');
 
     // Notification function
     function showNotification(message, type = 'error') {

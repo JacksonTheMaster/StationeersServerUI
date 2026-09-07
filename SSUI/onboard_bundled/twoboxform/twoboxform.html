@@ -5,19 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/twoboxform/twoboxform.css">
+    <link rel="stylesheet" href="/twoboxform/twoboxform.css?v=7">
     <link rel="stylesheet" href="/static/css/flags.css">
 </head>
-<body>
-    <div id="space-background"></div>
-    <div id="planet-container"></div>
+<body class="two-box-form-page {{.Mode}}-page">
+    <div class="form-background" aria-hidden="true"></div>
     <div class="breakout-container"></div>
 
     <div id="preloader">
         <div class="preloader-content">
-            <h2>Preparing...</h2>
+            <h2>{{if eq .Mode "login"}}Loading SSUI...{{else}}Preparing...{{end}}</h2>
             <div class="preloader-spinner"></div>
-            <p>Preparing {{.Title}}</p>
+            <p>{{if eq .Mode "login"}}Preparing your station{{else}}Preparing {{.Title}}{{end}}</p>
         </div>
     </div>
     {{if and (eq .Mode "setup") (ne .Step "welcome")}}
@@ -153,6 +152,6 @@
     {{end}}
     
     <script src="/static/js/api-client.js"></script>
-    <script src="/twoboxform/twoboxform.js"></script>
+    <script src="/twoboxform/twoboxform.js?v=7"></script>
 </body>
 </html>

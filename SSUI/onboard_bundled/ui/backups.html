@@ -5,15 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.UITextBackupManager}} · SSUI v{{.Version}}{{.SSUIIdentifier}}</title>
+    <link rel="stylesheet" href="/static/css/page-loader.css">
+    <script src="/static/js/page-loader.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/base.css">
     <link rel="stylesheet" href="/static/css/components.css">
-    <link rel="stylesheet" href="/static/css/background.css">
+    <link rel="stylesheet" href="/static/css/background.css?v=6">
     <link rel="stylesheet" href="/static/css/backups.css">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 
 <body class="backup-page" data-authenticated="true" data-permissions="{{.Permissions}}">
+    <div id="page-loader" role="status" aria-label="Loading Stationeers Server UI">
+        <div class="page-loader-content">
+            <div class="page-loader-mark">SSUI</div>
+            <div class="page-loader-line" aria-hidden="true"></div>
+        </div>
+    </div>
     <div id="space-background"></div>
     <div id="planet-container"></div>
 
@@ -79,6 +87,7 @@
 
     <script src="/static/js/api-client.js"></script>
     <script src="/static/js/theme-engine.js"></script>
+    <script src="/static/js/background.js"></script>
     <script src="/static/js/backups-page.js"></script>
 </body>
 

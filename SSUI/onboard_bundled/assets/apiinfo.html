@@ -4,10 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSUI API v3</title>
-    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/page-loader.css">
+    <script src="/static/js/page-loader.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/background.css?v=6">
     <link rel="stylesheet" href="/static/css/apiinfo.css">
 </head>
-<body>
+<body data-authenticated="true">
+    <div id="page-loader" role="status" aria-label="Loading Stationeers Server UI">
+        <div class="page-loader-content">
+            <div class="page-loader-mark">SSUI</div>
+            <div class="page-loader-line" aria-hidden="true"></div>
+        </div>
+    </div>
+    <div id="space-background"></div>
+    <div id="planet-container"></div>
     <main class="api-page">
         <header class="api-hero">
             <div>
@@ -101,5 +113,7 @@ Content-Type: application/json
             <p>Available below <code>/api/v3/streams/</code>: <code>console</code>, <code>events</code>, <code>logs/debug</code>, <code>logs/info</code>, <code>logs/warn</code>, <code>logs/error</code>, and <code>logs/backend</code>.</p>
         </section>
     </main>
+    <script src="/static/js/theme-engine.js"></script>
+    <script src="/static/js/background.js"></script>
 </body>
 </html>

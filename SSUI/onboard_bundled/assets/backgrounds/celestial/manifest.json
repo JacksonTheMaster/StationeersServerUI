@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "bodies": [
+    {
+      "id": "europa",
+      "label": "Europa"
+    },
+    {
+      "id": "mars",
+      "label": "Mars"
+    },
+    {
+      "id": "mimas",
+      "label": "Mimas"
+    },
+    {
+      "id": "moon",
+      "label": "Moon"
+    },
+    {
+      "id": "venus",
+      "label": "Venus"
+    }
+  ]
+}

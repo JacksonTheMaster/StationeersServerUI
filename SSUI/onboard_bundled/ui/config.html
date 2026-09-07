@@ -5,11 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.UIText_ServerConfig}}</title>
+    <link rel="stylesheet" href="/static/css/page-loader.css">
+    <script src="/static/js/page-loader.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/base.css">
     <link rel="stylesheet" href="/static/css/components.css">
     <link rel="stylesheet" href="/static/css/tabs.css">
-    <link rel="stylesheet" href="/static/css/background.css">
+    <link rel="stylesheet" href="/static/css/background.css?v=6">
     <link rel="stylesheet" href="/static/css/mobile.css">
     <link rel="stylesheet" href="/static/css/config.css">
     <link rel="stylesheet" href="/static/css/detectionmanager.css">
@@ -20,6 +22,12 @@
 </head>
 
 <body data-authenticated="true" data-permissions="{{.Permissions}}" data-can-manage-settings="{{.CanManageSettings}}">
+    <div id="page-loader" role="status" aria-label="Loading Stationeers Server UI">
+        <div class="page-loader-content">
+            <div class="page-loader-mark">SSUI</div>
+            <div class="page-loader-line" aria-hidden="true"></div>
+        </div>
+    </div>
     <div id="space-background"></div>
     <div id="config-save-notification" class="config-save-notification" role="status" aria-live="polite"
         data-saving="{{.UIText_ConfigSaving}}" data-success="{{.UIText_ConfigSaveSuccess}}"
@@ -1488,8 +1496,9 @@
     </script>
     <script src="/static/js/api-client.js"></script>
     <script src="/static/js/theme-engine.js"></script>
+    <script src="/static/js/background.js"></script>
     <script src="/static/js/theme-editor.js"></script>
-    <script src="/static/js/main.js"></script>
+    <script src="/static/js/main.js?v=6"></script>
     {{if .CanViewSettings}}<script src="/static/js/world-gen-config.js"></script>{{end}}
     {{if .CanManageDetections}}<script src="/static/js/detectionmanager.js"></script>{{end}}
     <script src="/static/js/xmas.js"></script>

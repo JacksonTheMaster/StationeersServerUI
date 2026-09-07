@@ -7,7 +7,7 @@ main {
     box-sizing: border-box;
     background-color: var(--bg-panel);
     border-radius: 10px;
-    margin: 40px 0;
+    margin: 30px 0;
     box-shadow: 0 15px 50px var(--primary-glow);
     border: 3px solid var(--primary);
     position: relative;

@@ -2,11 +2,8 @@
 
 header {
     width: 100%;
-    background-color: var(--bg-panel);
     text-align: center;
-    padding: 20px 0;
-    border-bottom: 2px solid var(--primary);
-    box-shadow: 0 4px 20px var(--primary-glow);
+    padding: 30px 0 0 0;
     position: relative;
     isolation: isolate; /* Better stacking context */
   }
@@ -15,9 +12,6 @@ header {
     content: '';
     position: absolute;
     inset: 0;
-    background: 
-      linear-gradient(color-mix(in srgb, var(--primary) 5%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in srgb, var(--primary) 5%, transparent) 1px, transparent 1px);
     background-size: 20px 20px;
     background-position: center center;
     z-index: 0;
@@ -30,9 +24,147 @@ header {
     width: 100%;
     height: 100%;
     background: radial-gradient(ellipse at bottom, color-mix(in srgb, var(--bg-dark) 70%, var(--bg-panel)) 0%, var(--bg-dark) 100%);
-    z-index: -2;
+    z-index: 0;
     will-change: transform;
     overflow: hidden;
+  }
+
+  #panorama-background {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 1;
+    transition: opacity 220ms ease;
+  }
+
+  #space-background.background-switching #panorama-background {
+    opacity: 0;
+  }
+
+  /* Old main.js versions changed these values inline. Keep cached v5 code from
+     hiding the v6 background after an update. */
+  body:not(.background-disabled) #space-background {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  body.background-planets #planet-container {
+    display: block !important;
+  }
+
+  body.background-panorama:not(.background-fallback) #space-background::before {
+    z-index: 1;
+    opacity: 0.75;
+    background:
+      linear-gradient(180deg, rgba(4, 6, 12, 0.28), rgba(4, 6, 12, 0.58)),
+      radial-gradient(ellipse at center, transparent 35%, rgba(2, 3, 8, 0.72) 100%);
+  }
+
+  body.background-panorama:not(.background-fallback) #space-background::after {
+    z-index: 2;
+    opacity: 0.14;
+    background-image:
+      radial-gradient(1px 1px at 12% 30%, rgba(255, 255, 255, 0.8), transparent),
+      radial-gradient(1px 1px at 71% 63%, rgba(255, 255, 255, 0.65), transparent),
+      radial-gradient(1.5px 1.5px at 43% 82%, rgba(255, 255, 255, 0.55), transparent),
+      radial-gradient(1px 1px at 88% 16%, rgba(255, 255, 255, 0.7), transparent);
+    background-size: 620px 540px;
+    animation: panoramaDust 90s linear infinite;
+  }
+
+  body.background-celestial:not(.background-fallback) #space-background::before {
+    z-index: 1;
+    opacity: 1;
+    background: radial-gradient(ellipse at center, transparent 48%, rgba(0, 0, 0, 0.55) 100%);
+  }
+
+  body.background-celestial:not(.background-fallback) #space-background::after {
+    display: none;
+  }
+
+  body.background-celestial #planet-container,
+  body.background-panorama #planet-container,
+  body.background-disabled #planet-container {
+    display: none !important;
+  }
+
+  body.background-planets #panorama-background,
+  body.background-disabled #panorama-background {
+    display: none;
+  }
+
+  body.background-disabled #space-background {
+    display: none !important;
+  }
+
+  body.background-paused #space-background::after,
+  body.background-paused #space-background::before,
+  body.background-paused #space-background *,
+  body.background-paused #planet-container,
+  body.background-paused #planet-container * {
+    animation-play-state: paused !important;
+  }
+
+  @keyframes panoramaDust {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-80px, -45px, 0); }
+  }
+
+  .background-picker {
+    position: absolute;
+    top: calc(100% - 8px);
+    right: 64px;
+    z-index: 20;
+    display: grid;
+    min-width: 245px;
+    gap: 7px;
+    padding: 14px;
+    border: 1px solid var(--primary-dim);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg-dark) 94%, transparent);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 18px var(--primary-glow-soft);
+    text-align: left;
+    backdrop-filter: blur(12px);
+  }
+
+  .background-picker[hidden] {
+    display: none;
+  }
+
+  .background-picker strong {
+    margin-bottom: 3px;
+    color: var(--primary);
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .background-picker label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 8px;
+    border-radius: 5px;
+    color: var(--text-bright);
+    cursor: pointer;
+  }
+
+  .background-picker label:hover {
+    background: var(--primary-glow-soft);
+  }
+
+  .background-picker input {
+    accent-color: var(--primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #panorama-background,
+    #space-background::after,
+    .orbit {
+      animation-play-state: paused !important;
+    }
   }
   
   /* Stars Layer 1 - smaller and more scattered stars */
@@ -155,7 +287,7 @@ header {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
     overflow: hidden; /* Prevents any overflow issues */
   }
   

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "scenes": [
+    {
+      "id": "mountain-base",
+      "label": "Mountain base"
+    },
+    {
+      "id": "workshop",
+      "label": "Workshop"
+    },
+    {
+      "id": "industrial-overlook",
+      "label": "Industrial overlook"
+    },
+    {
+      "id": "cave-tanks",
+      "label": "Cave tanks"
+    },
+    {
+      "id": "mountain-outpost",
+      "label": "Mountain outpost"
+    }
+  ]
+}
