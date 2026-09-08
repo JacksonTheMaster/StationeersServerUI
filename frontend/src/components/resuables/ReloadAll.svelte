@@ -22,11 +22,11 @@
         throw new Error('Invalid response format');
       }
 
-      if (!response.ok || data.status !== 'OK') {
+      if (!response.ok) {
         isError = true;
-        responseMessage = data.message || 'Backend reload failed';
+        responseMessage = data.error || 'Backend reload failed';
       } else {
-        responseMessage = 'Backend reload triggered';
+        responseMessage = data.message || 'Backend reloaded';
       }
     } catch (error) {
       isError = true;

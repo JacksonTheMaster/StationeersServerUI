@@ -230,9 +230,10 @@ function handleConsole() {
                     'Accept': 'application/json'
                 }
             });
+            const status = await response.json();
     
             // If status is not 200, exit the function
-            if (response.status !== 200) {
+            if (!response.ok || !status.enabled) {
                 console.log('SSCM is not enabled, status:', response.status);
                 return;
             }

@@ -72,8 +72,9 @@ async function checkSSCMEnabled() {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
+        const status = await response.json();
         const input = document.getElementById('sscm-command-input');
-        if (response.status === 200) {
+        if (response.ok && status.enabled) {
             input.disabled = false;
             input.placeholder = "Enter command...";
         } else {
@@ -98,7 +99,7 @@ async function sendSSCMCommand(command) {
         const statusResponse = await fetch('/api/v3/server/status');
         const statusData = await statusResponse.json();
         
-        if (!statusData.isRunning) {
+        if (!statusData.running) {
             appendToConsole('[SSCM] Error: Gameserver is not running, start the server and try again.');
             return;
         }
@@ -109,9 +110,9 @@ async function sendSSCMCommand(command) {
             body: JSON.stringify({ command })
         });
         const result = await response.json();
-        appendToConsole(result.status === 'success'
-            ? `[SSCM] ${result.message}: ${command}`
-            : `[SSCM] Error: ${result.message || 'Command failed'}`);
+        appendToConsole(response.ok
+            ? `[SSCM] Command queued: ${result.command}`
+            : `[SSCM] Error: ${result.error || 'Command failed'}`);
     } catch (error) {
         console.error('Error sending SSCM command:', error);
         appendToConsole(`[SSCM] Error: Failed to send command "${command}"`);

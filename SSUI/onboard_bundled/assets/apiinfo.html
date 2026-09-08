@@ -34,7 +34,7 @@
         <section class="api-card">
             <h2>Response format</h2>
             <p>JSON endpoints return exactly one of these envelopes:</p>
-            <pre><code>{"data":{"isRunning":true}}
+            <pre><code>{"data":{"running":true}}
 {"error":{"code":"forbidden","message":"Permission denied"}}</code></pre>
             <p>Downloads return the requested file and stream endpoints use <code>text/event-stream</code>.</p>
         </section>
@@ -87,8 +87,8 @@ Content-Type: application/json
                 <p><span class="method post">POST</span><code>/api/v3/server/stop</code> Stop the server</p>
                 <p><span class="method get">GET</span><code>/api/v3/backups</code> List archives by stable filename</p>
                 <p><span class="method get">GET</span><code>/api/v3/backups/analysis?name=FILE.save</code> Read or run save analysis</p>
-                <p><span class="method post">POST</span><code>/api/v3/backups/restore?name=FILE.save</code> Restore an archive</p>
-                <p><span class="method post">POST</span><code>/api/v3/backups/download</code> Download an archive using <code>{"name":"FILE.save"}</code></p>
+                <p><span class="method post">POST</span><code>/api/v3/backups/restore</code> Restore the archive named by <code>{"name":"FILE.save"}</code></p>
+                <p><span class="method get">GET</span><code>/api/v3/backups/download?name=FILE.save</code> Stream an archive</p>
             </div>
         </section>
 
@@ -106,6 +106,8 @@ Content-Type: application/json
                 <p><span class="method get">GET</span><code>/api/v3/sscm/status</code> Read SSCM availability</p>
                 <p><span class="method post">POST</span><code>/api/v3/sscm/commands</code> Send an SSCM command</p>
                 <p><span class="method post">POST</span><code>/api/v3/steamcmd/run</code> Update the game installation</p>
+                <p><span class="method get">GET</span><code>/api/v3/slp/mods</code> List installed mods</p>
+                <p><span class="method post">POST</span><code>/api/v3/slp/mods</code> Install Workshop IDs from <code>{"workshopIds":[]}</code></p>
             </div>
         </section>
 

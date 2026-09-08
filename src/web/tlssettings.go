@@ -3,7 +3,6 @@ package web
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -12,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/setup/update"
@@ -98,14 +98,9 @@ func replaceTLSFiles(certPEM, keyPEM []byte) error {
 }
 
 func SaveTLSCertificateHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if r.Method != http.MethodPost {
-		http.Error(w, `{"status":"error","message":"Method not allowed"}`, http.StatusMethodNotAllowed)
-		return
-	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxTLSUploadSize)
 	if err := r.ParseMultipartForm(maxTLSUploadSize); err != nil {
-		http.Error(w, `{"status":"error","message":"Certificate upload is too large or invalid"}`, http.StatusBadRequest)
+		api.WriteError(w, http.StatusBadRequest, "invalid_certificate_upload", "Certificate upload is too large or invalid")
 		return
 	}
 	readUpload := func(name string) ([]byte, error) {
@@ -141,11 +136,12 @@ func SaveTLSCertificateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := replaceTLSFiles(certPEM, keyPEM); err != nil {
-		http.Error(w, `{"status":"error","message":"Failed to save TLS files"}`, http.StatusInternalServerError)
+		api.WriteError(w, http.StatusInternalServerError, "certificate_save_failed", "Failed to save TLS files")
 		return
 	}
-	w.WriteHeader(http.StatusAccepted)
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "restarting", "message": "TLS certificate saved. SSUI is restarting."})
+	api.WriteData(w, http.StatusAccepted, api.RestartReceipt{
+		State: "restarting", Message: "TLS certificate saved. SSUI is restarting",
+	})
 	go func() {
 		time.Sleep(750 * time.Millisecond)
 		logger.Security.Info("TLS certificate changed; restarting SSUI")
@@ -154,6 +150,5 @@ func SaveTLSCertificateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeTLSError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusBadRequest)
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "error", "message": err.Error()})
+	api.WriteError(w, http.StatusUnprocessableEntity, "invalid_certificate", err.Error())
 }

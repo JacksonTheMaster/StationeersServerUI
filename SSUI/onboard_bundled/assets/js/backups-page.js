@@ -204,10 +204,11 @@
                 if (!response.ok) return response.text().then(message => { throw new Error(message); });
                 return response.json();
             })
-            .then(backups => {
+            .then(result => {
+                const backups = result.items || [];
                 if (sequence !== fetchSequence) return;
                 list.innerHTML = '';
-                if (!Array.isArray(backups) || backups.length === 0) {
+                if (backups.length === 0) {
                     list.innerHTML = `<li class="backup-page-empty">${escapeHTML(text.none)}</li>`;
                     return;
                 }
@@ -224,8 +225,11 @@
 
     function restoreBackup(name) {
         if (!window.SSUIAccess.require('backups.restore', "You don't have permission to restore backups.")) return;
-        const selection = new URLSearchParams({ name });
-        fetch(`/api/v3/backups/restore?${selection}`, { method: 'POST' })
+        fetch('/api/v3/backups/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        })
             .then(response => response.text().then(message => ({ ok: response.ok, message })))
             .then(result => {
                 if (!result.ok) throw new Error(result.message);
@@ -236,11 +240,8 @@
 
     function downloadBackup(name) {
         if (!window.SSUIAccess.require('backups.download', "You don't have permission to download backups.")) return;
-        fetch('/api/v3/backups/download', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
-        })
+        const selection = new URLSearchParams({ name });
+        fetch(`/api/v3/backups/download?${selection}`)
             .then(async response => {
                 if (!response.ok) {
                     const error = await response.json().catch(() => ({}));

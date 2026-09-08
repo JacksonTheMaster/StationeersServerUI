@@ -1,9 +1,9 @@
 package web
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config/configchanger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/loader"
@@ -13,25 +13,22 @@ import (
 
 func SetupFinalizeHandler(w http.ResponseWriter, r *http.Request) {
 	if security.SetupRequired() {
-		http.Error(w, "Create the owner account before finalizing setup", http.StatusBadRequest)
+		api.WriteError(w, http.StatusConflict, "setup_incomplete", "Create the owner account before finalizing setup")
 		return
 	}
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		http.Error(w, "Failed to load configuration", http.StatusInternalServerError)
+		api.WriteError(w, http.StatusInternalServerError, "config_load_failed", "Failed to load configuration")
 		return
 	}
 	authEnabled := true
 	cfg.AuthEnabled = &authEnabled
 	if err := configchanger.SaveConfig(cfg, false); err != nil {
-		http.Error(w, "Failed to save configuration", http.StatusInternalServerError)
+		api.WriteError(w, http.StatusInternalServerError, "config_save_failed", "Failed to save configuration")
 		return
 	}
 	_ = config.SetIsFirstTimeSetup(false)
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"message": "Setup finalized successfully",
-	})
+	api.WriteData(w, http.StatusOK, api.Message{Message: "Setup finalized successfully"})
 	logger.Web.Info("User setup finalized successfully")
 	go loader.ReloadBackend()
 }

@@ -44,6 +44,12 @@ type BackupFileData struct {
 	SaveTime time.Time
 }
 
+type BackupFileInfo struct {
+	Filename string
+	Size     int64
+	SaveTime time.Time
+}
+
 // BackupManager manages backup operations
 type BackupManager struct {
 	config        BackupConfig

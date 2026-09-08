@@ -25,10 +25,15 @@ func TestListBackupsSummaryIsOptIn(t *testing.T) {
 	if bytes.Contains(basicResponse.Body.Bytes(), []byte(`"summary"`)) {
 		t.Fatalf("basic response unexpectedly contains Summary: %s", basicResponse.Body.String())
 	}
-	var basicRows []map[string]any
-	if err := json.NewDecoder(bytes.NewReader(basicResponse.Body.Bytes())).Decode(&basicRows); err != nil {
+	var basicBody struct {
+		Data struct {
+			Items []map[string]any `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(bytes.NewReader(basicResponse.Body.Bytes())).Decode(&basicBody); err != nil {
 		t.Fatal(err)
 	}
+	basicRows := basicBody.Data.Items
 	if len(basicRows) != 1 || len(basicRows[0]) != 2 {
 		t.Fatalf("basic response shape changed: %#v", basicRows)
 	}
@@ -61,12 +66,8 @@ func TestBackupHTTPSelectionUsesName(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("stable selection depended on the old index: %d %s", response.Code, response.Body.String())
 	}
-	body, err := json.Marshal(DownloadBackupRequest{Name: filepath.Base(path)})
-	if err != nil {
-		t.Fatal(err)
-	}
 	response = httptest.NewRecorder()
-	handler.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/api/v3/backups/download", bytes.NewReader(body)))
+	handler.DownloadBackupHandler(response, httptest.NewRequest(http.MethodGet, "/api/v3/backups/download?"+query.Encode(), nil))
 	if response.Code != http.StatusOK || !bytes.HasPrefix(response.Body.Bytes(), []byte("PK")) {
 		t.Fatalf("stable download: %d", response.Code)
 	}
@@ -97,10 +98,13 @@ func TestAnalyzeBackupHandler(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("unexpected status %d: %s", response.Code, response.Body.String())
 	}
-	var analysis SaveAnalysis
-	if err := json.NewDecoder(response.Body).Decode(&analysis); err != nil {
+	var body struct {
+		Data SaveAnalysis `json:"data"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
+	analysis := body.Data
 	if analysis.DaysPlayed != 67 || analysis.Players != 3 || analysis.Furnaces != 2 {
 		t.Fatalf("unexpected analysis response: %+v", analysis)
 	}

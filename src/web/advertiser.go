@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config/configchanger"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
@@ -48,28 +48,26 @@ func normalizeAdvertiserOverride(mode, value string) (string, error) {
 }
 
 func SaveAdvertiserOverrideHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
-		http.Error(w, `{"status":"error","message":"Method not allowed"}`, http.StatusMethodNotAllowed)
+		w.Header().Set("Allow", http.MethodPost)
+		api.WriteError(w, http.StatusMethodNotAllowed, "method_not_allowed", "Method not allowed")
 		return
 	}
-
 	var request advertiserOverrideRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, `{"status":"error","message":"Invalid request"}`, http.StatusBadRequest)
+	if err := api.DecodeJSONLimit(w, r, &request, 16<<10); err != nil {
+		api.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 		return
 	}
 
 	override, err := normalizeAdvertiserOverride(request.Mode, request.Value)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"status": "error", "message": err.Error()})
+		api.WriteError(w, http.StatusUnprocessableEntity, "invalid_advertiser", err.Error())
 		return
 	}
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		http.Error(w, `{"status":"error","message":"Failed to load configuration"}`, http.StatusInternalServerError)
+		api.WriteError(w, http.StatusInternalServerError, "config_load_failed", "Failed to load configuration")
 		return
 	}
 	cfg.AdvertiserOverride = override
@@ -78,14 +76,12 @@ func SaveAdvertiserOverrideHandler(w http.ResponseWriter, r *http.Request) {
 		cfg.ServerVisible = &nativeAdvertisementDisabled
 	}
 	if err := configchanger.SaveConfig(cfg, false); err != nil {
-		http.Error(w, `{"status":"error","message":"Failed to save configuration"}`, http.StatusInternalServerError)
+		api.WriteError(w, http.StatusInternalServerError, "config_save_failed", "Failed to save configuration")
 		return
 	}
 
-	w.WriteHeader(http.StatusAccepted)
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"status":  "restarting",
-		"message": "Advertiser configuration saved. SSUI is restarting.",
+	api.WriteData(w, http.StatusAccepted, api.RestartReceipt{
+		State: "restarting", Message: "Advertiser configuration saved. SSUI is restarting",
 	})
 
 	go func() {

@@ -244,7 +244,7 @@
         try {
             if (!configuredWorldID) {
                 const response = await fetch('/api/v3/server/status');
-                if (response.ok) worldID = (await response.json()).worldID || worldID;
+                if (response.ok) worldID = (await response.json()).worldId || worldID;
             }
         } catch (_) {}
 

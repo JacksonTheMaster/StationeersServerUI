@@ -33,21 +33,22 @@ function setButtonLoading(buttonId, isLoading) {
     }
 }
 
+async function slpRequest(url, options) {
+    const response = await fetch(url, options);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'SLP request failed');
+    return data;
+}
+
 function installSLP() {
     setButtonLoading('installSLPBtn', true);
     showPopup('info', 'Installing Stationeers Launch Pad...');
     
-    fetch('/api/v3/slp/install', { method: 'POST' })
-        .then(response => response.json())
+    slpRequest('/api/v3/slp/install', { method: 'POST' })
         .then(data => {
-            if (data.success) {
-                showPopup('success', 'Stationeers Launch Pad installed successfully! The page will refresh automatically.');
-                setButtonLoading('installSLPBtn', false);
-                setTimeout(() => reloadConfigTab('slp'), 1200);
-            } else {
-                showPopup('error', 'Failed to install SLP:\n\n' + (data.error || 'Unknown error'));
-                setButtonLoading('installSLPBtn', false);
-            }
+            showPopup('success', 'Stationeers Launch Pad installed successfully' + (data.version ? ' (Version: ' + data.version + ')' : '') + '! The page will refresh automatically.');
+            setButtonLoading('installSLPBtn', false);
+            setTimeout(() => reloadConfigTab('slp'), 1200);
         })
         .catch(error => {
             showPopup('error', 'Failed to install SLP:\n\n' + (error.message || 'Network error'));
@@ -62,17 +63,11 @@ function uninstallSLP() {
     setButtonLoading('uninstallSLPBtn', true);
     showPopup('info', 'Uninstalling Stationeers Launch Pad...');
 
-    fetch('/api/v3/slp/uninstall', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showPopup('success', 'Stationeers Launch Pad uninstalled successfully! The page will refresh automatically.');
-                setButtonLoading('uninstallSLPBtn', false);
-                setTimeout(() => reloadConfigTab('slp'), 1200);
-            } else {
-                showPopup('error', 'Failed to uninstall SLP:\n\n' + (data.error || 'Unknown error'));
-                setButtonLoading('uninstallSLPBtn', false);
-            }
+    slpRequest('/api/v3/slp/uninstall', { method: 'POST' })
+        .then(() => {
+            showPopup('success', 'Stationeers Launch Pad uninstalled successfully! The page will refresh automatically.');
+            setButtonLoading('uninstallSLPBtn', false);
+            setTimeout(() => reloadConfigTab('slp'), 1200);
         })
         .catch(error => {
             showPopup('error', 'Failed to uninstall SLP:\n\n' + (error.message || 'Network error'));
@@ -87,17 +82,11 @@ function reinstallSLP() {
     setButtonLoading('reinstallSLPBtn', true);
     showPopup('info', 'Reinstalling Stationeers Launch Pad...\n\nThis will re-download the latest version while keeping your mods intact.');
 
-    fetch('/api/v3/slp/reinstall', { method: 'POST' })
-        .then(response => response.json())
+    slpRequest('/api/v3/slp/reinstall', { method: 'POST' })
         .then(data => {
-            if (data.success) {
-                showPopup('success', 'Stationeers Launch Pad reinstalled successfully!' + (data.version ? ' (Version: ' + data.version + ')' : '') + ' The page will refresh automatically.');
-                setButtonLoading('reinstallSLPBtn', false);
-                setTimeout(() => reloadConfigTab('slp'), 1200);
-            } else {
-                showPopup('error', 'Failed to reinstall SLP:\n\n' + (data.error || 'Unknown error'));
-                setButtonLoading('reinstallSLPBtn', false);
-            }
+            showPopup('success', 'Stationeers Launch Pad reinstalled successfully!' + (data.version ? ' (Version: ' + data.version + ')' : '') + ' The page will refresh automatically.');
+            setButtonLoading('reinstallSLPBtn', false);
+            setTimeout(() => reloadConfigTab('slp'), 1200);
         })
         .catch(error => {
             showPopup('error', 'Failed to reinstall SLP:\n\n' + (error.message || 'Network error'));
@@ -110,20 +99,15 @@ function updateSingleMod(workshopHandle, index) {
     setButtonLoading(btnId, true);
     showPopup('info', 'Updating workshop mod ' + workshopHandle + '...\n\nPlease wait.');
 
-    fetch('/api/v3/slp/mods', {
+    slpRequest('/api/v3/slp/mods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workshopHandle: workshopHandle })
+        body: JSON.stringify({ workshopIds: [workshopHandle] })
     })
-        .then(response => response.json())
-        .then(data => {
+        .then(() => {
             setButtonLoading(btnId, false);
-            if (data.success) {
-                showPopup('success', 'Workshop mod updated successfully!\n\nReloading mod list...');
-                loadInstalledMods(true);
-            } else {
-                showPopup('error', 'Failed to update mod:\n\n' + (data.error || 'Unknown error'));
-            }
+            showPopup('success', 'Workshop mod updated successfully!\n\nReloading mod list...');
+            loadInstalledMods(true);
         })
         .catch(error => {
             showPopup('error', 'Failed to update mod:\n\n' + (error.message || 'Network error'));
@@ -135,16 +119,11 @@ function updateWorkshopMods() {
     setButtonLoading('updateWorkshopModsBtn', true);
     showPopup('info', 'Updating workshop mods...\n\nThis may take some time depending on the number of mods. Please wait.');
     
-    fetch('/api/v3/slp/mods/update', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
+    slpRequest('/api/v3/slp/mods/update', { method: 'POST' })
+        .then(() => {
             setButtonLoading('updateWorkshopModsBtn', false);
-            if (data.success) {
-                showPopup('success', 'Workshop mods updated successfully.');
-                loadInstalledMods(true);
-            } else {
-                showPopup('error', 'Failed to update workshop mods:\n\n' + (data.error || 'Unknown error'));
-            }
+            showPopup('success', 'Workshop mods updated successfully.');
+            loadInstalledMods(true);
         })
         .catch(error => {
             showPopup('error', 'Failed to update workshop mods:\n\n' + (error.message || 'Network error'));
@@ -167,21 +146,16 @@ function installWorkshopMods() {
     setButtonLoading('installWorkshopModsBtn', true);
     showPopup('info', 'Downloading and installing ' + workshopHandles.length + ' workshop item(s)...\n\nThis can take a while.');
 
-    fetch('/api/v3/slp/mods', {
+    slpRequest('/api/v3/slp/mods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workshopHandles })
+        body: JSON.stringify({ workshopIds: workshopHandles })
     })
-        .then(response => response.json())
-        .then(data => {
+        .then(() => {
             setButtonLoading('installWorkshopModsBtn', false);
-            if (data.success) {
-                input.value = '';
-                showPopup('success', 'Workshop mods installed successfully.');
-                loadInstalledMods(true);
-            } else {
-                showPopup('error', 'Failed to install workshop mods:\n\n' + (data.error || 'Unknown error'));
-            }
+            input.value = '';
+            showPopup('success', 'Workshop mods installed successfully.');
+            loadInstalledMods(true);
         })
         .catch(error => {
             setButtonLoading('installWorkshopModsBtn', false);
@@ -268,28 +242,22 @@ function uploadModPackage() {
     reader.onload = function(e) {
         const zipData = e.target.result;
         
-        fetch('/api/v3/slp/packages', {
+        slpRequest('/api/v3/slp/packages', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/zip'
             },
             body: zipData
         })
-        .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                showPopup('success', 'Mod package uploaded successfully!\n\n' + (data.message || 'The mods have been extracted and are ready to use.'));
-                selectedModFile = null;
-                document.getElementById('modPackageUpload').value = '';
-                updateFileDisplay();
-                updateUploadProgress(100);
-                loadInstalledMods(true);
-                setTimeout(() => updateUploadProgress(0), 2000);
-                setButtonLoading('uploadModPackageBtn', false);
-            } else {
-                showPopup('error', 'Failed to upload mod package:\n\n' + (data.error || 'Unknown error'));
-                setButtonLoading('uploadModPackageBtn', false);
-            }
+            showPopup('success', 'Mod package uploaded successfully!\n\n' + (data.message || 'The mods have been extracted and are ready to use.'));
+            selectedModFile = null;
+            document.getElementById('modPackageUpload').value = '';
+            updateFileDisplay();
+            updateUploadProgress(100);
+            loadInstalledMods(true);
+            setTimeout(() => updateUploadProgress(0), 2000);
+            setButtonLoading('uploadModPackageBtn', false);
         })
         .catch(error => {
             showPopup('error', 'Upload failed:\n\n' + (error.message || 'Network error'));
@@ -386,14 +354,13 @@ function loadInstalledMods(reloadOnFailure = false) {
     if (loader) loader.style.display = 'block';
     if (modsList) modsList.innerHTML = '';
     
-    fetch('/api/v3/slp/mods')
-        .then(response => response.json())
+    slpRequest('/api/v3/slp/mods')
         .then(data => {
             if (loader) loader.style.display = 'none';
-            
-            if (data.success && data.mods && data.mods.length > 0) {
-                modsData = data.mods;
-                renderModsList(data.mods);
+
+            if (data.items && data.items.length > 0) {
+                modsData = data.items;
+                renderModsList(data.items);
             } else {
                 if (modsList) modsList.innerHTML = '<div class="mods-empty">No mods installed yet. Upload a mod package to get started!</div>';
             }
@@ -429,7 +396,7 @@ function createModCard(mod, index) {
     const card = document.createElement('div');
     card.className = 'mod-card';
     
-    const images = mod.Images || {};
+    const images = mod.images || {};
     const imageArray = Object.entries(images);
     
     let imageHtml = '';
@@ -448,7 +415,7 @@ function createModCard(mod, index) {
         `;
     }
     
-    const parsedDescription = mod.Description ? parseSteamMarkup(mod.Description) : '';
+    const parsedDescription = mod.description ? parseSteamMarkup(mod.description) : '';
     
     let descriptionHtml = '';
     if (parsedDescription) {
@@ -462,19 +429,19 @@ function createModCard(mod, index) {
     
     card.innerHTML = `
         ${imageHtml}
-        <div class="mod-title">${escapeHtml(mod.Name || 'Unknown Mod')}</div>
-        ${mod.Author ? `<div class="mod-author">By ${escapeHtml(mod.Author)}</div>` : ''}
-        ${mod.Version ? `<div class="mod-version">v${escapeHtml(mod.Version)}</div>` : ''}
+        <div class="mod-title">${escapeHtml(mod.name || 'Unknown Mod')}</div>
+        ${mod.author ? `<div class="mod-author">By ${escapeHtml(mod.author)}</div>` : ''}
+        ${mod.version ? `<div class="mod-version">v${escapeHtml(mod.version)}</div>` : ''}
         ${descriptionHtml}
     `;
 
-    if (mod.WorkshopHandle) {
+    if (mod.workshopId) {
         const actions = document.createElement('div');
         actions.className = 'mod-card-actions';
 
         const workshopLink = document.createElement('a');
         workshopLink.className = 'mod-workshop-link';
-        workshopLink.href = 'https://steamcommunity.com/sharedfiles/filedetails/?id=' + encodeURIComponent(mod.WorkshopHandle);
+        workshopLink.href = 'https://steamcommunity.com/sharedfiles/filedetails/?id=' + encodeURIComponent(mod.workshopId);
         workshopLink.target = '_blank';
         workshopLink.rel = 'noopener noreferrer';
         workshopLink.textContent = '↗ Workshop';
@@ -483,7 +450,7 @@ function createModCard(mod, index) {
         updateButton.className = 'mod-update-button';
         updateButton.id = `update-mod-btn-${index}`;
         updateButton.textContent = '🔄 Update';
-        updateButton.addEventListener('click', () => updateSingleMod(mod.WorkshopHandle, index));
+        updateButton.addEventListener('click', () => updateSingleMod(mod.workshopId, index));
 
         actions.appendChild(workshopLink);
         actions.appendChild(updateButton);

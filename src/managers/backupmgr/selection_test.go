@@ -99,7 +99,7 @@ func TestBackupHTTPRejectsOldAndAmbiguousSelections(t *testing.T) {
 	h := &HTTPHandler{manager: NewBackupManager(BackupConfig{SafeBackupDir: filepath.Dir(path)})}
 	name := filepath.Base(path)
 	for _, query := range []string{"", "index=0", "file=" + url.QueryEscape(path), "name=" + name + "&index=0", "name=" + name + "&name=" + name, "name=../analysis.save", "name=" + name + "&bad=%zz", "name=" + name + ";index=0"} {
-		for _, handle := range []http.HandlerFunc{h.AnalyzeBackupHandler, h.RestoreBackupHandler} {
+		for _, handle := range []http.HandlerFunc{h.AnalyzeBackupHandler, h.DownloadBackupHandler} {
 			response := httptest.NewRecorder()
 			handle(response, httptest.NewRequest(http.MethodGet, "/?"+query, nil))
 			if response.Code != http.StatusBadRequest {
@@ -109,21 +109,28 @@ func TestBackupHTTPRejectsOldAndAmbiguousSelections(t *testing.T) {
 	}
 	for _, body := range []string{`{}`, `null`, `{"index":0}`, `{"saveFile":"analysis.save"}`, `{"name":"analysis.save","index":0}`, `{"name":0}`, `{"name":"../analysis.save"}`, `{"name":"analysis.save"} {}`, `{"name":"analysis.save"} garbage`} {
 		response := httptest.NewRecorder()
-		h.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body)))
+		request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
+		request.Header.Set("Content-Type", "application/json")
+		h.RestoreBackupHandler(response, request)
 		if response.Code != http.StatusBadRequest {
 			t.Fatalf("body %s: got %d: %s", body, response.Code, response.Body.String())
 		}
 	}
 	// Restore must return here, before attempting to stop the game server.
-	for _, handle := range []http.HandlerFunc{h.AnalyzeBackupHandler, h.RestoreBackupHandler} {
-		response := httptest.NewRecorder()
-		handle(response, httptest.NewRequest(http.MethodGet, "/?name=missing.save", nil))
-		if response.Code != http.StatusNotFound {
-			t.Fatalf("missing selection: %d %s", response.Code, response.Body.String())
-		}
-	}
 	response := httptest.NewRecorder()
-	h.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"name":"missing.save"}`)))
+	h.AnalyzeBackupHandler(response, httptest.NewRequest(http.MethodGet, "/?name=missing.save", nil))
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("missing analysis: %d %s", response.Code, response.Body.String())
+	}
+	response = httptest.NewRecorder()
+	restore := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"name":"missing.save"}`))
+	restore.Header.Set("Content-Type", "application/json")
+	h.RestoreBackupHandler(response, restore)
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("missing restore: %d %s", response.Code, response.Body.String())
+	}
+	response = httptest.NewRecorder()
+	h.DownloadBackupHandler(response, httptest.NewRequest(http.MethodGet, "/?name=missing.save", nil))
 	if response.Code != http.StatusNotFound {
 		t.Fatalf("missing download: %d %s", response.Code, response.Body.String())
 	}
@@ -142,10 +149,15 @@ func TestBackupHTTPNameRoundTrip(t *testing.T) {
 	h := &HTTPHandler{manager: NewBackupManager(BackupConfig{SafeBackupDir: safe})}
 	response := httptest.NewRecorder()
 	h.ListBackupsHandler(response, httptest.NewRequest(http.MethodGet, "/", nil))
-	var rows []map[string]any
-	if err := json.Unmarshal(response.Body.Bytes(), &rows); err != nil {
+	var result struct {
+		Data struct {
+			Items []map[string]any `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
+	rows := result.Data.Items
 	if len(rows) != 1 || len(rows[0]) != 2 || rows[0]["name"] != name || rows[0]["saveTime"] == nil {
 		t.Fatalf("list leaked paths or indices: %#v", rows)
 	}
@@ -154,9 +166,8 @@ func TestBackupHTTPNameRoundTrip(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("encoded name: %d %s", response.Code, response.Body.String())
 	}
-	body, _ := json.Marshal(DownloadBackupRequest{Name: name})
 	response = httptest.NewRecorder()
-	h.DownloadBackupHandler(response, httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body)))
+	h.DownloadBackupHandler(response, httptest.NewRequest(http.MethodGet, "/?"+url.Values{"name": {name}}.Encode(), nil))
 	want, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

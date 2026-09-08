@@ -221,7 +221,12 @@ func DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 func TokensHandler(w http.ResponseWriter, r *http.Request) {
 	principal, _ := PrincipalFromContext(r.Context())
-	WriteData(w, http.StatusOK, map[string]any{"tokens": security.ListTokens(principal)})
+	tokens := security.ListTokens(principal)
+	items := make([]tokenResponse, 0, len(tokens))
+	for _, token := range tokens {
+		items = append(items, publicToken(token))
+	}
+	WriteData(w, http.StatusOK, map[string]any{"tokens": items})
 }
 
 func CreateTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -240,8 +245,7 @@ func CreateTokenHandler(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, "token_failed", err.Error())
 		return
 	}
-	token.SecretHash = ""
-	WriteData(w, http.StatusCreated, map[string]any{"token": token, "secret": secret})
+	WriteData(w, http.StatusCreated, map[string]any{"token": publicToken(token), "secret": secret})
 }
 
 func DeleteTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -264,7 +268,44 @@ func DeleteTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 func SessionsHandler(w http.ResponseWriter, r *http.Request) {
 	principal, _ := PrincipalFromContext(r.Context())
-	WriteData(w, http.StatusOK, map[string]any{"sessions": security.ListSessions(principal)})
+	sessions := security.ListSessions(principal)
+	items := make([]sessionListResponse, 0, len(sessions))
+	for _, session := range sessions {
+		items = append(items, sessionListResponse{
+			ID: session.ID, UserID: session.UserID, CreatedAt: session.CreatedAt,
+			LastUsedAt: session.LastUsedAt, IdleExpiresAt: session.IdleExpiresAt,
+			AbsoluteExpiresAt: session.AbsoluteExpiresAt,
+		})
+	}
+	WriteData(w, http.StatusOK, map[string]any{"sessions": items})
+}
+
+type tokenResponse struct {
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	OwnerID    string     `json:"ownerId"`
+	Scopes     []string   `json:"scopes"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	ExpiresAt  *time.Time `json:"expiresAt,omitempty"`
+	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
+	RevokedAt  *time.Time `json:"revokedAt,omitempty"`
+}
+
+func publicToken(token security.Token) tokenResponse {
+	return tokenResponse{
+		ID: token.ID, Name: token.Name, OwnerID: token.OwnerID, Scopes: token.Scopes,
+		CreatedAt: token.CreatedAt, ExpiresAt: token.ExpiresAt,
+		LastUsedAt: token.LastUsedAt, RevokedAt: token.RevokedAt,
+	}
+}
+
+type sessionListResponse struct {
+	ID                string    `json:"id"`
+	UserID            string    `json:"userId"`
+	CreatedAt         time.Time `json:"createdAt"`
+	LastUsedAt        time.Time `json:"lastUsedAt"`
+	IdleExpiresAt     time.Time `json:"idleExpiresAt"`
+	AbsoluteExpiresAt time.Time `json:"absoluteExpiresAt"`
 }
 
 func DeleteSessionHandler(w http.ResponseWriter, r *http.Request) {

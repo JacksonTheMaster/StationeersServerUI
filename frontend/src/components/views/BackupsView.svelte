@@ -41,7 +41,7 @@
       }
       
       const data = await response.json();
-      backupStatus = { isRunning: Boolean(data?.isRunning) };
+      backupStatus = { isRunning: Boolean(data?.running) };
     } catch (err) {
       console.error('Failed to load backup status:', err);
       // Silently fail for status updates to avoid UI flicker
@@ -75,8 +75,8 @@
       throw new Error(errorMessage);
     }
     
-    if (Array.isArray(data)) {
-      const newBackups = data.map(backup => ({
+    if (Array.isArray(data?.items)) {
+      const newBackups = data.items.map(backup => ({
         name: backup.name,
         date: new Date(backup.saveTime).toLocaleDateString(),
         time: new Date(backup.saveTime).toLocaleTimeString(),
@@ -121,9 +121,10 @@
     success = null;
 
     try {
-      const selection = new URLSearchParams({ name: selectedBackup.name });
-      const response = await apiFetch(`/api/v3/backups/restore?${selection}`, {
+      const response = await apiFetch('/api/v3/backups/restore', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: selectedBackup.name })
       });
 
       if (!response.ok) {

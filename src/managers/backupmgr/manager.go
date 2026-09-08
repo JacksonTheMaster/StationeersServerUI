@@ -178,6 +178,38 @@ func (m *BackupManager) GetBackupFileData(name string) (*BackupFileData, error) 
 	return ReadBackupFileData(m, name, 0)
 }
 
+// OpenBackupFile opens an inventoried archive without loading it into memory.
+// The caller owns the returned file.
+func OpenBackupFile(m *BackupManager, name string) (*os.File, BackupFileInfo, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if err := m.ctx.Err(); err != nil {
+		return nil, BackupFileInfo{}, err
+	}
+	target, err := selectBackup(m, name)
+	if err != nil {
+		return nil, BackupFileInfo{}, fmt.Errorf("failed to get backup files: %w", err)
+	}
+	path, err := backupFilePath(m, name)
+	if err != nil {
+		return nil, BackupFileInfo{}, err
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, BackupFileInfo{}, err
+	}
+	info, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, BackupFileInfo{}, err
+	}
+	return file, BackupFileInfo{
+		Filename: filepath.Base(path),
+		Size:     info.Size(),
+		SaveTime: target.SaveTime,
+	}, nil
+}
+
 var ErrBackupTooLarge = errors.New("backup exceeds the download size limit")
 
 // ReadBackupFileData applies an optional byte limit before allocating the file

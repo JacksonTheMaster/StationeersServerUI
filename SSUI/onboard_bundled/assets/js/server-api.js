@@ -37,7 +37,11 @@ function triggerSteamCMD() {
     status.hidden = false;
     typeTextWithCallback(status, 'Running SteamCMD, please wait... ', 20, () => {
         fetch('/api/v3/steamcmd/run', { method: 'POST' })
-            .then(response => response.json())
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'SteamCMD failed');
+                return data;
+            })
             .then(data => {
                 showPopup("info", data.message);
             })
@@ -80,8 +84,8 @@ function fetchBackups() {
                 return;
             }
             
-            const data = result.data;
-            if (!data || data.length === 0) {
+            const data = result.data?.items || [];
+            if (data.length === 0) {
                 backupList.innerHTML = '<li class="no-backups">No valid backup files found.</li>';
                 updateLatestBackupDisplay(null);
                 return;
@@ -226,6 +230,7 @@ function fetchPlayers() {
     return fetch('/api/v3/server/players')
         .then(response => response.json())
         .then(data => {
+            data = data.players || [];
             playerList.innerHTML = '';
             updatePlayerCount(Array.isArray(data) ? data.length : null);
             
@@ -337,8 +342,11 @@ function updateLatestBackupDisplay(backup) {
 function restoreBackup(name) {
     if (!window.SSUIAccess.require('backups.restore', "You don't have permission to restore backups.")) return;
     const status = document.getElementById('status');
-    const selection = new URLSearchParams({ name });
-    fetch(`/api/v3/backups/restore?${selection}`, { method: 'POST' })
+    fetch('/api/v3/backups/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+    })
         .then(response => response.text().then(message => ({ ok: response.ok, message })))
         .then(result => {
             if (!result.ok) throw new Error(result.message || 'Restore failed');
@@ -363,13 +371,8 @@ function downloadBackup(name) {
     status.hidden = false;
     typeTextWithCallback(status, 'Preparing download...', 20, () => {});
     
-    fetch('/api/v3/backups/download', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name })
-    })
+    const selection = new URLSearchParams({ name });
+    fetch(`/api/v3/backups/download?${selection}`)
     .then(response => {
         if (!response.ok) {
             return response.json().then(err => { throw new Error(err.error || 'Download failed'); });
@@ -407,9 +410,9 @@ function pollRecurringTasks() {
         fetch('/api/v3/server/status')
             .then(response => response.json())
             .then(data => {
-                updateStatusIndicator(data.isRunning, false, data.uptime, data.state);
-                if (data.uuid) {
-                    localStorage.setItem('gameserverrunID', data.uuid);
+                updateStatusIndicator(data.running, false, formatAPIUptime(data.uptimeSeconds), data.state);
+                if (data.serverId) {
+                    localStorage.setItem('gameserverrunID', data.serverId);
                 }
             })
             .catch(err => {
@@ -440,6 +443,17 @@ function pollRecurringTasks() {
             fetchBackups().catch(err => console.error("Failed to fetch backups:", err));
         }, 30000);
     }
+}
+
+function formatAPIUptime(seconds) {
+    seconds = Math.max(0, Number(seconds) || 0);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remaining = Math.floor(seconds % 60);
+    return [days && `${days}d`, (hours || days) && `${hours}h`, (minutes || hours || days) && `${minutes}m`, `${remaining}s`]
+        .filter(Boolean)
+        .join('');
 }
 
 function updateStatusIndicator(isRunning, isError = false, uptime = '', state = 'uncertain') {

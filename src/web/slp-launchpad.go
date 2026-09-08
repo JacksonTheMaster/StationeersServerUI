@@ -1,178 +1,104 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/modding"
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/steamcmd"
 )
 
 func InstallSLPHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := modding.InstallSLP(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   err.Error(),
-		})
+	version, err := modding.InstallSLP()
+	if err != nil {
+		api.WriteError(w, http.StatusBadGateway, "slp_install_failed", err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"success": true}`))
+	api.WriteData(w, http.StatusOK, map[string]string{"version": version})
 }
 
 func UninstallSLPHandler(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := modding.UninstallSLP(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   err.Error(),
-		})
+	version, err := modding.UninstallSLP()
+	if err != nil {
+		api.WriteError(w, http.StatusInternalServerError, "slp_uninstall_failed", err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"success": true}`))
+	api.WriteData(w, http.StatusOK, map[string]string{"version": version})
 }
 
 func ReinstallSLPHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	version, err := modding.ReinstallSLP()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   err.Error(),
-		})
+		api.WriteError(w, http.StatusBadGateway, "slp_reinstall_failed", err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"version": version,
-		"message": "SLP reinstalled successfully",
-	})
+	api.WriteData(w, http.StatusOK, map[string]string{"version": version})
 }
 
 func UploadModPackageHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+	r.Body = http.MaxBytesReader(w, r.Body, 500<<20)
 	if err := modding.ProcessModPackageUpload(r.Body); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   err.Error(),
-		})
+		api.WriteError(w, http.StatusUnprocessableEntity, "mod_package_failed", err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "Mod package uploaded and extracted successfully",
-	})
+	api.WriteData(w, http.StatusOK, api.Message{Message: "Mod package imported"})
 }
 
 func GetInstalledModDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	mods := modding.GetModList()
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"mods":    mods,
-	})
+	type modResponse struct {
+		Name           string            `json:"name"`
+		Author         string            `json:"author"`
+		Version        string            `json:"version"`
+		Description    string            `json:"description"`
+		WorkshopHandle string            `json:"workshopId,omitempty"`
+		Images         map[string]string `json:"images,omitempty"`
+	}
+	items := make([]modResponse, 0, len(mods))
+	for _, mod := range mods {
+		items = append(items, modResponse{
+			Name: mod.Name, Author: mod.Author, Version: mod.Version, Description: mod.Description,
+			WorkshopHandle: mod.WorkshopHandle, Images: mod.Images,
+		})
+	}
+	api.WriteData(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func UpdateWorkshopModsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	logs, err := steamcmd.UpdateWorkshopItems()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   err.Error(),
-			"logs":    logs,
-		})
+		api.WriteErrorDetails(w, http.StatusBadGateway, "workshop_update_failed", err.Error(), map[string]any{"logs": logs})
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "Workshop mods updated successfully",
-		"logs":    logs,
-	})
+	api.WriteData(w, http.StatusOK, map[string]any{"logs": logs})
 }
 
 func UpdateSingleWorkshopModHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   "method not allowed",
-		})
-		return
-	}
-
 	var req struct {
-		WorkshopHandle  string   `json:"workshopHandle"`
-		WorkshopHandles []string `json:"workshopHandles"`
+		WorkshopIDs []string `json:"workshopIds"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   "invalid request body",
-		})
+	if err := api.DecodeJSONLimit(w, r, &req, 64<<10); err != nil {
+		api.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 		return
 	}
 
-	inputs := append([]string{}, req.WorkshopHandles...)
-	if req.WorkshopHandle != "" {
-		inputs = append(inputs, req.WorkshopHandle)
-	}
-
-	workshopHandles, err := parseWorkshopHandles(inputs)
+	workshopHandles, err := parseWorkshopHandles(req.WorkshopIDs)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   err.Error(),
-		})
+		api.WriteError(w, http.StatusUnprocessableEntity, "invalid_workshop_id", err.Error())
 		return
 	}
 
 	logs, err := steamcmd.DownloadWorkshopItems(workshopHandles)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"error":   err.Error(),
-			"logs":    logs,
-		})
+		api.WriteErrorDetails(w, http.StatusBadGateway, "workshop_download_failed", err.Error(), map[string]any{"logs": logs})
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "Workshop mods downloaded successfully",
-		"logs":    logs,
-	})
+	api.WriteData(w, http.StatusOK, map[string]any{"workshopIds": workshopHandles, "logs": logs})
 }
 
 func parseWorkshopHandles(inputs []string) ([]string, error) {

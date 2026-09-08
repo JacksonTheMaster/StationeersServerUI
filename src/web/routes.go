@@ -90,15 +90,14 @@ func registerIdentityRoutes(mux *http.ServeMux) {
 }
 
 func registerServerRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/v3/server/start", api.Require(security.PermissionServerControl, api.JSONBoundary(StartServer)))
-	mux.HandleFunc("POST /api/v3/server/stop", api.Require(security.PermissionServerControl, api.JSONBoundary(StopServer)))
-	mux.HandleFunc("GET /api/v3/server/status", api.Require(security.PermissionServerView, api.JSONBoundary(GetGameServerRunState)))
-	mux.HandleFunc("GET /api/v3/server/players", api.Require(security.PermissionServerView, api.JSONBoundary(HandleConnectedPlayersList)))
-	mux.HandleFunc("GET /api/v3/monitor/status", api.Require(security.PermissionServerView, api.JSONBoundary(HandleMonitorStatus)))
-	mux.HandleFunc("POST /api/v3/backend/reload", api.Require(security.PermissionBackendReload, api.JSONBoundary(HandleReloadAll)))
-	mux.HandleFunc("POST /api/v3/steamcmd/run", api.Require(security.PermissionSteamCMDRun, api.JSONBoundary(HandleRunSteamCMD)))
-	mux.HandleFunc("GET /api/v3/sscm/status", api.Require(security.PermissionConsoleRead, api.JSONBoundary(HandleIsSSCMEnabled)))
-	mux.HandleFunc("POST /api/v3/sscm/commands", api.Require(security.PermissionConsoleWrite, api.JSONBoundary(HandleCommand)))
+	mux.HandleFunc("POST /api/v3/server/start", api.Require(security.PermissionServerControl, StartServer))
+	mux.HandleFunc("POST /api/v3/server/stop", api.Require(security.PermissionServerControl, StopServer))
+	mux.HandleFunc("GET /api/v3/server/status", api.Require(security.PermissionServerView, GetGameServerRunState))
+	mux.HandleFunc("GET /api/v3/server/players", api.Require(security.PermissionServerView, HandleConnectedPlayersList))
+	mux.HandleFunc("POST /api/v3/backend/reload", api.Require(security.PermissionBackendReload, HandleReloadAll))
+	mux.HandleFunc("POST /api/v3/steamcmd/run", api.Require(security.PermissionSteamCMDRun, HandleRunSteamCMD))
+	mux.HandleFunc("GET /api/v3/sscm/status", api.Require(security.PermissionConsoleRead, HandleIsSSCMEnabled))
+	mux.HandleFunc("POST /api/v3/sscm/commands", api.Require(security.PermissionConsoleWrite, HandleCommand))
 	mux.HandleFunc("GET /api/v3/streams/console", api.Require(security.PermissionConsoleRead, GetLogOutput))
 	mux.HandleFunc("GET /api/v3/streams/events", api.Require(security.PermissionServerView, GetEventOutput))
 	mux.HandleFunc("GET /api/v3/streams/logs/debug", api.Require(security.PermissionConsoleRead, GetDebugLogOutput))
@@ -110,33 +109,33 @@ func registerServerRoutes(mux *http.ServeMux) {
 
 func registerBackupRoutes(mux *http.ServeMux) {
 	handler := backupmgr.NewHTTPHandler(backupmgr.CurrentBackupManager())
-	mux.HandleFunc("GET /api/v3/backups", api.Require(security.PermissionBackupsView, api.JSONBoundary(handler.ListBackupsHandler)))
-	mux.HandleFunc("GET /api/v3/backups/analysis", api.Require(security.PermissionBackupsAnalyze, api.JSONBoundary(handler.AnalyzeBackupHandler)))
-	mux.HandleFunc("POST /api/v3/backups/restore", api.Require(security.PermissionBackupsRestore, api.JSONBoundary(handler.RestoreBackupHandler)))
-	mux.HandleFunc("POST /api/v3/backups/download", api.Require(security.PermissionBackupsDownload, handler.DownloadBackupHandler))
+	mux.HandleFunc("GET /api/v3/backups", api.Require(security.PermissionBackupsView, handler.ListBackupsHandler))
+	mux.HandleFunc("GET /api/v3/backups/analysis", api.Require(security.PermissionBackupsAnalyze, handler.AnalyzeBackupHandler))
+	mux.HandleFunc("POST /api/v3/backups/restore", api.Require(security.PermissionBackupsRestore, handler.RestoreBackupHandler))
+	mux.HandleFunc("GET /api/v3/backups/download", api.Require(security.PermissionBackupsDownload, handler.DownloadBackupHandler))
 }
 
 func registerSettingsRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v3/settings", api.Require(security.PermissionSettingsManage, api.JSONBoundary(configchanger.SaveConfigRestful)))
-	mux.HandleFunc("GET /api/v3/worldgen/catalog", api.Require(security.PermissionSettingsView, api.JSONBoundary(HandleWorldGenerationCatalog)))
-	mux.HandleFunc("POST /api/v3/advertiser/override", api.Require(security.PermissionSettingsManage, api.JSONBoundary(SaveAdvertiserOverrideHandler)))
-	mux.HandleFunc("POST /api/v3/tls/certificate", api.Require(security.PermissionSecurityManage, api.JSONBoundary(SaveTLSCertificateHandler)))
+	mux.HandleFunc("GET /api/v3/worldgen/catalog", api.Require(security.PermissionSettingsView, HandleWorldGenerationCatalog))
+	mux.HandleFunc("POST /api/v3/advertiser/override", api.Require(security.PermissionSettingsManage, SaveAdvertiserOverrideHandler))
+	mux.HandleFunc("POST /api/v3/tls/certificate", api.Require(security.PermissionSecurityManage, SaveTLSCertificateHandler))
 	mux.HandleFunc("GET /api/v3/update", api.Require(security.PermissionServerView, CheckUpdateHandler))
 	mux.HandleFunc("POST /api/v3/update", api.Require(security.PermissionUpdateInstall, TriggerUpdateHandler))
 	mux.HandleFunc("GET /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleCustomDetection)))
 	mux.HandleFunc("POST /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleCustomDetection)))
 	mux.HandleFunc("DELETE /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleDeleteCustomDetection)))
-	mux.HandleFunc("POST /api/v3/setup/finalize", api.Require(security.PermissionSettingsManage, api.JSONBoundary(SetupFinalizeHandler)))
+	mux.HandleFunc("POST /api/v3/setup/finalize", api.Require(security.PermissionSettingsManage, SetupFinalizeHandler))
 }
 
 func registerModdingRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/v3/slp/install", api.Require(security.PermissionSLPManage, api.JSONBoundary(InstallSLPHandler)))
-	mux.HandleFunc("POST /api/v3/slp/uninstall", api.Require(security.PermissionSLPManage, api.JSONBoundary(UninstallSLPHandler)))
-	mux.HandleFunc("POST /api/v3/slp/reinstall", api.Require(security.PermissionSLPManage, api.JSONBoundary(ReinstallSLPHandler)))
-	mux.HandleFunc("POST /api/v3/slp/packages", api.Require(security.PermissionSLPManage, api.JSONBoundary(UploadModPackageHandler)))
-	mux.HandleFunc("GET /api/v3/slp/mods", api.Require(security.PermissionSLPManage, api.JSONBoundary(GetInstalledModDetailsHandler)))
-	mux.HandleFunc("POST /api/v3/slp/mods/update", api.Require(security.PermissionSLPManage, api.JSONBoundary(UpdateWorkshopModsHandler)))
-	mux.HandleFunc("POST /api/v3/slp/mods", api.Require(security.PermissionSLPManage, api.JSONBoundary(UpdateSingleWorkshopModHandler)))
+	mux.HandleFunc("POST /api/v3/slp/install", api.Require(security.PermissionSLPManage, InstallSLPHandler))
+	mux.HandleFunc("POST /api/v3/slp/uninstall", api.Require(security.PermissionSLPManage, UninstallSLPHandler))
+	mux.HandleFunc("POST /api/v3/slp/reinstall", api.Require(security.PermissionSLPManage, ReinstallSLPHandler))
+	mux.HandleFunc("POST /api/v3/slp/packages", api.Require(security.PermissionSLPManage, UploadModPackageHandler))
+	mux.HandleFunc("GET /api/v3/slp/mods", api.Require(security.PermissionSLPManage, GetInstalledModDetailsHandler))
+	mux.HandleFunc("POST /api/v3/slp/mods/update", api.Require(security.PermissionSLPManage, UpdateWorkshopModsHandler))
+	mux.HandleFunc("POST /api/v3/slp/mods", api.Require(security.PermissionSLPManage, UpdateSingleWorkshopModHandler))
 }
 
 func setupOnly(next http.HandlerFunc) http.HandlerFunc {
