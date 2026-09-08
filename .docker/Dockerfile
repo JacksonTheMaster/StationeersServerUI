@@ -18,6 +18,8 @@ RUN npm run build
 ############
 FROM golang:1.26-bookworm AS go-builder
 
+ARG SSUI_VERSION=""
+
 WORKDIR /src
 
 # Pre-copy go.mod and go.sum for better caching
@@ -28,8 +30,12 @@ COPY . ./
 
 COPY --from=frontend-builder /src/SSUI /src/SSUI
 
-# Build the server (embed will include SSUI/* at build time)
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/StationeersServerUI ./server.go
+# Build the server (embed will include SSUI/* at build time). Release images
+# inject their tag; nightly builds keep the version from config.go.
+RUN if [ -n "$SSUI_VERSION" ]; then \
+      VERSION_FLAG="-X github.com/SteamServerUI/StationeersServerUI/v6/src/config.Version=$SSUI_VERSION"; \
+    fi \
+ && CGO_ENABLED=0 go build -ldflags="-s -w $VERSION_FLAG" -o /out/StationeersServerUI ./server.go
 
 ############
 # Runtime

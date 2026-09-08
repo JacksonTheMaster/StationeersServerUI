@@ -42,7 +42,7 @@
     <div id="update-modal">
         <div class="update-modal-content">
             <button type="button" class="update-modal-close" onclick="closeUpdateModal()" aria-label="Close">&times;</button>
-            <div class="update-modal-icon">⭳</div>
+            <div class="update-modal-icon"><svg class="update-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg></div>
             <h2>SSUI update</h2>
             <p id="update-summary">{{.UIText_UpdateAvailable}}</p>
 
@@ -92,7 +92,7 @@
     </header>
     <main>
 
-        <button onclick="openUpdateModal()" id="update-button" class="update-icon" title="Update available">⭳</button>
+        <button onclick="openUpdateModal()" id="update-button" class="update-icon" title="Update available"><svg class="update-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg></button>
         <h1>Stationeers Server UI v{{.Version}}{{.SSUIIdentifier}}</h1>
 
         <section class="mission-overview" aria-label="Server overview">
