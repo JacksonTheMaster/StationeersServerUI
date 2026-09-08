@@ -9,7 +9,6 @@ import (
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/config/configchanger"
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/security"
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/backupmgr"
-	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/detectionmgr"
 )
 
 func SetupRoutes() *http.ServeMux {
@@ -123,9 +122,9 @@ func registerSettingsRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v3/tls/certificate", api.Require(security.PermissionSecurityManage, SaveTLSCertificateHandler))
 	mux.HandleFunc("GET /api/v3/update", api.Require(security.PermissionServerView, CheckUpdateHandler))
 	mux.HandleFunc("POST /api/v3/update", api.Require(security.PermissionUpdateInstall, TriggerUpdateHandler))
-	mux.HandleFunc("GET /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleCustomDetection)))
-	mux.HandleFunc("POST /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleCustomDetection)))
-	mux.HandleFunc("DELETE /api/v3/detections", api.Require(security.PermissionDetectionsManage, api.JSONBoundary(detectionmgr.HandleDeleteCustomDetection)))
+	mux.HandleFunc("GET /api/v3/detections", api.Require(security.PermissionDetectionsManage, ListDetections))
+	mux.HandleFunc("POST /api/v3/detections", api.Require(security.PermissionDetectionsManage, CreateDetection))
+	mux.HandleFunc("DELETE /api/v3/detections/{id}", api.Require(security.PermissionDetectionsManage, DeleteDetection))
 	mux.HandleFunc("POST /api/v3/setup/finalize", api.Require(security.PermissionSettingsManage, SetupFinalizeHandler))
 }
 

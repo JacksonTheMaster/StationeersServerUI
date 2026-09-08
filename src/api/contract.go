@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -67,92 +66,4 @@ func Method(method string, next http.HandlerFunc) http.HandlerFunc {
 		}
 		next(w, r)
 	}
-}
-
-// JSONBoundary gives old handlers the v3 response contract while they are
-// moved over one by one. Downloads and event streams don't go through here.
-func JSONBoundary(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		buffer := &responseBuffer{header: make(http.Header), status: http.StatusOK}
-		next(buffer, r)
-		copyHeaders(w.Header(), buffer.header)
-		if buffer.status == http.StatusNoContent {
-			w.WriteHeader(buffer.status)
-			return
-		}
-		body := bytes.TrimSpace(buffer.body.Bytes())
-		if buffer.status >= http.StatusBadRequest {
-			WriteError(w, buffer.status, "request_failed", errorMessage(body, http.StatusText(buffer.status)))
-			return
-		}
-		if len(body) == 0 {
-			WriteData(w, buffer.status, map[string]string{"message": http.StatusText(buffer.status)})
-			return
-		}
-		var value any
-		if json.Unmarshal(body, &value) == nil {
-			if object, ok := value.(map[string]any); ok && (object["data"] != nil || object["error"] != nil) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(buffer.status)
-				_, _ = w.Write(append(body, '\n'))
-				return
-			}
-			WriteData(w, buffer.status, value)
-			return
-		}
-		WriteData(w, buffer.status, map[string]string{"message": string(body)})
-	}
-}
-
-type responseBuffer struct {
-	header http.Header
-	body   bytes.Buffer
-	status int
-	wrote  bool
-}
-
-func (buffer *responseBuffer) Header() http.Header {
-	return buffer.header
-}
-
-func (buffer *responseBuffer) WriteHeader(status int) {
-	if buffer.wrote {
-		return
-	}
-	buffer.wrote = true
-	buffer.status = status
-}
-
-func (buffer *responseBuffer) Write(data []byte) (int, error) {
-	if !buffer.wrote {
-		buffer.WriteHeader(http.StatusOK)
-	}
-	return buffer.body.Write(data)
-}
-
-func copyHeaders(destination, source http.Header) {
-	for key, values := range source {
-		if strings.EqualFold(key, "Content-Length") || strings.EqualFold(key, "Content-Type") {
-			continue
-		}
-		for _, value := range values {
-			destination.Add(key, value)
-		}
-	}
-}
-
-func errorMessage(body []byte, fallback string) string {
-	if len(body) == 0 {
-		return fallback
-	}
-	var value map[string]any
-	if json.Unmarshal(body, &value) == nil {
-		if message, ok := value["error"].(string); ok && strings.TrimSpace(message) != "" {
-			return message
-		}
-		if message, ok := value["message"].(string); ok && strings.TrimSpace(message) != "" {
-			return message
-		}
-	}
-	return string(body)
 }

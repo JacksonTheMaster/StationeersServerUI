@@ -4,6 +4,7 @@ package detectionmgr
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,10 @@ import (
 
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
 )
+
+var ErrDetectionNotFound = errors.New("detection not found")
+
+var customDetectionsManager *CustomDetectionsManager
 
 /*
 Custom Detection Pattern Management System
@@ -46,6 +51,31 @@ func NewCustomDetectionsManager(detector *Detector) *CustomDetectionsManager {
 	}
 	manager.LoadDetections()
 	return manager
+}
+
+func InitCustomDetectionsManager(detector *Detector) {
+	customDetectionsManager = NewCustomDetectionsManager(detector)
+}
+
+func GetCustomDetections() []CustomDetection {
+	if customDetectionsManager == nil {
+		return []CustomDetection{}
+	}
+	return customDetectionsManager.GetDetections()
+}
+
+func AddCustomDetection(detection CustomDetection) error {
+	if customDetectionsManager == nil {
+		return errors.New("custom detections manager is not initialized")
+	}
+	return customDetectionsManager.AddDetection(detection)
+}
+
+func RemoveCustomDetection(id string) error {
+	if customDetectionsManager == nil {
+		return errors.New("custom detections manager is not initialized")
+	}
+	return customDetectionsManager.DeleteDetection(id)
 }
 
 // LoadDetections loads custom detections from file
@@ -155,7 +185,7 @@ func (m *CustomDetectionsManager) DeleteDetection(id string) error {
 		}
 	}
 
-	return fmt.Errorf("detection not found")
+	return ErrDetectionNotFound
 }
 
 // GetDetections returns all custom detections

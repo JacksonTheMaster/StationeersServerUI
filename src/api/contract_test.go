@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,40 +10,6 @@ import (
 
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/security"
 )
-
-func TestJSONBoundaryNormalizesLegacyResponses(t *testing.T) {
-	handler := JSONBoundary(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"isRunning": true})
-	})
-	response := httptest.NewRecorder()
-	handler(response, httptest.NewRequest(http.MethodGet, "/api/v3/server/status", nil))
-
-	var body Envelope
-	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
-		t.Fatal(err)
-	}
-	data, ok := body.Data.(map[string]any)
-	if !ok || data["isRunning"] != true || body.Error != nil {
-		t.Fatalf("unexpected v3 response: %#v", body)
-	}
-}
-
-func TestJSONBoundaryNormalizesErrors(t *testing.T) {
-	handler := JSONBoundary(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, "not today", http.StatusConflict)
-	})
-	response := httptest.NewRecorder()
-	handler(response, httptest.NewRequest(http.MethodPost, "/api/v3/test", nil))
-
-	var body Envelope
-	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
-		t.Fatal(err)
-	}
-	if response.Code != http.StatusConflict || body.Error == nil || body.Error.Message != "not today" || body.Data != nil {
-		t.Fatalf("unexpected v3 error: %#v", body)
-	}
-}
 
 func TestIdentityMiddlewareRequiresCSRFForSessions(t *testing.T) {
 	workingDirectory, err := os.Getwd()

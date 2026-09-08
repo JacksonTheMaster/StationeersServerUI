@@ -33,7 +33,8 @@ function loadDetections() {
             if (!response.ok) throw new Error('Failed to load detections');
             return response.json();
         })
-        .then(detections => {
+        .then(result => {
+            const detections = result.detections || [];
             loader.style.display = 'none';
 
             if (detections.length === 0) {
@@ -110,7 +111,7 @@ function submitDetection() {
 // Delete detection
 function deleteDetection(id) {
 
-    fetch(`/api/v3/detections?id=${id}`, { method: 'DELETE' })
+    fetch(`/api/v3/detections/${encodeURIComponent(id)}`, { method: 'DELETE' })
         .then(response => {
             if (!response.ok) {
                 return response.text().then(text => { throw new Error(text || 'Failed to delete detection'); });
