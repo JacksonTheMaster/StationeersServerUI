@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 const releasesURL = "https://api.github.com/repos/SteamServerUI/StationeersServerUI/releases?per_page=100"

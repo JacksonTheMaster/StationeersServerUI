@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/setup/update"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/api"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/setup/update"
 )
 
 type updateRequest struct {

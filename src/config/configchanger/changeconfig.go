@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
 )
 
 func validateBackupSettings(cfg *config.JsonConfig) error {

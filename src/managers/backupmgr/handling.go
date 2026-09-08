@@ -10,7 +10,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 // One worker drains new autosaves before doing another old archive. The detector

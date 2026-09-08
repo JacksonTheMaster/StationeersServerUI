@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/security"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/localization"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/security"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/localization"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 func ServeTwoBoxFormTemplate(w http.ResponseWriter, r *http.Request) {

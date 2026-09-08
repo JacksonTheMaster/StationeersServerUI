@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 // isRelSymlink ensures `link` resolves to a path within `root`.

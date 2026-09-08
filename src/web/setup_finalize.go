@@ -3,12 +3,12 @@ package web
 import (
 	"net/http"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config/configchanger"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/loader"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/security"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/api"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config/configchanger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/loader"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/security"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 func SetupFinalizeHandler(w http.ResponseWriter, r *http.Request) {

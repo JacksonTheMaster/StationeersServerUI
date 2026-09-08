@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/modding"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/steamcmd"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/api"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/modding"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/steamcmd"
 )
 
 func InstallSLPHandler(w http.ResponseWriter, r *http.Request) {

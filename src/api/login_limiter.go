@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/security"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/security"
 )
 
 const (

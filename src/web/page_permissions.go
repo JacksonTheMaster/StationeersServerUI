@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/api"
 )
 
 func pagePermissions(r *http.Request) string {

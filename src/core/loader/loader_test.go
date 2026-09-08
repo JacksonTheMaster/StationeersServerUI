@@ -3,7 +3,7 @@ package loader
 import (
 	"testing"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
 )
 
 func TestPlanConfigReloadIgnoresGameServerSettings(t *testing.T) {

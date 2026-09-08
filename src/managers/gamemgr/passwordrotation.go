@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 // rotatePasswordIfEnabled checks if password rotation is enabled and sets a new random password

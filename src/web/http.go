@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/detectionmgr"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/gamemgr"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/steamcmd"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/api"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/detectionmgr"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/gamemgr"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/steamcmd"
 )
 
 // StartServer HTTP handler

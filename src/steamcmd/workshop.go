@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/modding"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/modding"
 )
 
 // DownloadWorkshopItems downloads all installed workshop mods using SteamCMD

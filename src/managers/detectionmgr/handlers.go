@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/ssestream"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/discordbot"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/ssestream"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/discordbot"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 /*

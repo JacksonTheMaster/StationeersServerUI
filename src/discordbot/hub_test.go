@@ -17,9 +17,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/backupmgr"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/gamemgr"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/backupmgr"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/gamemgr"
 	"github.com/bwmarrin/discordgo"
 )
 

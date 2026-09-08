@@ -7,12 +7,12 @@ import (
 	"runtime/pprof"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/discordbot"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/localization"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/modding"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/steamcmd"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/discordbot"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/localization"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/modding"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/steamcmd"
 )
 
 // COMMAND HANDLERS WITH COMMANDS USEFUL FOR DEVELOPMENT AND DEBUGGING

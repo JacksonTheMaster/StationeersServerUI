@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 // scanBackupFiles takes a metadata-only snapshot. Do not interpret an incomplete

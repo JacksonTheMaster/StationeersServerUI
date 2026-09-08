@@ -4,12 +4,12 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/api"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config/configchanger"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/security"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/backupmgr"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/managers/detectionmgr"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/api"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config/configchanger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/security"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/backupmgr"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/detectionmgr"
 )
 
 func SetupRoutes() *http.ServeMux {

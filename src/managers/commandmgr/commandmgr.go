@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
 )
 
 var mutex = &sync.Mutex{}

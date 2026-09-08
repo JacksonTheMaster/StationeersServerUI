@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/core/ssestream"
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/core/ssestream"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 // Use the backend log stream so these tests exercise the real logger without

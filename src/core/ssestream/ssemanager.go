@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
 )
 
 // The SSE blocking issue is NOT related to the backend; the API handles 200 clients per channel fine.

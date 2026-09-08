@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 )
 
 // Cleanup performs backup cleanup according to retention policy
