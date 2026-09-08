@@ -4,6 +4,7 @@ package loader
 import (
 	"embed"
 	"os"
+	"reflect"
 	"sync"
 	"time"
 
@@ -58,6 +59,92 @@ func ReloadBackend() {
 	reloadDiscordBotFunc()
 	PrintConfigDetails()
 	logger.Core.Info("Backend reload done!")
+}
+
+// ReloadChangedConfig applies a saved config and only restarts the parts that
+// keep their own runtime state. Most settings are read through config getters
+// and need no subsystem reload at all.
+func ReloadChangedConfig(previous, next *config.JsonConfig) {
+	ReloadConfig()
+	plan := planConfigReload(previous, next)
+
+	if plan.backupManager {
+		ReloadBackupManager()
+	}
+	if plan.localizer {
+		ReloadLocalizer()
+	}
+	if plan.appInfoPoller {
+		ReloadAppInfoPoller()
+	}
+	if plan.discord {
+		reloadDiscordBotFunc()
+	}
+	if plan.sscm {
+		ReloadSSCM()
+	}
+	if plan.slpAutoUpdates {
+		EnsureSLPAutoUpdates()
+	}
+}
+
+type configReloadPlan struct {
+	backupManager  bool
+	localizer      bool
+	appInfoPoller  bool
+	discord        bool
+	sscm           bool
+	slpAutoUpdates bool
+}
+
+func planConfigReload(previous, next *config.JsonConfig) configReloadPlan {
+	return configReloadPlan{
+		backupManager:  backupConfigChanged(previous, next),
+		localizer:      previous.LanguageSetting != next.LanguageSetting,
+		appInfoPoller:  boolChanged(previous.AllowAutoGameServerUpdates, next.AllowAutoGameServerUpdates),
+		discord:        discordConfigChanged(previous, next),
+		sscm:           boolChanged(previous.IsSSCMEnabled, next.IsSSCMEnabled),
+		slpAutoUpdates: boolChanged(previous.IsStationeersLaunchPadAutoUpdatesEnabled, next.IsStationeersLaunchPadAutoUpdatesEnabled),
+	}
+}
+
+func backupConfigChanged(previous, next *config.JsonConfig) bool {
+	return previous.SaveName != next.SaveName ||
+		boolChanged(previous.BackupRetentionEnabled, next.BackupRetentionEnabled) ||
+		intChanged(previous.BackupKeepNewestCount, next.BackupKeepNewestCount) ||
+		intChanged(previous.BackupDailyRetentionDays, next.BackupDailyRetentionDays) ||
+		intChanged(previous.BackupWeeklyRetentionWeeks, next.BackupWeeklyRetentionWeeks) ||
+		intChanged(previous.BackupMonthlyRetentionMonths, next.BackupMonthlyRetentionMonths) ||
+		intChanged(previous.BackupCleanupIntervalHours, next.BackupCleanupIntervalHours)
+}
+
+func discordConfigChanged(previous, next *config.JsonConfig) bool {
+	return previous.DiscordToken != next.DiscordToken ||
+		previous.DiscordAdminRoleID != next.DiscordAdminRoleID ||
+		previous.EventLogChannelID != next.EventLogChannelID ||
+		previous.StatusPanelChannelID != next.StatusPanelChannelID ||
+		previous.LogChannelID != next.LogChannelID ||
+		previous.DiscordCharBufferSize != next.DiscordCharBufferSize ||
+		previous.BlackListFilePath != next.BlackListFilePath ||
+		boolChanged(previous.IsDiscordEnabled, next.IsDiscordEnabled) ||
+		boolChanged(previous.RotateServerPassword, next.RotateServerPassword) ||
+		boolChanged(previous.DiscordRestartVoteEnabled, next.DiscordRestartVoteEnabled) ||
+		boolChanged(previous.DiscordRestoreVoteEnabled, next.DiscordRestoreVoteEnabled) ||
+		intChanged(previous.DiscordVoteDurationMinutes, next.DiscordVoteDurationMinutes) ||
+		intChanged(previous.DiscordRestartVoteThreshold, next.DiscordRestartVoteThreshold) ||
+		intChanged(previous.DiscordRestartVoteMinimum, next.DiscordRestartVoteMinimum) ||
+		intChanged(previous.DiscordRestartVoteCooldownMinutes, next.DiscordRestartVoteCooldownMinutes) ||
+		intChanged(previous.DiscordRestoreVoteThreshold, next.DiscordRestoreVoteThreshold) ||
+		intChanged(previous.DiscordRestoreVoteMinimum, next.DiscordRestoreVoteMinimum) ||
+		intChanged(previous.DiscordRestoreVoteCooldownMinutes, next.DiscordRestoreVoteCooldownMinutes)
+}
+
+func boolChanged(previous, next *bool) bool {
+	return !reflect.DeepEqual(previous, next)
+}
+
+func intChanged(previous, next *int) bool {
+	return !reflect.DeepEqual(previous, next)
 }
 
 // should ideally not be called standalone, if feasable, call ReloadBackend instead
@@ -173,9 +260,9 @@ func LoadAdvertiser() {
 }
 
 func StartUpdateCheckLoop() {
-	if config.GetIsUpdateEnabled() || config.GetIsDockerContainer() {
-		go update.StartUpdateCheckLoop()
-	}
+	// The disabled loop stays local and cheap, but needs to exist so enabling
+	// updates at runtime takes effect without restarting SSUI.
+	go update.StartUpdateCheckLoop()
 }
 
 // InitBundler initialized the onboard bundled assets for the web UI

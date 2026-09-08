@@ -214,14 +214,6 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		allowMajorUpdatesFalseSelected = "selected"
 	}
 
-	authEnabledTrueSelected := ""
-	authEnabledFalseSelected := ""
-	if config.GetAuthEnabled() {
-		authEnabledTrueSelected = "selected"
-	} else {
-		authEnabledFalseSelected = "selected"
-	}
-
 	isStationeersLaunchPadAutoUpdatesEnabledTrueSelected := ""
 	isStationeersLaunchPadAutoUpdatesEnabledFalseSelected := ""
 	if config.GetIsStationeersLaunchPadAutoUpdatesEnabled() {
@@ -554,10 +546,6 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		AllowMajorUpdates:                        fmt.Sprintf("%v", config.GetAllowMajorUpdates()),
 		AllowMajorUpdatesTrueSelected:            allowMajorUpdatesTrueSelected,
 		AllowMajorUpdatesFalseSelected:           allowMajorUpdatesFalseSelected,
-		AuthEnabled:                              fmt.Sprintf("%v", config.GetAuthEnabled()),
-		AuthEnabledTrueSelected:                  authEnabledTrueSelected,
-		AuthEnabledFalseSelected:                 authEnabledFalseSelected,
-		AuthTokenLifetime:                        fmt.Sprintf("%d", config.GetAuthTokenLifetime()),
 		DiscordCharBufferSize:                    fmt.Sprintf("%d", config.GetDiscordCharBufferSize()),
 		AdvertiserOverride:                       config.GetAdvertiserOverride(),
 		IsStationeersLaunchPadAutoUpdatesEnabled: fmt.Sprintf("%v", config.GetIsStationeersLaunchPadAutoUpdatesEnabled()),

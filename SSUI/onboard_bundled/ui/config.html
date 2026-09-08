@@ -557,20 +557,6 @@
                                         <div class="input-info">Automatically update StationeersLaunchPad</div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label for="authEnabled">Web Auth Enabled:</label>
-                                        <select id="authEnabled" name="authEnabled" required>
-                                            <option value="true" {{.AuthEnabledTrueSelected}}>TRUE</option>
-                                            <option value="false" {{.AuthEnabledFalseSelected}}>FALSE</option>
-                                        </select>
-                                        <div class="input-info">Enable authentication for the web interface</div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="AuthTokenLifetime">Auth Token Lifetime:</label>
-                                        <input type="number" id="AuthTokenLifetime" name="AuthTokenLifetime" value="{{.AuthTokenLifetime}}" min="1">
-                                        <div class="input-info">JWT token lifetime in minutes (default: 1440 = 24 hours)</div>
-                                    </div>
                             </div>
                         </div>
 
@@ -1249,6 +1235,27 @@
             }
         }
 
+        function configAPIField(name) {
+            const aliases = {
+                WorldID: 'worldId',
+                UPNPEnabled: 'upnpEnabled',
+                SSUIWebPort: 'ssuiWebPort',
+                IsSSCMEnabled: 'sscmEnabled',
+                IsConsoleEnabled: 'consoleEnabled',
+                IsUpdateEnabled: 'updatesEnabled',
+                IsStationeersLaunchPadEnabled: 'stationeersLaunchPadEnabled',
+                IsStationeersLaunchPadAutoUpdatesEnabled: 'stationeersLaunchPadAutoUpdatesEnabled',
+                LanguageSetting: 'language',
+                isDiscordEnabled: 'discordEnabled',
+                discordAdminRoleID: 'discordAdminRoleId',
+                eventLogChannelID: 'eventLogChannelId',
+                statusPanelChannelID: 'statusPanelChannelId',
+                logChannelID: 'logChannelId',
+                blackListFilePath: 'blacklistFilePath'
+            };
+            return aliases[name] || name.charAt(0).toLowerCase() + name.slice(1);
+        }
+
         function configScopePayload(scope) {
             const payload = {};
 
@@ -1259,11 +1266,11 @@
                 }
 
                 if (control?.type === 'number') {
-                    payload[control.name] = Number(control.value);
+                    payload[configAPIField(control.name)] = Number(control.value);
                 } else if (control?.tagName === 'SELECT' && (control.value === 'true' || control.value === 'false')) {
-                    payload[control.name] = control.value === 'true';
+                    payload[configAPIField(control.name)] = control.value === 'true';
                 } else {
-                    payload[control.name] = control.value;
+                    payload[configAPIField(control.name)] = control.value;
                 }
             });
 
@@ -1299,23 +1306,21 @@
 
             try {
                 const response = await fetch('/api/v3/settings', {
-                    method: 'POST',
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(configScopePayload(scope))
                 });
-                const responseText = await response.text();
+                const responseData = await response.json();
 
                 if (!response.ok) {
-                    let errorMessage = responseText;
-                    try {
-                        errorMessage = JSON.parse(responseText).error || responseText;
-                    } catch (_) {
-                        // The endpoint may return a plain-text HTTP error.
-                    }
-                    throw new Error(errorMessage);
+                    throw new Error(responseData.error || 'Configuration update failed');
                 }
 
-                showConfigNotification(notification.dataset.success, 'success');
+                if (responseData.restartRequired?.includes('ssuiWebPort')) {
+                    showConfigNotification('Saved. Restart SSUI to apply the web port change.', 'info');
+                } else {
+                    showConfigNotification(notification.dataset.success, 'success');
+                }
             } catch (error) {
                 const detail = error.message ? ` ${error.message}` : '';
                 showConfigNotification(notification.dataset.failed + detail, 'error');
@@ -1352,16 +1357,16 @@
 
             try {
                 const response = await fetch('/api/v3/settings', {
-                    method: 'POST',
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ShowExpertSettings: enabled })
+                    body: JSON.stringify({ showExpertSettings: enabled })
                 });
                 const responseText = await response.text();
 
                 if (!response.ok) {
                     let errorMessage = responseText;
                     try {
-                        errorMessage = JSON.parse(responseText).error || responseText;
+                        errorMessage = JSON.parse(responseText).error?.message || responseText;
                     } catch (_) {
                         // The endpoint may return a plain-text HTTP error.
                     }

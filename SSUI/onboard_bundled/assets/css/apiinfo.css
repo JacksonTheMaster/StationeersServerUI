@@ -146,6 +146,10 @@
     background-color: var(--success);
 }
 
+.method.patch {
+    background-color: #7c3aed;
+}
+
 .method.delete {
     background-color: var(--danger);
 }

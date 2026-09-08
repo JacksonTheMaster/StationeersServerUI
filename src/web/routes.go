@@ -45,7 +45,7 @@ func SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("POST /api/v3/auth/setup/bootstrap", api.BootstrapOwnerHandler)
 	mux.HandleFunc("POST /api/v3/auth/login", api.LoginHandler)
 	mux.HandleFunc("POST /api/v3/auth/logout", api.LogoutHandler)
-	mux.HandleFunc("POST /api/v3/setup/settings", setupOnly(api.JSONBoundary(configchanger.SaveConfigRestful)))
+	mux.HandleFunc("POST /api/v3/setup/settings", setupOnly(configchanger.PatchSetupSettings))
 
 	pages := http.NewServeMux()
 	pages.HandleFunc("GET /", ServeIndex)
@@ -116,7 +116,8 @@ func registerBackupRoutes(mux *http.ServeMux) {
 }
 
 func registerSettingsRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/v3/settings", api.Require(security.PermissionSettingsManage, api.JSONBoundary(configchanger.SaveConfigRestful)))
+	mux.HandleFunc("GET /api/v3/settings", api.RequireAny([]string{security.PermissionSettingsView, security.PermissionSettingsManage}, configchanger.GetSettings))
+	mux.HandleFunc("PATCH /api/v3/settings", api.Require(security.PermissionSettingsManage, configchanger.PatchSettings))
 	mux.HandleFunc("GET /api/v3/worldgen/catalog", api.Require(security.PermissionSettingsView, HandleWorldGenerationCatalog))
 	mux.HandleFunc("POST /api/v3/advertiser/override", api.Require(security.PermissionSettingsManage, SaveAdvertiserOverrideHandler))
 	mux.HandleFunc("POST /api/v3/tls/certificate", api.Require(security.PermissionSecurityManage, SaveTLSCertificateHandler))

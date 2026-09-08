@@ -9,18 +9,63 @@ import (
 	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/logger"
 )
 
+type ValidationError struct {
+	Err error
+}
+
+func (err *ValidationError) Error() string {
+	return err.Err.Error()
+}
+
 func SaveConfig(cfg *config.JsonConfig, reloadBackend ...bool) error {
+	previous, err := config.ReadConfigFile()
+	if err != nil {
+		return err
+	}
 	if err := validateDiscordAdminRole(cfg.DiscordAdminRoleID); err != nil {
 		return err
 	}
-	err := config.SaveConfigToFile(cfg)
+	err = config.SaveConfigToFile(cfg)
 	if err != nil {
 		logger.Core.Error("Failed to save config: " + err.Error())
 		return err
 	}
-	// Call ReloadBackend by default, unless reloadBackend is explicitly false
+	// Apply runtime changes by default, unless this is part of startup.
 	if len(reloadBackend) == 0 || reloadBackend[0] {
-		loader.ReloadBackend()
+		loader.ReloadChangedConfig(previous, cfg)
+	}
+	return nil
+}
+
+// UpdateConfig is the normal runtime write path. Reading, changing and writing
+// happen under one config lock so concurrent requests cannot overwrite each
+// other with an older copy.
+func UpdateConfig(update func(*config.JsonConfig) error) error {
+	previous, next, err := config.UpdateConfig(func(cfg *config.JsonConfig) error {
+		if err := update(cfg); err != nil {
+			return err
+		}
+		if err := validateConfig(cfg); err != nil {
+			return &ValidationError{Err: err}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	loader.ReloadChangedConfig(previous, next)
+	return nil
+}
+
+func validateConfig(cfg *config.JsonConfig) error {
+	if err := validateDiscordAdminRole(cfg.DiscordAdminRoleID); err != nil {
+		return err
+	}
+	if err := validateBackupSettings(cfg); err != nil {
+		return err
+	}
+	if err := validateDiscordVoteSettings(cfg); err != nil {
+		return err
 	}
 	return nil
 }

@@ -59,6 +59,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return document.cookie.includes('SSUICSRF=') ? '/api/v3/settings' : '/api/v3/setup/settings';
     }
 
+    function settingsMethod() {
+        return document.cookie.includes('SSUICSRF=') ? 'PATCH' : 'POST';
+    }
+
+    function settingsFieldName(name) {
+        const aliases = {
+            WorldID: 'worldId',
+            UPNPEnabled: 'upnpEnabled',
+            IsSSCMEnabled: 'sscmEnabled',
+            LanguageSetting: 'language'
+        };
+        return aliases[name] || name.charAt(0).toLowerCase() + name.slice(1);
+    }
+
     // Form submission
     const form = document.getElementById('two-box-form');
     form.addEventListener('submit', async (e) => {
@@ -116,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (configField === "IsDiscordEnabled" || configField === "UPNPEnabled" || 
                 configField === "ServerVisible" || configField === "UseSteamP2P" || configField === "IsSSCMEnabled" || configField === "IsNewTerrainAndSaveSystem") {
                 body = JSON.stringify({
-                    [configField]: booleanToConfig(document.getElementById('primary-field').value)
+                    [settingsFieldName(configField)]: booleanToConfig(document.getElementById('primary-field').value)
                 });
                 
             } else if (configField === "WorldID") {
@@ -127,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return; // Prevent submission
                     }
                 body = JSON.stringify({
-                    [configField]: secondaryValue
+                    [settingsFieldName(configField)]: secondaryValue
                 });
             } else if (configField === "gameBranch") {
                 const secondaryValue = document.getElementById('secondary-field').value.trim();
@@ -137,11 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     return; // Prevent submission
                     }
                 body = JSON.stringify({
-                    [configField]: secondaryValue
+                    [settingsFieldName(configField)]: secondaryValue
                 });
             } else {
                 body = JSON.stringify({
-                    [configField]: document.getElementById('primary-field').value
+                    [settingsFieldName(configField)]: document.getElementById('primary-field').value
                 });
             }
         } else if (step === "admin_account") { // User setup
@@ -170,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const response = await fetch(url, {
-                method: 'POST',
+                method: url === '/api/v3/settings' ? settingsMethod() : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: body
             });
@@ -271,9 +285,9 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 showPreloader();
                 const response = await fetch(settingsEndpoint(), {
-                    method: 'POST',
+                    method: settingsMethod(),
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ LanguageSetting: lang })
+                    body: JSON.stringify({ [settingsFieldName('LanguageSetting')]: lang })
                 });
                 const data = await response.json();
                 if (response.ok) {

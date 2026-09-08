@@ -385,10 +385,6 @@ type ConfigTemplateData struct {
 	AllowMajorUpdates                                     string
 	AllowMajorUpdatesTrueSelected                         string
 	AllowMajorUpdatesFalseSelected                        string
-	AuthEnabled                                           string
-	AuthEnabledTrueSelected                               string
-	AuthEnabledFalseSelected                              string
-	AuthTokenLifetime                                     string
 	DiscordCharBufferSize                                 string
 	BackupKeepNewestCount                                 string
 	BackupRetentionEnabled                                string

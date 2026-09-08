@@ -15,12 +15,8 @@ var (
 	Branch  = "release"
 )
 
-/*
-If you read this, you are likely a developer. I sincerly apologize for the way the config works.
-While I would love to refactor the config to not write to file then read the file every time a config value is changed,
-I have not found the time to do so. So, for now, we save to file, then read the file and rely on whatever the file says. Although this is not ideal, it works for now. Deal with it.
-JacksonTheMaster
-*/
+// JsonConfig is the config.json format. Keep its existing JSON names stable;
+// the public API has its own contract in api.SettingsPatch.
 
 type JsonConfig struct {
 	// reordered in 5.6.4 to simplify the order of the config file.
@@ -126,8 +122,30 @@ func LoadConfig() (*JsonConfig, error) {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()
 
+	jsonConfig, err := readConfigFile(ConfigPath)
+	if err != nil {
+		return nil, err
+	}
+	// Apply configuration
+	applyConfig(jsonConfig)
+	effective := snapshotConfig()
+	if err := writeConfigFile(ConfigPath, &effective); err != nil {
+		return nil, fmt.Errorf("save normalized config: %w", err)
+	}
+
+	return &effective, nil
+}
+
+// ReadConfigFile returns the persisted config without changing runtime state.
+func ReadConfigFile() (*JsonConfig, error) {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return readConfigFile(ConfigPath)
+}
+
+func readConfigFile(path string) (*JsonConfig, error) {
 	var jsonConfig JsonConfig
-	file, err := os.Open(ConfigPath)
+	file, err := os.Open(path)
 	if err == nil {
 		// File exists, proceed to decode it
 		defer file.Close()
@@ -142,9 +160,6 @@ func LoadConfig() (*JsonConfig, error) {
 		// Other errors (e.g., permissions), fail immediately
 		return nil, fmt.Errorf("failed to open config file: %v", err)
 	}
-	// Apply configuration
-	applyConfig(&jsonConfig)
-
 	return &jsonConfig, nil
 }
 
@@ -434,14 +449,26 @@ func applyConfig(cfg *JsonConfig) {
 	ConfiguredSafeBackupDir = filepath.Join(SSUIFolder, "savebackups", SaveName)
 
 	AdvertiserOverride = getString(cfg.AdvertiserOverride, "ADVERTISER_OVERRIDE", "")
-
-	safeSaveConfig()
 }
 
 // use safeSaveConfig EXCLUSIVELY though setter functions
 // M U S T be called while holding a lock on ConfigMu!
 func safeSaveConfig() error {
-	cfg := JsonConfig{
+	cfg := snapshotConfig()
+	return writeConfigFile(ConfigPath, &cfg)
+}
+
+// Snapshot returns the effective runtime configuration. It is useful for
+// readers that need a consistent view of more than one setting.
+func Snapshot() JsonConfig {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return snapshotConfig()
+}
+
+// snapshotConfig must be called while holding ConfigMu.
+func snapshotConfig() JsonConfig {
+	return JsonConfig{
 		DiscordToken:                             DiscordToken,
 		DiscordAdminRoleID:                       DiscordAdminRoleID,
 		EventLogChannelID:                        EventLogChannelID,
@@ -517,8 +544,38 @@ func safeSaveConfig() error {
 		AdvertiserOverride:                       AdvertiserOverride,
 		ShowExpertSettings:                       &ShowExpertSettings,
 	}
+}
 
-	return writeConfigFile(ConfigPath, &cfg)
+// UpdateConfig changes and writes the persisted config while holding one lock.
+// The callback should only mutate fields it owns and may reject the update.
+func UpdateConfig(update func(*JsonConfig) error) (*JsonConfig, *JsonConfig, error) {
+	ConfigMu.Lock()
+	defer ConfigMu.Unlock()
+
+	current, err := readConfigFile(ConfigPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	previous := cloneConfig(current)
+	if err := update(current); err != nil {
+		return nil, nil, err
+	}
+	if err := writeConfigFile(ConfigPath, current); err != nil {
+		return nil, nil, err
+	}
+	return previous, cloneConfig(current), nil
+}
+
+func cloneConfig(source *JsonConfig) *JsonConfig {
+	clone := *source
+	if source.Users != nil {
+		clone.Users = make(map[string]string, len(source.Users))
+		for name, password := range source.Users {
+			clone.Users[name] = password
+		}
+	}
+	clone.SubsystemFilters = append([]string(nil), source.SubsystemFilters...)
+	return &clone
 }
 
 // use SaveConfig EXCLUSIVELY though loader.SaveConfig to trigger a reload afterwards!
@@ -534,6 +591,9 @@ func SaveConfigToFile(cfg *JsonConfig) error {
 
 func writeConfigFile(path string, cfg *JsonConfig) error {
 	directory := filepath.Dir(path)
+	if err := os.MkdirAll(directory, 0700); err != nil {
+		return fmt.Errorf("create config directory: %w", err)
+	}
 	file, err := os.CreateTemp(directory, ".config-*.tmp")
 	if err != nil {
 		return fmt.Errorf("create temporary config file: %w", err)

@@ -56,15 +56,6 @@ func TestValidateBackupSettingsRejectsUnsafeValues(t *testing.T) {
 	}
 }
 
-func TestJSONIntRejectsFractions(t *testing.T) {
-	if _, ok := jsonInt(1.5); ok {
-		t.Fatal("jsonInt() accepted a fractional value")
-	}
-	if got, ok := jsonInt(float64(12)); !ok || got != 12 {
-		t.Fatalf("jsonInt() = (%d, %t), want (12, true)", got, ok)
-	}
-}
-
 func TestValidateWorldGenerationSettingsAcceptsPositionalPrefixes(t *testing.T) {
 	tests := []config.JsonConfig{
 		{WorldID: "Mars2"},

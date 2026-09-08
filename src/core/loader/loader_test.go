@@ -1,21 +1,39 @@
 package loader
 
-import "testing"
+import (
+	"testing"
 
-func TestReloadBackendReloadsDiscordBot(t *testing.T) {
-	original := reloadDiscordBotFunc
-	defer func() {
-		reloadDiscordBotFunc = original
-	}()
+	"github.com/JacksonTheMaster/StationeersServerUI/v5/src/config"
+)
 
-	called := false
-	reloadDiscordBotFunc = func() {
-		called = true
+func TestPlanConfigReloadIgnoresGameServerSettings(t *testing.T) {
+	previous := &config.JsonConfig{ServerName: "Europa"}
+	next := &config.JsonConfig{ServerName: "Mars"}
+
+	if plan := planConfigReload(previous, next); plan != (configReloadPlan{}) {
+		t.Fatalf("game server setting unexpectedly reloads a subsystem: %+v", plan)
+	}
+}
+
+func TestPlanConfigReloadTargetsChangedSubsystems(t *testing.T) {
+	oldFalse, newTrue := false, true
+	oldKeep, newKeep := 5, 10
+	previous := &config.JsonConfig{
+		BackupKeepNewestCount:      &oldKeep,
+		IsDiscordEnabled:           &oldFalse,
+		AllowAutoGameServerUpdates: &oldFalse,
+	}
+	next := &config.JsonConfig{
+		BackupKeepNewestCount:      &newKeep,
+		IsDiscordEnabled:           &newTrue,
+		AllowAutoGameServerUpdates: &oldFalse,
 	}
 
-	ReloadBackend()
-
-	if !called {
-		t.Fatal("expected ReloadBackend to reload Discord bot")
+	plan := planConfigReload(previous, next)
+	if !plan.backupManager || !plan.discord {
+		t.Fatalf("expected backup and Discord reloads: %+v", plan)
+	}
+	if plan.localizer || plan.appInfoPoller || plan.sscm || plan.slpAutoUpdates {
+		t.Fatalf("unrelated subsystem was selected: %+v", plan)
 	}
 }

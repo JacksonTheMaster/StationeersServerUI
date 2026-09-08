@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const lang = flag.dataset.lang;
             try {
                 const response = await fetch('/api/v3/settings', {
-                    method: 'POST',
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ LanguageSetting: lang })
+                    body: JSON.stringify({ language: lang })
                 });
                 const data = await response.json();
                 if (response.ok) {
