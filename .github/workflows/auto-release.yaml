@@ -1,108 +1,58 @@
-name: Build and Release
+name: Release binaries
 
 on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - closed
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build
+        required: true
+        default: v5.14.1
+        type: string
 
 jobs:
   build-and-release:
-    # Only run if the PR was merged
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-
     permissions:
-      contents: write  # Required for creating releases
+      contents: write
 
     steps:
-      # Checkout the repository code
-      - name: Checkout code
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}"
+          if [ "$TAG" != "v5.14.1" ]; then
+            echo "This bridge workflow only builds v5.14.1"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout release tag
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ steps.release.outputs.tag }}
 
-      # Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26.0'
+          go-version-file: go.mod
 
-      # Install dependencies
-      - name: Install dependencies
-        run: go mod download
+      - name: Test
+        run: go test ./...
 
-      # Compile the build.go script to produce Executable
-      - name: Run ./build/build.go
+      - name: Build bridge assets
         run: go run ./build/build.go
 
-      # Verify the executable exists
-      - name: Verify build output
+      - name: Add legacy updater names
         run: |
-          VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' src/config/config.go)
-          test -f "build/StationeersServerUI_v${VERSION}_windows_amd64.exe"
-          test -f "build/StationeersServerUI_v${VERSION}_linux_amd64"
+          cp build/StationeersServerUI_v5.14.1_windows_amd64.exe build/StationeersServerControlv5.14.1.exe
+          cp build/StationeersServerUI_v5.14.1_linux_amd64 build/StationeersServerControlv5.14.1.x86_64
 
-      - name: Add legacy updater assets
-        run: |
-          VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' src/config/config.go)
-          case "$VERSION" in
-            5.14.1|6.0.0)
-              cp "build/StationeersServerUI_v${VERSION}_windows_amd64.exe" "build/StationeersServerControlv${VERSION}.exe"
-              cp "build/StationeersServerUI_v${VERSION}_linux_amd64" "build/StationeersServerControlv${VERSION}.x86_64"
-              ;;
-          esac
-
-      # Check for git tag on any commit in the PR
-      - name: Check for git tag
-        id: check_tag
-        run: |
-          # Get the base and head SHAs of the PR
-          BASE_SHA=${{ github.event.pull_request.base.sha }}
-          HEAD_SHA=${{ github.sha }}
-          
-          # Get all commits in the PR (from base to head)
-          COMMITS=$(git rev-list $BASE_SHA..$HEAD_SHA)
-          
-          # Check each commit for a tag
-          TAG=""
-          for COMMIT in $COMMITS; do
-            CURRENT_TAG=$(git tag --points-at $COMMIT)
-            if [ -n "$CURRENT_TAG" ]; then
-              TAG=$CURRENT_TAG
-              break
-            fi
-          done
-          
-          if [ -n "$TAG" ]; then
-            echo "Found tag: $TAG"
-            echo "tag=$TAG" >> $GITHUB_OUTPUT
-          else
-            echo "No tag found for any commit in this PR."
-            echo "tag=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Verify release version
-        if: steps.check_tag.outputs.tag != ''
-        run: |
-          VERSION=$(sed -n 's/.*Version = "\([^"]*\)".*/\1/p' src/config/config.go)
-          EXPECTED_TAG="v${VERSION}"
-          RELEASE_TAG=${{ steps.check_tag.outputs.tag }}
-          if [ "$RELEASE_TAG" != "$EXPECTED_TAG" ]; then
-            echo "Release tag $RELEASE_TAG must be $EXPECTED_TAG"
-            exit 1
-          fi
-
-      # Create a stable release or prerelease based on the version suffix
-      - name: Create Release
-        if: steps.check_tag.outputs.tag != ''
+      - name: Upload assets to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          prerelease: ${{ contains(steps.check_tag.outputs.tag, '-') }}
-          tag_name: ${{ steps.check_tag.outputs.tag }}
-          name: "Release ${{ steps.check_tag.outputs.tag }}"
-          files: ./build/StationeersServer*
+          tag_name: ${{ steps.release.outputs.tag }}
+          files: build/StationeersServer*
           fail_on_unmatched_files: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
