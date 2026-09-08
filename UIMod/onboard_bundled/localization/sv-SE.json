@@ -50,7 +50,7 @@
             "UIText_UpdateFailed": "Uppdateringen kunde inte installeras.",
             "UIText_UpdateDescription": "SSUI stoppar spelservern vid behov, installerar uppdateringen och startar sedan om.",
             "UIText_MajorUpdateTitle": "Större versionsuppdatering",
-            "UIText_MajorUpdateWarning": "Den här versionen innehåller inkompatibla ändringar. Läs versionsinformationen och säkerhetskopiera din SSUI-mapp innan du fortsätter.",
+            "UIText_MajorUpdateWarning": "Den här versionen innehåller inkompatibla ändringar. Läs versionsinformationen innan du fortsätter.",
             "UIText_MajorUpdateConfirm": "Jag förstår och vill installera den här större uppdateringen.",
             "UIText_UpdateReleaseNotes": "Läs versionsinformationen",
             "UIText_UpdateRetry": "Försök igen"

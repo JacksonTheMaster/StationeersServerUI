@@ -50,7 +50,7 @@
             "UIText_UpdateFailed": "Das Update konnte nicht installiert werden.",
             "UIText_UpdateDescription": "SSUI stoppt bei Bedarf den Gameserver, installiert das Update und startet anschließend neu.",
             "UIText_MajorUpdateTitle": "Großes Versionsupdate",
-            "UIText_MajorUpdateWarning": "Diese Version enthält inkompatible Änderungen. Lies die Release Notes und sichere deinen SSUI-Ordner, bevor du fortfährst.",
+            "UIText_MajorUpdateWarning": "Diese Version enthält inkompatible Änderungen. Lies die Release Notes, bevor du fortfährst.",
             "UIText_MajorUpdateConfirm": "Ich habe das verstanden und möchte dieses große Update installieren.",
             "UIText_UpdateReleaseNotes": "Release Notes lesen",
             "UIText_UpdateRetry": "Erneut versuchen"

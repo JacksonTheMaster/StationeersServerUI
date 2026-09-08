@@ -1145,6 +1145,16 @@ body.modal-open {
   color: var(--text-header);
 }
 
+.update-symbol {
+  width: 52%;
+  height: 52%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .update-modal-content.major .update-modal-icon {
   background: linear-gradient(135deg, var(--danger), color-mix(in srgb, var(--danger) 80%, black));
 }
@@ -1426,6 +1436,11 @@ body.modal-open {
   transition: transform 0.2s ease;
   font-size: 1.3rem;
 
+}
+
+.update-icon .update-symbol {
+  width: 18px;
+  height: 18px;
 }
 
 .update-icon:hover {
