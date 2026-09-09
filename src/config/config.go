@@ -11,9 +11,16 @@ import (
 
 var (
 	// All configuration variables can be found in vars.go
-	Version = "6.0.0"
+	Version = "6.0.0-rc.1"
 	Branch  = "release"
 )
+
+/*
+If you read this, you are likely a developer. I sincerely apologize for the way the config works.
+While I would love to refactor the config to not write to file then read the file every time a config value is changed,
+I have not found the time to do so. So, for now, we save to file, then read the file and rely on whatever the file says. Although this is not ideal, it works for now. Deal with it.
+JacksonTheMaster
+*/
 
 // JsonConfig is the config.json format. Keep its existing JSON names stable;
 // the public API has its own contract in api.SettingsPatch.
