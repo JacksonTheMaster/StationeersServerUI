@@ -213,12 +213,7 @@ func saveIdentity(path string, state IdentityState) error {
 	if err := replaceIdentityFile(temp, path); err != nil {
 		return err
 	}
-	dir, err := os.Open(directory)
-	if err == nil {
-		err = dir.Sync()
-		_ = dir.Close()
-	}
-	return err
+	return syncIdentityDirectory(directory)
 }
 
 func cloneIdentity(state IdentityState) IdentityState {
