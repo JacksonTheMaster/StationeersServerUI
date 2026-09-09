@@ -13,20 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const setupSecretLifetime = 30 * time.Minute
-
-func renewSetupSecret(state *IdentityState, now time.Time) (string, error) {
-	secret, err := randomSecret(32)
-	if err != nil {
-		return "", err
-	}
-	state.SetupRequired = true
-	state.SetupSecretHash = hashSecret(secret)
-	state.SetupExpiresAt = now.Add(setupSecretLifetime)
-	return secret, nil
-}
-
-func BootstrapOwner(setupSecret, username, password string, now time.Time) (User, error) {
+func BootstrapOwner(username, password string, now time.Time) (User, error) {
 	if err := ValidateUsername(username); err != nil {
 		return User{}, err
 	}
@@ -39,9 +26,8 @@ func BootstrapOwner(setupSecret, username, password string, now time.Time) (User
 		if !state.SetupRequired || len(state.Users) != 0 {
 			return errors.New("owner setup is already complete")
 		}
-		if now.After(state.SetupExpiresAt) || !secretMatches(state.SetupSecretHash, setupSecret) {
-			return errors.New("invalid or expired setup secret")
-		}
+		// Initial setup deliberately trusts this endpoint until the first owner
+		// exists. The zero-user check above permanently closes it afterwards.
 		state.Groups[OwnerGroupID] = ownerGroup(now)
 		owner = User{
 			ID: uuid.NewString(), Username: strings.TrimSpace(username), Normalized: NormalizeUsername(username),
@@ -49,8 +35,6 @@ func BootstrapOwner(setupSecret, username, password string, now time.Time) (User
 		}
 		state.Users[owner.ID] = owner
 		state.SetupRequired = false
-		state.SetupSecretHash = ""
-		state.SetupExpiresAt = time.Time{}
 		appendAudit(state, owner.ID, owner.Username, "setup.bootstrap", "user", owner.ID, now)
 		return nil
 	})

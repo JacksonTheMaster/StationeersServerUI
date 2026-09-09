@@ -23,7 +23,7 @@ var identityMu sync.RWMutex
 var identityState IdentityState
 var identityFile string
 
-func InitializeIdentity(legacyUsers map[string]string, now time.Time) (string, error) {
+func InitializeIdentity(legacyUsers map[string]string, now time.Time) error {
 	identityMu.Lock()
 	defer identityMu.Unlock()
 	identityFile = filepath.Join(config.GetSSUIFolder(), "security", "identity.json")
@@ -31,33 +31,22 @@ func InitializeIdentity(legacyUsers map[string]string, now time.Time) (string, e
 	state, err := readIdentity(identityFile)
 	if err == nil {
 		if err := os.Chmod(identityFile, 0600); err != nil {
-			return "", fmt.Errorf("secure identity file: %w", err)
+			return fmt.Errorf("secure identity file: %w", err)
 		}
 		identityState = state
-		if !state.SetupRequired || state.SetupExpiresAt.After(now) {
-			return "", nil
-		}
-		secret, err := renewSetupSecret(&identityState, now)
-		if err != nil {
-			return "", err
-		}
-		return secret, saveIdentityLocked()
+		return nil
 	}
 	if !os.IsNotExist(err) {
-		return "", err
+		return err
 	}
 
 	identityState = newIdentityState()
 	if importLegacyUsers(&identityState, legacyUsers, now) {
 		identityState.SetupRequired = false
 		appendAudit(&identityState, "", "migration", "identity.migrate", "users", "", now)
-		return "", saveIdentityLocked()
+		return saveIdentityLocked()
 	}
-	secret, err := renewSetupSecret(&identityState, now)
-	if err != nil {
-		return "", err
-	}
-	return secret, saveIdentityLocked()
+	return saveIdentityLocked()
 }
 
 func newIdentityState() IdentityState {
@@ -330,15 +319,12 @@ func validateIdentity(state IdentityState) error {
 		}
 	}
 	if state.SetupRequired {
-		if len(state.Users) != 0 || state.SetupSecretHash == "" || state.SetupExpiresAt.IsZero() {
+		if len(state.Users) != 0 {
 			return fmt.Errorf("identity setup state is invalid")
 		}
 	} else {
 		if enabledOwnerCount(state) == 0 {
 			return fmt.Errorf("identity does not contain an enabled owner")
-		}
-		if state.SetupSecretHash != "" || !state.SetupExpiresAt.IsZero() {
-			return fmt.Errorf("completed identity setup still contains setup credentials")
 		}
 	}
 	return nil

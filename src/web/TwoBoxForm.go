@@ -57,7 +57,6 @@ func ServeTwoBoxFormTemplate(w http.ResponseWriter, r *http.Request) {
 		NextStep                 string
 		PrimaryPlaceholderText   string
 		SecondaryPlaceholderText string
-		SetupSecretRequired      bool
 		Steps                    []Step
 	}
 
@@ -353,7 +352,6 @@ func ServeTwoBoxFormTemplate(w http.ResponseWriter, r *http.Request) {
 			data.PrimaryPlaceholderText = step.PrimaryPlaceholderText
 			data.SecondaryPlaceholderText = step.SecondaryPlaceholderText
 			data.SecondaryOptions = step.SecondaryOptions
-			data.SetupSecretRequired = stepID == "admin_account"
 		} else {
 			// Default to welcome page if step is invalid
 			welcomeStep := steps["welcome"]

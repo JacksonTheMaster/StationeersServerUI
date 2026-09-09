@@ -161,8 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (step === "admin_account") { // User setup
             url = '/api/v3/auth/setup/bootstrap';
             body = JSON.stringify({
-                setupSecret: document.getElementById('setup-secret').value,
-                username: document.getElementById('primary-field').value,
+				username: document.getElementById('primary-field').value,
                 password: document.getElementById('secondary-field').value
             });
         } else { // Login or changeuser

@@ -87,20 +87,6 @@
                 </div>
                 {{end}}
 
-                {{if .SetupSecretRequired}}
-                <div class="form-group">
-                    <label for="setup-secret">One-time setup secret</label>
-                    <input
-                        type="password"
-                        id="setup-secret"
-                        name="setup-secret"
-                        placeholder="Paste the secret printed by SSUI"
-                        autocomplete="off"
-                        required
-                    >
-                </div>
-                {{end}}
-
                 <div class="form-actions">
                     <input 
                         type="submit" 

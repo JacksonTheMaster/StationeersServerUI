@@ -57,16 +57,12 @@ func main() {
 	loader.HandleFlags()
 	setup.Install(&wg)
 	wg.Wait()
-	setupSecret, err := security.InitializeIdentity(config.GetUsers(), time.Now())
+	err := security.InitializeIdentity(config.GetUsers(), time.Now())
 	if err != nil {
 		logger.Security.Error("Failed to initialize identity store: " + err.Error())
 		os.Exit(1)
 	}
 	loader.HandleIdentityFlags()
-	if setupSecret != "" && security.SetupRequired() {
-		logger.Security.Warn("Owner setup is required. Open /setup and use this one-time setup secret:")
-		logger.Security.Warn(setupSecret)
-	}
 	logger.Main.Debug("Initializing Backend...")
 	loader.InitBackend()
 	loader.HandleShutdownSignals()

@@ -19,14 +19,14 @@ func TestInitializeIdentityMigratesUsersAndDropsAPIKeys(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secret, err := InitializeIdentity(map[string]string{
+	err = InitializeIdentity(map[string]string{
 		"Jackson":                          string(legacyHash),
 		"apikey-this-must-not-be-imported": string(legacyHash),
 	}, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if secret != "" || SetupRequired() {
+	if SetupRequired() {
 		t.Fatal("legacy user migration should complete setup")
 	}
 	users := ListUsers()
@@ -45,11 +45,11 @@ func TestInitializeIdentityMigratesUsersAndDropsAPIKeys(t *testing.T) {
 func TestOwnerBootstrapSessionAndToken(t *testing.T) {
 	useIdentityTestDirectory(t)
 	now := time.Date(2026, 9, 7, 10, 0, 0, 0, time.UTC)
-	secret, err := InitializeIdentity(nil, now)
+	err := InitializeIdentity(nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	owner, err := BootstrapOwner(secret, "admin", "correct horse battery staple", now)
+	owner, err := BootstrapOwner("admin", "correct horse battery staple", now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,11 +85,11 @@ func TestOwnerBootstrapSessionAndToken(t *testing.T) {
 func TestChangeOwnPasswordRevokesExistingCredentials(t *testing.T) {
 	useIdentityTestDirectory(t)
 	now := time.Date(2026, 9, 7, 10, 0, 0, 0, time.UTC)
-	secret, err := InitializeIdentity(nil, now)
+	err := InitializeIdentity(nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	owner, err := BootstrapOwner(secret, "admin", "correct horse battery staple", now)
+	owner, err := BootstrapOwner("admin", "correct horse battery staple", now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,11 +115,11 @@ func TestChangeOwnPasswordRevokesExistingCredentials(t *testing.T) {
 func TestFailedIdentityMutationDoesNotLeakIntoMemory(t *testing.T) {
 	useIdentityTestDirectory(t)
 	now := time.Date(2026, 9, 7, 10, 0, 0, 0, time.UTC)
-	secret, err := InitializeIdentity(nil, now)
+	err := InitializeIdentity(nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	owner, err := BootstrapOwner(secret, "admin", "correct horse battery staple", now)
+	owner, err := BootstrapOwner("admin", "correct horse battery staple", now)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,15 +6,13 @@ const IdentitySchemaVersion = 1
 const OwnerGroupID = "system-owner"
 
 type IdentityState struct {
-	SchemaVersion   int                `json:"schemaVersion"`
-	SetupRequired   bool               `json:"setupRequired"`
-	SetupSecretHash string             `json:"setupSecretHash,omitempty"`
-	SetupExpiresAt  time.Time          `json:"setupExpiresAt,omitempty"`
-	Users           map[string]User    `json:"users"`
-	Groups          map[string]Group   `json:"groups"`
-	Sessions        map[string]Session `json:"sessions"`
-	Tokens          map[string]Token   `json:"tokens"`
-	Audit           []AuditEvent       `json:"audit"`
+	SchemaVersion int                `json:"schemaVersion"`
+	SetupRequired bool               `json:"setupRequired"`
+	Users         map[string]User    `json:"users"`
+	Groups        map[string]Group   `json:"groups"`
+	Sessions      map[string]Session `json:"sessions"`
+	Tokens        map[string]Token   `json:"tokens"`
+	Audit         []AuditEvent       `json:"audit"`
 }
 
 type User struct {

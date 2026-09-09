@@ -46,8 +46,6 @@ func RecoverOwner(username, password string, now time.Time) (User, error) {
 		state.Sessions = make(map[string]Session)
 		state.Tokens = make(map[string]Token)
 		state.SetupRequired = false
-		state.SetupSecretHash = ""
-		state.SetupExpiresAt = time.Time{}
 		appendAudit(state, "", "local-cli", "owner.recover", "user", recovered.ID, now)
 		return nil
 	})

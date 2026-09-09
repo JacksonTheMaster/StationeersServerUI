@@ -22,11 +22,11 @@ func TestIdentityMiddlewareRequiresCSRFForSessions(t *testing.T) {
 	defer os.Chdir(workingDirectory)
 
 	now := time.Now()
-	secret, err := security.InitializeIdentity(nil, now)
+	err = security.InitializeIdentity(nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	owner, err := security.BootstrapOwner(secret, "admin", "correct horse battery staple", now)
+	owner, err := security.BootstrapOwner("admin", "correct horse battery staple", now)
 	if err != nil {
 		t.Fatal(err)
 	}

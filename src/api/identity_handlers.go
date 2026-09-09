@@ -20,15 +20,14 @@ func SetupStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 func BootstrapOwnerHandler(w http.ResponseWriter, r *http.Request) {
 	var request struct {
-		SetupSecret string `json:"setupSecret"`
-		Username    string `json:"username"`
-		Password    string `json:"password"`
+		Username string `json:"username"`
+		Password string `json:"password"`
 	}
 	if err := DecodeJSON(w, r, &request); err != nil {
 		WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 		return
 	}
-	owner, err := security.BootstrapOwner(request.SetupSecret, request.Username, request.Password, time.Now())
+	owner, err := security.BootstrapOwner(request.Username, request.Password, time.Now())
 	if err != nil {
 		WriteError(w, http.StatusBadRequest, "setup_failed", err.Error())
 		return
