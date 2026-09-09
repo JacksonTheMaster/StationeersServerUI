@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"strings"
@@ -55,9 +56,8 @@ func HandleFlags() {
 	if devModeFlag {
 		config.SetAuthEnabled(true)
 		config.SetIsFirstTimeSetup(false)
-		config.SetUsers(map[string]string{"admin": "$2a$10$7QQhPkNAfT.MXhJhnnodXOyn3KKE/1eu7nYb0y2O1UBoAWc0Y/fda"}) // admin:admin
 		config.SetIsConsoleEnabled(true)
-		logger.Main.Info("Dev mode enabled: Auth enabled, admin user set to admin:admin:superadmin, console enabled")
+		logger.Main.Info("Dev mode enabled: console enabled; development owner will be configured after identity startup")
 	}
 
 	if skipSteamCMDFlag {
@@ -115,7 +115,22 @@ func HandleFlags() {
 // HandleIdentityFlags runs after the identity store has been initialized.
 func HandleIdentityFlags() {
 	password := strings.TrimSpace(recoveryPasswordFlag)
+	if devModeFlag {
+		if _, err := security.EnableDevelopmentOwner(time.Now()); err != nil {
+			logger.Security.Error(fmt.Sprintf("Failed to configure development owner: %v", err))
+		} else {
+			logger.Security.Warn("Development owner enabled: admin:admin with full access. For development only.")
+		}
+	}
 	if recoveryPasswordFlag == "" {
+		removed, err := security.RemoveRecoveryOwner(time.Now())
+		if errors.Is(err, security.ErrRecoveryOwnerStillRequired) {
+			logger.Security.Warn("Temporary recovery account is still the only owner. Create another owner before restarting SSUI.")
+		} else if err != nil {
+			logger.Security.Error(fmt.Sprintf("Failed to remove temporary recovery account: %v", err))
+		} else if removed {
+			logger.Security.Info("Removed temporary recovery account.")
+		}
 		return
 	}
 	if password == "" {

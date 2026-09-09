@@ -139,6 +139,87 @@ func TestFailedIdentityMutationDoesNotLeakIntoMemory(t *testing.T) {
 	}
 }
 
+func TestRecoveryOwnerIsRemovedOnNextNormalStart(t *testing.T) {
+	useIdentityTestDirectory(t)
+	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+	if err := InitializeIdentity(nil, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := RecoverOwner("recovery", "temporary password", now); err != nil {
+		t.Fatal(err)
+	}
+
+	removed, err := RemoveRecoveryOwner(now.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !removed || !SetupRequired() || len(ListUsers()) != 0 {
+		t.Fatal("temporary recovery owner was not removed cleanly")
+	}
+}
+
+func TestRegularUserNamedRecoveryIsNotRemoved(t *testing.T) {
+	useIdentityTestDirectory(t)
+	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+	if err := InitializeIdentity(nil, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := BootstrapOwner("recovery", "permanent owner password", now); err != nil {
+		t.Fatal(err)
+	}
+
+	removed, err := RemoveRecoveryOwner(now.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed {
+		t.Fatal("regular owner named recovery was treated as a temporary account")
+	}
+}
+
+func TestRecoveryOwnerRemovalKeepsExistingOwner(t *testing.T) {
+	useIdentityTestDirectory(t)
+	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+	if err := InitializeIdentity(nil, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := BootstrapOwner("owner", "permanent owner password", now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := RecoverOwner("recovery", "temporary password", now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := RemoveRecoveryOwner(now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if SetupRequired() {
+		t.Fatal("removing recovery owner reopened setup despite an existing owner")
+	}
+	if _, err := AuthenticateUser("owner", "permanent owner password"); err != nil {
+		t.Fatalf("existing owner no longer works: %v", err)
+	}
+	if _, err := AuthenticateUser("recovery", "temporary password"); err == nil {
+		t.Fatal("temporary recovery owner still exists")
+	}
+}
+
+func TestDevelopmentOwnerOverridesExistingIdentity(t *testing.T) {
+	useIdentityTestDirectory(t)
+	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+	if err := InitializeIdentity(nil, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := BootstrapOwner("owner", "permanent owner password", now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := EnableDevelopmentOwner(now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := AuthenticateUser("admin", "admin"); err != nil {
+		t.Fatalf("development owner cannot log in: %v", err)
+	}
+}
+
 func useIdentityTestDirectory(t *testing.T) {
 	t.Helper()
 	workingDirectory, err := os.Getwd()
