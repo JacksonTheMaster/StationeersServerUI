@@ -1078,15 +1078,23 @@ body.modal-open {
 }
 
 .update-modal-content {
+  box-sizing: border-box;
   background: linear-gradient(135deg, var(--surface-hover), var(--bg-dark));
-  border: 3px solid var(--danger);
+  border: 2px solid var(--accent);
   border-radius: 16px;
   padding: 40px;
   max-width: 500px;
   width: 90%;
-  box-shadow: 0 8px 40px color-mix(in srgb, var(--danger) 30%, transparent);
+  box-shadow: 0 8px 40px color-mix(in srgb, var(--accent) 25%, transparent);
   position: relative;
+  max-height: calc(100vh - 30px);
+  overflow-y: auto;
   animation: modalSlideIn 0.3s ease-out;
+}
+
+.update-modal-content.major {
+  border-color: var(--danger);
+  box-shadow: 0 8px 40px color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 @keyframes modalSlideIn {
@@ -1128,13 +1136,27 @@ body.modal-open {
   width: 80px;
   height: 80px;
   margin: 0 auto 20px;
-  background: linear-gradient(135deg, var(--danger), color-mix(in srgb, var(--danger) 80%, black));
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 48px;
   color: var(--text-header);
+}
+
+.update-symbol {
+  width: 52%;
+  height: 52%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.update-modal-content.major .update-modal-icon {
+  background: linear-gradient(135deg, var(--danger), color-mix(in srgb, var(--danger) 80%, black));
 }
 
 .update-modal-content h2 {
@@ -1152,11 +1174,95 @@ body.modal-open {
 }
 
 .update-version {
-  color: var(--danger);
+  color: var(--accent);
   font-weight: bold;
   font-size: 20px;
   text-align: center;
   margin: 10px 0 25px 0;
+}
+
+.update-version-picker {
+  display: grid;
+  gap: 7px;
+  margin: 20px 0;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.update-version-picker select {
+  width: 100%;
+  padding: 12px 14px;
+  color: var(--text-header);
+  background: var(--input-bg);
+  border: 1px solid var(--primary-glow-strong);
+  border-radius: 8px;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.update-modal-content.major .update-version {
+  color: var(--danger);
+}
+
+.major-update-warning {
+  display: none;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 65%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--text-header);
+}
+
+.major-update-warning + .major-update-warning {
+  margin-top: 12px;
+}
+
+.prerelease-update-warning {
+  border-color: color-mix(in srgb, var(--warning) 65%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.prerelease-update-warning > strong {
+  color: var(--warning);
+}
+
+.major-update-warning.show {
+  display: block;
+}
+
+.major-update-warning > strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--danger);
+  font-size: 17px;
+}
+
+.major-update-warning p {
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.major-update-confirmation {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--text-dim);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.major-update-confirmation input {
+  margin-top: 3px;
+}
+
+.update-release-notes {
+  display: block;
+  margin-top: 18px;
+  color: var(--accent);
+  text-align: center;
 }
 
 .update-modal-buttons {
@@ -1184,6 +1290,13 @@ body.modal-open {
 #update-now-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+#update-now-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 #update-later-btn {
@@ -1226,6 +1339,58 @@ body.modal-open {
   background: color-mix(in srgb, var(--danger) 20%, transparent);
   border: 2px solid var(--danger);
   color: var(--danger);
+}
+
+.update-status-message small {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-dim);
+  font-weight: normal;
+  overflow-wrap: anywhere;
+}
+
+.update-status-message button {
+  margin-top: 12px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--danger);
+  color: var(--text-header);
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .update-modal-content {
+    width: calc(100% - 24px);
+    max-height: calc(100vh - 24px);
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+
+  .update-modal-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 14px;
+    font-size: 36px;
+  }
+
+  .update-modal-content h2 {
+    font-size: 21px;
+  }
+
+  .update-version {
+    margin-bottom: 18px;
+  }
+
+  .update-modal-buttons {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .update-modal-buttons button {
+    padding: 12px 10px;
+    font-size: 14px;
+  }
 }
 
 #update-button {
@@ -1271,6 +1436,11 @@ body.modal-open {
   transition: transform 0.2s ease;
   font-size: 1.3rem;
 
+}
+
+.update-icon .update-symbol {
+  width: 18px;
+  height: 18px;
 }
 
 .update-icon:hover {

@@ -32,7 +32,7 @@ jobs:
       - name: Verify build output
         run: |
           cd build
-          if ls StationeersServerControl*; then
+          if ls StationeersServerUI_*; then
             echo "Build succeeded: Executable found."
           else
             echo "Build failed: No executable found."
@@ -44,5 +44,5 @@ jobs:
         if: always()  # Upload even if the build fails for debugging
         uses: actions/upload-artifact@v4
         with:
-          name: StationeersServerControl
-          path: ./build/StationeersServerControl*
+          name: StationeersServerUI
+          path: ./build/StationeersServerUI_*

@@ -43,11 +43,17 @@
             "UIText_Copyright": "Urheberrecht",
             "UIText_Copyright1": "Lizenziert unter",
             "UIText_Copyright2": "Proprietärer Lizenz",
-            "UIText_UpdateAvailable": "Eine neue Version von SSUI ist bereit zu installieren und wird beim nächsten Neustart installiert.",
+            "UIText_UpdateAvailable": "SSUI-Update verfügbar",
             "UIText_UpdateLater": "Später",
             "UIText_UpdateNow": "Jetzt aktualisieren",
             "UIText_UpdateInstalling": "Aktualisierung wird installiert, bitte warten...",
-            "UIText_UpdateFailed": "Aktualisierung fehlgeschlagen. Bitte versuche es später erneut."
+            "UIText_UpdateFailed": "Das Update konnte nicht installiert werden.",
+            "UIText_UpdateDescription": "SSUI stoppt bei Bedarf den Gameserver, installiert das Update und startet anschließend neu.",
+            "UIText_MajorUpdateTitle": "Großes Versionsupdate",
+            "UIText_MajorUpdateWarning": "Diese Version enthält inkompatible Änderungen. Lies die Release Notes, bevor du fortfährst.",
+            "UIText_MajorUpdateConfirm": "Ich habe das verstanden und möchte dieses große Update installieren.",
+            "UIText_UpdateReleaseNotes": "Release Notes lesen",
+            "UIText_UpdateRetry": "Erneut versuchen"
         },
         "config": {
             "UIText_BackToDashboard": "Zurück zum Dashboard",

@@ -43,11 +43,17 @@
             "UIText_Copyright": "Upphovsrätt",
             "UIText_Copyright1": "Licensierad under",
             "UIText_Copyright2": "Proprietär licens",
-            "UIText_UpdateAvailable": "En ny version av SSUI är redo att installera och kommer att installeras nästa gång du startar applikationen.",
+            "UIText_UpdateAvailable": "SSUI-uppdatering tillgänglig",
             "UIText_UpdateLater": "Senare",
             "UIText_UpdateNow": "Uppdatera nu",
             "UIText_UpdateInstalling": "Uppdatering installeras, vänligen vänta...",
-            "UIText_UpdateFailed": "Uppdateringen misslyckades. Försök igen senare."
+            "UIText_UpdateFailed": "Uppdateringen kunde inte installeras.",
+            "UIText_UpdateDescription": "SSUI stoppar spelservern vid behov, installerar uppdateringen och startar sedan om.",
+            "UIText_MajorUpdateTitle": "Större versionsuppdatering",
+            "UIText_MajorUpdateWarning": "Den här versionen innehåller inkompatibla ändringar. Läs versionsinformationen innan du fortsätter.",
+            "UIText_MajorUpdateConfirm": "Jag förstår och vill installera den här större uppdateringen.",
+            "UIText_UpdateReleaseNotes": "Läs versionsinformationen",
+            "UIText_UpdateRetry": "Försök igen"
         },
         "config": {
             "UIText_BackToDashboard": "Tillbaka till dashboard",
