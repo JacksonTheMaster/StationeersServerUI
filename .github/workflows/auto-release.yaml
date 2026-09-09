@@ -1,58 +1,114 @@
-name: Release binaries
+name: Build and Release
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing release tag to build
-        required: true
-        default: v5.14.1
-        type: string
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
 
 jobs:
   build-and-release:
+    # Only run if the PR was merged
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+
     permissions:
-      contents: write
+      contents: write  # Required for creating releases
 
     steps:
-      - name: Resolve release tag
-        id: release
-        shell: bash
-        run: |
-          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.event.release.tag_name }}"
-          if [ "$TAG" != "v5.14.1" ]; then
-            echo "This bridge workflow only builds v5.14.1"
-            exit 1
-          fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout release tag
+      # Checkout the repository code
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.release.outputs.tag }}
 
+      # Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version: '1.26.0'
 
-      - name: Test
-        run: go test ./...
+      # Install dependencies
+      - name: Install dependencies
+        run: go mod download
 
-      - name: Build bridge assets
+      # Compile the build.go script to produce Executable
+      - name: Run ./build/build.go
         run: go run ./build/build.go
 
-      - name: Add legacy updater names
+      # Verify the executable exists
+      - name: Verify build output
         run: |
-          cp build/StationeersServerUI_v5.14.1_windows_amd64.exe build/StationeersServerControlv5.14.1.exe
-          cp build/StationeersServerUI_v5.14.1_linux_amd64 build/StationeersServerControlv5.14.1.x86_64
+          cd build
+          if ls StationeersServerControl*; then
+            echo "Build succeeded: Executable found."
+          else
+            echo "Build failed: No executable found."
+            exit 1
+          fi
 
-      - name: Upload assets to GitHub release
+      # Check for git tag on any commit in the PR
+      - name: Check for git tag
+        id: check_tag
+        run: |
+          # Get the base and head SHAs of the PR
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          HEAD_SHA=${{ github.sha }}
+          
+          # Get all commits in the PR (from base to head)
+          COMMITS=$(git rev-list $BASE_SHA..$HEAD_SHA)
+          
+          # Check each commit for a tag
+          TAG=""
+          for COMMIT in $COMMITS; do
+            CURRENT_TAG=$(git tag --points-at $COMMIT)
+            if [ -n "$CURRENT_TAG" ]; then
+              TAG=$CURRENT_TAG
+              break
+            fi
+          done
+          
+          if [ -n "$TAG" ]; then
+            echo "Found tag: $TAG"
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          else
+            echo "No tag found for any commit in this PR."
+            echo "tag=" >> $GITHUB_OUTPUT
+          fi
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        if: steps.check_tag.outputs.tag != ''
+        uses: docker/setup-buildx-action@v3
+
+      # Log in to DockerHub
+      - name: Log in to DockerHub
+        if: steps.check_tag.outputs.tag != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build and push Docker image
+      - name: Build and push Docker image
+        if: steps.check_tag.outputs.tag != ''
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/ssui:${{ steps.check_tag.outputs.tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ssui:latest
+
+      # Create release (not prerelease) if tag exists
+      - name: Create Release
+        if: steps.check_tag.outputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release.outputs.tag }}
-          files: build/StationeersServer*
+          prerelease: false
+          tag_name: ${{ steps.check_tag.outputs.tag }}
+          name: "Release ${{ steps.check_tag.outputs.tag }}"
+          files: ./build/StationeersServerControl*
           fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
