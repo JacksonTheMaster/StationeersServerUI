@@ -64,6 +64,7 @@ var (
 	AutoStartServerOnStartup                 bool
 	SSUIIdentifier                           string
 	AdvertiserOverride                       string
+	ConnectivityCheckEnabled                 bool
 	IsStationeersLaunchPadEnabled            bool
 	IsStationeersLaunchPadAutoUpdatesEnabled bool
 	ShowExpertSettings                       bool

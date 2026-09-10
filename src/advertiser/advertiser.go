@@ -3,8 +3,6 @@ package advertiser
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"net"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -14,6 +12,7 @@ import (
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/detectionmgr"
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/gamemgr"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/network"
 )
 
 var StationeersAdvertisementEndpoint = config.GetStationeersServerPingEndpoint()
@@ -36,41 +35,6 @@ type ServerAdMessage struct {
 type ServerAdResponse struct {
 	SessionId int
 	Status    string
-}
-
-func getIpFromAdvertiserOverride(address string) (string, error) {
-	// If the address is "auto", we need to check our public IPv4 via ipify
-	if address == "auto" {
-		resp, err := http.Get("https://api4.ipify.org")
-		if err != nil {
-			return "", err
-		}
-		defer resp.Body.Close()
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
-		return buf.String(), nil
-	}
-	// If the address is an IP quad, return it as is
-	if ip := net.ParseIP(address); ip != nil {
-		if ip.To4() != nil {
-			return ip.To4().String(), nil
-		} else if ip.To16() != nil {
-			return "", errors.New("IPv6 addresses are not supported for advertiser override")
-		}
-	}
-	// If the address is a DNS name, resolve it
-	ips, err := net.LookupIP(address)
-	if err != nil {
-		return "", err
-	}
-	// Return the first resolved IPv4 address
-	for _, ip := range ips {
-		if ip.To4() != nil {
-			return ip.To4().String(), nil
-		}
-	}
-	// If the address is invalid, return an error
-	return "", errors.New("unable to resolve IP from advertiser override")
 }
 
 func StartAdvertiser() {
@@ -110,7 +74,7 @@ func StartAdvertiser() {
 					platform = 2
 				}
 				// Get IP address
-				ipAddress, err := getIpFromAdvertiserOverride(config.GetAdvertiserOverride())
+				ipAddress, err := network.ResolveAdvertisedIP(config.GetAdvertiserOverride())
 				if err != nil {
 					logger.Advertiser.Warnf("ServerAdvertiser failed to get IP address from config value '%s': %v", config.GetAdvertiserOverride(), err)
 					transientErrors++

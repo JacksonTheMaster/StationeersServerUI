@@ -26,10 +26,11 @@ type SettingsPatch struct {
 	StartCondition   *string `json:"startCondition,omitempty"`
 	StartLocation    *string `json:"startLocation,omitempty"`
 
-	Debug                   *bool `json:"debug,omitempty"`
-	CreateSSUILogFile       *bool `json:"createSSUILogFile,omitempty"`
-	CreateGameServerLogFile *bool `json:"createGameServerLogFile,omitempty"`
-	LogLevel                *int  `json:"logLevel,omitempty"`
+	Debug                    *bool `json:"debug,omitempty"`
+	CreateSSUILogFile        *bool `json:"createSSUILogFile,omitempty"`
+	CreateGameServerLogFile  *bool `json:"createGameServerLogFile,omitempty"`
+	LogLevel                 *int  `json:"logLevel,omitempty"`
+	ConnectivityCheckEnabled *bool `json:"connectivityCheckEnabled,omitempty"`
 
 	ExePath                  *string `json:"exePath,omitempty"`
 	LogClutterToConsole      *bool   `json:"logClutterToConsole,omitempty"`

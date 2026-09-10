@@ -75,6 +75,117 @@
   box-shadow: none;
 }
 
+.connectivity-notice {
+  margin-top: 15px;
+}
+
+.connectivity-notice.connectivity-reachable {
+  border-color: color-mix(in srgb, var(--success) 65%, transparent);
+  background: color-mix(in srgb, var(--success) 8%, var(--panel-surface));
+}
+
+.connectivity-notice.connectivity-partial,
+.connectivity-notice.connectivity-unreachable,
+.connectivity-notice.connectivity-bind_failed,
+.connectivity-notice.connectivity-configuration_error,
+.connectivity-notice.connectivity-service_unavailable {
+  border-color: color-mix(in srgb, var(--danger) 75%, transparent);
+  background: color-mix(in srgb, var(--danger) 11%, var(--panel-surface));
+}
+
+.connectivity-notice.connectivity-reachable h3 {
+  color: var(--success);
+}
+
+.connectivity-notice.connectivity-partial h3,
+.connectivity-notice.connectivity-unreachable h3,
+.connectivity-notice.connectivity-bind_failed h3,
+.connectivity-notice.connectivity-configuration_error h3,
+.connectivity-notice.connectivity-service_unavailable h3 {
+  color: var(--danger);
+}
+
+.connectivity-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.connectivity-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.connectivity-dismiss {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--text-dim) 45%, transparent);
+  border-radius: 50%;
+  color: var(--text-dim);
+  background: transparent;
+  font: 0.9rem/1 'Share Tech Mono', monospace;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.connectivity-dismiss:hover,
+.connectivity-dismiss:focus-visible {
+  border-color: var(--text-header);
+  color: var(--text-header);
+  opacity: 1;
+}
+
+.connectivity-notice h2 {
+  margin: 5px 0 0;
+  color: var(--text-header);
+  font-size: 1.05rem;
+}
+
+.connectivity-notice #connectivity-message {
+  margin: 12px 0 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.connectivity-probes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.connectivity-probes span {
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.connectivity-footer {
+  margin: 14px 0 0;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+
+.connectivity-footer a {
+  color: var(--accent);
+}
+
+.probe-ok {
+  color: var(--success);
+}
+
+.probe-failed {
+  color: var(--danger);
+}
+
 .control-panel-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 330px;

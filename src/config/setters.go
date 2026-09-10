@@ -689,6 +689,14 @@ func SetAdvertiserOverride(value string) error {
 	return safeSaveConfig()
 }
 
+func SetConnectivityCheckEnabled(value bool) error {
+	ConfigMu.Lock()
+	defer ConfigMu.Unlock()
+
+	ConnectivityCheckEnabled = value
+	return safeSaveConfig()
+}
+
 func SetIsStationeersLaunchPadEnabled(value bool) error {
 	ConfigMu.Lock()
 	defer ConfigMu.Unlock()

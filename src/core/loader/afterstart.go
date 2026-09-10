@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/config"
+	"github.com/SteamServerUI/StationeersServerUI/v6/src/connectivity"
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/logger"
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/managers/gamemgr"
 	"github.com/SteamServerUI/StationeersServerUI/v6/src/setup"
@@ -19,6 +20,7 @@ func AfterStartComplete() {
 	if err != nil {
 		logger.Core.Error("AfterStartComplete: Failed to clean up old executables: " + err.Error())
 	}
+	connectivity.RunStartupCheck()
 	if config.GetAutoStartServerOnStartup() {
 		logger.Core.Info("AutoStartServerOnStartup is enabled, starting server...")
 		gamemgr.InternalStartServer()

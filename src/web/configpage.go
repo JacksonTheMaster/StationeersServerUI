@@ -91,6 +91,14 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		autoStartServerFalseSelected = "selected"
 	}
 
+	connectivityCheckEnabledTrueSelected := ""
+	connectivityCheckEnabledFalseSelected := ""
+	if config.GetConnectivityCheckEnabled() {
+		connectivityCheckEnabledTrueSelected = "selected"
+	} else {
+		connectivityCheckEnabledFalseSelected = "selected"
+	}
+
 	steamP2PTrueSelected := ""
 	steamP2PFalseSelected := ""
 	if config.GetUseSteamP2P() {
@@ -303,6 +311,9 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		AutoStartServerOnStartup:                fmt.Sprintf("%v", config.GetAutoStartServerOnStartup()),
 		AutoStartServerOnStartupTrueSelected:    autoStartServerTrueSelected,
 		AutoStartServerOnStartupFalseSelected:   autoStartServerFalseSelected,
+		ConnectivityCheckEnabled:                fmt.Sprintf("%v", config.GetConnectivityCheckEnabled()),
+		ConnectivityCheckEnabledTrueSelected:    connectivityCheckEnabledTrueSelected,
+		ConnectivityCheckEnabledFalseSelected:   connectivityCheckEnabledFalseSelected,
 		AllowAutoGameServerUpdates:              fmt.Sprintf("%v", config.GetAllowAutoGameServerUpdates()),
 		AllowAutoGameServerUpdatesTrueSelected:  autoGameServerUpdatesTrueSelected,
 		AllowAutoGameServerUpdatesFalseSelected: autoGameServerUpdatesFalseSelected,
@@ -452,6 +463,8 @@ func ServeConfigPage(w http.ResponseWriter, r *http.Request) {
 		UIText_TerrainSettingsFillHint:        localization.GetString("UIText_TerrainSettingsFillHint"),
 		UIText_AutoStartServerOnStartup:       localization.GetString("UIText_AutoStartServerOnStartup"),
 		UIText_AutoStartServerOnStartupInfo:   localization.GetString("UIText_AutoStartServerOnStartupInfo"),
+		UIText_ConnectivityCheck:              localization.GetString("UIText_ConnectivityCheck"),
+		UIText_ConnectivityCheckInfo:          localization.GetString("UIText_ConnectivityCheckInfo"),
 		UIText_AllowAutoGameServerUpdates:     localization.GetString("UIText_AllowAutoGameServerUpdates"),
 		UIText_AllowAutoGameServerUpdatesInfo: localization.GetString("UIText_AllowAutoGameServerUpdatesInfo"),
 		UIText_CreateSSUILogFile:              localization.GetString("UIText_CreateSSUILogFile"),

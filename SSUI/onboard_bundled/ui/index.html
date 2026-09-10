@@ -218,7 +218,7 @@
                 <a id="backup-view-toggle" class="panel-link-button" href="/backups">{{.UIText_ViewAllBackups}}</a>
             </div>
         </section>
-        <div class="info-notice" style="display: none;">
+        <div id="legacy-info-notice" class="info-notice" style="display: none;">
             <h3>
                 <span class="notice-icon">ℹ️</span>
                 Transitioning to SteamServerUI (click to expand)
@@ -259,6 +259,51 @@
                 </p>
             </div>
         </div>
+
+        <section id="connectivity-panel" class="info-notice connectivity-notice" hidden aria-live="polite"
+            data-notice="{{.UIText_ConnectivityNotice}}"
+            data-all-crisp="{{.UIText_ConnectivityAllCrisp}}"
+            data-checking="{{.UIText_ConnectivityChecking}}"
+            data-reachable="{{.UIText_ConnectivityReachable}}"
+            data-partial="{{.UIText_ConnectivityPartial}}"
+            data-unreachable="{{.UIText_ConnectivityUnreachable}}"
+            data-bind-failed="{{.UIText_ConnectivityBindFailed}}"
+            data-config-error="{{.UIText_ConnectivityConfigError}}"
+            data-service-error="{{.UIText_ConnectivityServiceError}}"
+            data-default-title="{{.UIText_ConnectivityDefault}}"
+            data-message-checking="{{.UIText_ConnectivityMessageChecking}}"
+            data-message-reachable="{{.UIText_ConnectivityMessageReachable}}"
+            data-message-partial="{{.UIText_ConnectivityMessagePartial}}"
+            data-message-unreachable="{{.UIText_ConnectivityMessageUnreachable}}"
+            data-message-bind-failed="{{.UIText_ConnectivityMessageBindFailed}}"
+            data-message-config-error="{{.UIText_ConnectivityMessageConfigError}}"
+            data-message-service-error="{{.UIText_ConnectivityMessageServiceError}}"
+            data-retry="{{.UIText_ConnectivityRetry}}"
+            data-dismiss="{{.UIText_ConnectivityDismiss}}"
+            data-received="{{.UIText_ConnectivityReceived}}"
+            data-lost="{{.UIText_ConnectivityLost}}"
+            data-bytes="{{.UIText_ConnectivityBytes}}"
+            data-permission="{{.UIText_ConnectivityPermission}}">
+            <h3>
+                <span class="notice-icon" aria-hidden="true">🌐</span>
+                <span id="connectivity-summary">{{.UIText_ConnectivityNotice}}: {{.UIText_ConnectivityChecking}}</span>
+            </h3>
+            <div class="collapsible-content">
+                <div class="connectivity-panel-header">
+                    <h2 id="connectivity-title">{{.UIText_ConnectivityChecking}}</h2>
+                    <div class="connectivity-panel-actions">
+                        <button id="connectivity-retry" class="panel-button" type="button" onclick="runConnectivityCheck()">{{.UIText_ConnectivityRetry}}</button>
+                        <button id="connectivity-dismiss" class="connectivity-dismiss" type="button" onclick="dismissConnectivityWarning()"
+                            aria-label="{{.UIText_ConnectivityDismiss}}" title="{{.UIText_ConnectivityDismiss}}">×</button>
+                    </div>
+                </div>
+                <p id="connectivity-message">{{.UIText_ConnectivityMessageChecking}}</p>
+                <div id="connectivity-probes" class="connectivity-probes"></div>
+                <p class="connectivity-footer">
+                    {{.UIText_ConnectivityFooterPrefix}}<a href="/config?tab=settings&amp;section=network-settings">{{.UIText_ConnectivityFooterLink}}</a>{{.UIText_ConnectivityFooterSuffix}}
+                </p>
+            </div>
+        </section>
     </main>
 
     <discord-button>

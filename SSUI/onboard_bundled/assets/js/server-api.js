@@ -425,6 +425,9 @@ function pollRecurringTasks() {
     if (window.SSUIAccess.can('server.view')) {
         fetchServerStatus();
         setInterval(fetchServerStatus, 3500);
+
+        fetchConnectivityStatus();
+        setInterval(fetchConnectivityStatus, 10000);
     } else {
         updateStatusIndicator(false, true);
         document.getElementById('server-state-label').textContent = 'No permission';
@@ -443,6 +446,156 @@ function pollRecurringTasks() {
             fetchBackups().catch(err => console.error("Failed to fetch backups:", err));
         }, 30000);
     }
+}
+
+function fetchConnectivityStatus() {
+    fetch('/api/v3/server/connectivity')
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(result => {
+            if (!result.ok) throw new Error(result.data?.error || 'Connectivity status unavailable');
+            updateConnectivityPanel(result.data);
+        })
+        .catch(err => console.debug('Failed to fetch connectivity status:', err));
+}
+
+function runConnectivityCheck() {
+    const panel = document.getElementById('connectivity-panel');
+    const permissionMessage = panel?.dataset.permission || '';
+    if (!window.SSUIAccess.require('server.control', permissionMessage)) return;
+
+    const button = document.getElementById('connectivity-retry');
+    if (button) button.disabled = true;
+    updateConnectivityPanel({ state: 'checking' });
+
+    fetch('/api/v3/server/connectivity/check', { method: 'POST' })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(result => {
+            if (!result.ok && result.data?.state !== 'checking') {
+                throw new Error(result.data?.error || 'Connectivity check failed');
+            }
+            updateConnectivityPanel(result.data);
+        })
+        .catch(() => updateConnectivityPanel({ state: 'service_unavailable' }))
+        .finally(() => {
+            if (button) button.disabled = false;
+        });
+}
+
+const connectivityWarningStorageKey = 'ssui-connectivity-warning-dismissed';
+
+function isConnectivityWarningDismissed() {
+    try {
+        return localStorage.getItem(connectivityWarningStorageKey) === 'true';
+    } catch (error) {
+        return false;
+    }
+}
+
+function clearConnectivityWarningDismissal() {
+    try {
+        localStorage.removeItem(connectivityWarningStorageKey);
+    } catch (error) {
+        // Storage can be unavailable in private or restricted browser contexts.
+    }
+}
+
+function dismissConnectivityWarning() {
+    try {
+        localStorage.setItem(connectivityWarningStorageKey, 'true');
+    } catch (error) {
+        // The warning still disappears for this render if storage is unavailable.
+    }
+    const panel = document.getElementById('connectivity-panel');
+    if (panel) {
+        panel.hidden = true;
+        panel.classList.remove('open');
+    }
+}
+
+function placeConnectivityPanel(state) {
+    const panel = document.getElementById('connectivity-panel');
+    const controls = document.getElementById('controls');
+    const legacyNotice = document.getElementById('legacy-info-notice');
+    if (!panel || !controls || !legacyNotice) return;
+
+    if (state === 'reachable') {
+        legacyNotice.after(panel);
+        return;
+    }
+
+    controls.after(panel);
+}
+
+function updateConnectivityPanel(status) {
+    const panel = document.getElementById('connectivity-panel');
+    const summary = document.getElementById('connectivity-summary');
+    const title = document.getElementById('connectivity-title');
+    const message = document.getElementById('connectivity-message');
+    const probes = document.getElementById('connectivity-probes');
+    const retry = document.getElementById('connectivity-retry');
+    const dismiss = document.getElementById('connectivity-dismiss');
+    if (!panel || !summary || !title || !message || !probes) return;
+
+    const copy = panel.dataset;
+    const titles = {
+        checking: copy.checking,
+        reachable: copy.reachable,
+        partial: copy.partial,
+        unreachable: copy.unreachable,
+        bind_failed: copy.bindFailed,
+        configuration_error: copy.configError,
+        service_unavailable: copy.serviceError
+    };
+    const messages = {
+        checking: copy.messageChecking,
+        reachable: copy.messageReachable,
+        partial: copy.messagePartial,
+        unreachable: copy.messageUnreachable,
+        bind_failed: copy.messageBindFailed,
+        configuration_error: copy.messageConfigError,
+        service_unavailable: copy.messageServiceError
+    };
+
+    const state = status?.state || 'not_checked';
+    if (state === 'not_checked' || state === 'disabled' || state === 'skipped_running') {
+        panel.hidden = true;
+        return;
+    }
+
+    placeConnectivityPanel(state);
+
+    if (state === 'reachable') {
+        clearConnectivityWarningDismissal();
+    }
+
+    const warning = state !== 'checking';
+    panel.hidden = warning && isConnectivityWarningDismissed();
+    panel.classList.remove(
+        'connectivity-checking',
+        'connectivity-reachable',
+        'connectivity-partial',
+        'connectivity-unreachable',
+        'connectivity-bind_failed',
+        'connectivity-configuration_error',
+        'connectivity-service_unavailable'
+    );
+    panel.classList.add(`connectivity-${state}`);
+    const stateTitle = titles[state] || copy.defaultTitle;
+    summary.textContent = `${copy.notice}: ${state === 'reachable' ? copy.allCrisp : stateTitle}`;
+    title.textContent = stateTitle;
+    message.textContent = messages[state] || copy.messageServiceError;
+    probes.replaceChildren();
+
+    if (dismiss) dismiss.hidden = !warning;
+
+    (status.probes || []).forEach(probe => {
+        const item = document.createElement('span');
+        item.className = probe.received ? 'probe-ok' : 'probe-failed';
+        item.textContent = `${probe.size} ${copy.bytes}: ${probe.received ? copy.received : copy.lost}`;
+        probes.appendChild(item);
+    });
+
+    if (retry) retry.hidden = !window.SSUIAccess.can('server.control');
 }
 
 function formatAPIUptime(seconds) {

@@ -2,76 +2,102 @@ package web
 
 // TemplateData holds data to be passed to templates
 type IndexTemplateData struct {
-	Permissions                     string
-	UIText_UpdateAvailable          string
-	UIText_UpdateLater              string
-	UIText_UpdateNow                string
-	UIText_UpdateInstalling         string
-	UIText_UpdateFailed             string
-	Version                         string
-	Branch                          string
-	SSUIIdentifier                  string
-	UIText_StartButton              string
-	UIText_StopButton               string
-	UIText_Settings                 string
-	UIText_Update_SteamCMD          string
-	UIText_Console                  string
-	UIText_Detection_Events         string
-	UIText_Backend_Log              string
-	UIText_Backup_Manager           string
-	UIText_Connected_PlayersHeader  string
-	UIText_GameServer               string
-	UIText_Uptime                   string
-	UIText_PlayersOnline            string
-	UIText_LatestBackup             string
-	UIText_ServerOutput             string
-	UIText_ServerActivity           string
-	UIText_StreamConnected          string
-	UIText_StreamConnecting         string
-	UIText_StreamReconnecting       string
-	UIText_StreamPaused             string
-	UIText_Pause                    string
-	UIText_Resume                   string
-	UIText_Clear                    string
-	UIText_NoPlayers                string
-	UIText_PlayersUnavailable       string
-	UIText_RecentBackups            string
-	UIText_BackupHistory            string
-	UIText_BackupCreated            string
-	UIText_BackupDaysPlayed         string
-	UIText_BackupThings             string
-	UIText_BackupAtmospheres        string
-	UIText_BackupRooms              string
-	UIText_BackupPipeNetworks       string
-	UIText_BackupCableNetworks      string
-	UIText_BackupPlayers            string
-	UIText_BackupPlayersAlive       string
-	UIText_BackupPlayersUnconscious string
-	UIText_BackupFurnaces           string
-	UIText_BackupDestroyedFurnaces  string
-	UIText_BackupExpand             string
-	UIText_BackupCollapse           string
-	UIText_BackupAnalysisLoading    string
-	UIText_BackupAnalysisFailed     string
-	UIText_BackupRetry              string
-	UIText_BackupWorld              string
-	UIText_BackupGameVersion        string
-	UIText_BackupArchiveSize        string
-	UIText_ViewAllBackups           string
-	UIText_ShowRecentBackups        string
-	UIText_Refresh                  string
-	UIText_Close                    string
-	UIText_StateUncertain           string
-	UIText_StateStopped             string
-	UIText_StateStarting            string
-	UIText_StateLoadingMap          string
-	UIText_StateHostingSession      string
-	UIText_StateRunning             string
-	UIText_StateStopping            string
-	UIText_Discord_Info             string
-	UIText_API_Info                 string
-	UIText_Copyright1               string
-	UIText_Copyright2               string
+	Permissions                            string
+	UIText_UpdateAvailable                 string
+	UIText_UpdateLater                     string
+	UIText_UpdateNow                       string
+	UIText_UpdateInstalling                string
+	UIText_UpdateFailed                    string
+	Version                                string
+	Branch                                 string
+	SSUIIdentifier                         string
+	UIText_StartButton                     string
+	UIText_StopButton                      string
+	UIText_Settings                        string
+	UIText_Update_SteamCMD                 string
+	UIText_Console                         string
+	UIText_Detection_Events                string
+	UIText_Backend_Log                     string
+	UIText_Backup_Manager                  string
+	UIText_Connected_PlayersHeader         string
+	UIText_GameServer                      string
+	UIText_Uptime                          string
+	UIText_PlayersOnline                   string
+	UIText_LatestBackup                    string
+	UIText_ServerOutput                    string
+	UIText_ServerActivity                  string
+	UIText_StreamConnected                 string
+	UIText_StreamConnecting                string
+	UIText_StreamReconnecting              string
+	UIText_StreamPaused                    string
+	UIText_Pause                           string
+	UIText_Resume                          string
+	UIText_Clear                           string
+	UIText_NoPlayers                       string
+	UIText_PlayersUnavailable              string
+	UIText_RecentBackups                   string
+	UIText_BackupHistory                   string
+	UIText_BackupCreated                   string
+	UIText_BackupDaysPlayed                string
+	UIText_BackupThings                    string
+	UIText_BackupAtmospheres               string
+	UIText_BackupRooms                     string
+	UIText_BackupPipeNetworks              string
+	UIText_BackupCableNetworks             string
+	UIText_BackupPlayers                   string
+	UIText_BackupPlayersAlive              string
+	UIText_BackupPlayersUnconscious        string
+	UIText_BackupFurnaces                  string
+	UIText_BackupDestroyedFurnaces         string
+	UIText_BackupExpand                    string
+	UIText_BackupCollapse                  string
+	UIText_BackupAnalysisLoading           string
+	UIText_BackupAnalysisFailed            string
+	UIText_BackupRetry                     string
+	UIText_BackupWorld                     string
+	UIText_BackupGameVersion               string
+	UIText_BackupArchiveSize               string
+	UIText_ViewAllBackups                  string
+	UIText_ShowRecentBackups               string
+	UIText_Refresh                         string
+	UIText_Close                           string
+	UIText_StateUncertain                  string
+	UIText_StateStopped                    string
+	UIText_StateStarting                   string
+	UIText_StateLoadingMap                 string
+	UIText_StateHostingSession             string
+	UIText_StateRunning                    string
+	UIText_StateStopping                   string
+	UIText_ConnectivityNotice              string
+	UIText_ConnectivityAllCrisp            string
+	UIText_ConnectivityChecking            string
+	UIText_ConnectivityReachable           string
+	UIText_ConnectivityPartial             string
+	UIText_ConnectivityUnreachable         string
+	UIText_ConnectivityBindFailed          string
+	UIText_ConnectivityConfigError         string
+	UIText_ConnectivityServiceError        string
+	UIText_ConnectivityDefault             string
+	UIText_ConnectivityMessageChecking     string
+	UIText_ConnectivityMessageReachable    string
+	UIText_ConnectivityMessagePartial      string
+	UIText_ConnectivityMessageUnreachable  string
+	UIText_ConnectivityMessageBindFailed   string
+	UIText_ConnectivityMessageConfigError  string
+	UIText_ConnectivityMessageServiceError string
+	UIText_ConnectivityRetry               string
+	UIText_ConnectivityDismiss             string
+	UIText_ConnectivityReceived            string
+	UIText_ConnectivityLost                string
+	UIText_ConnectivityBytes               string
+	UIText_ConnectivityPermission          string
+	UIText_ConnectivityFooterPrefix        string
+	UIText_ConnectivityFooterLink          string
+	UIText_ConnectivityFooterSuffix        string
+	UIText_Discord_Info                    string
+	UIText_API_Info                        string
+	UIText_Copyright1                      string
+	UIText_Copyright2                      string
 }
 
 // ConfigTemplateData holds data for the config page template
@@ -149,6 +175,9 @@ type ConfigTemplateData struct {
 	AutoStartServerOnStartup                string
 	AutoStartServerOnStartupTrueSelected    string
 	AutoStartServerOnStartupFalseSelected   string
+	ConnectivityCheckEnabled                string
+	ConnectivityCheckEnabledTrueSelected    string
+	ConnectivityCheckEnabledFalseSelected   string
 	AllowAutoGameServerUpdates              string
 	AllowAutoGameServerUpdatesTrueSelected  string
 	AllowAutoGameServerUpdatesFalseSelected string
@@ -291,6 +320,8 @@ type ConfigTemplateData struct {
 	UIText_TerrainSettingsFillHint        string
 	UIText_AutoStartServerOnStartup       string
 	UIText_AutoStartServerOnStartupInfo   string
+	UIText_ConnectivityCheck              string
+	UIText_ConnectivityCheckInfo          string
 	UIText_AllowAutoGameServerUpdates     string
 	UIText_AllowAutoGameServerUpdatesInfo string
 	UIText_CreateSSUILogFile              string

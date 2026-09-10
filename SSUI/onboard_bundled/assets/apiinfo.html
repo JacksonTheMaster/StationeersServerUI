@@ -82,6 +82,8 @@ Content-Type: application/json
             <h2>Server and backups</h2>
             <div class="endpoint-list">
                 <p><span class="method get">GET</span><code>/api/v3/server/status</code> Server state and uptime</p>
+                <p><span class="method get">GET</span><code>/api/v3/server/connectivity</code> Latest external UDP connectivity check</p>
+                <p><span class="method post">POST</span><code>/api/v3/server/connectivity/check</code> Run an external UDP connectivity check</p>
                 <p><span class="method get">GET</span><code>/api/v3/server/players</code> Connected players</p>
                 <p><span class="method post">POST</span><code>/api/v3/server/start</code> Start the server</p>
                 <p><span class="method post">POST</span><code>/api/v3/server/stop</code> Stop the server</p>

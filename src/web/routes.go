@@ -92,6 +92,8 @@ func registerServerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v3/server/start", api.Require(security.PermissionServerControl, StartServer))
 	mux.HandleFunc("POST /api/v3/server/stop", api.Require(security.PermissionServerControl, StopServer))
 	mux.HandleFunc("GET /api/v3/server/status", api.Require(security.PermissionServerView, GetGameServerRunState))
+	mux.HandleFunc("GET /api/v3/server/connectivity", api.Require(security.PermissionServerView, GetConnectivityStatus))
+	mux.HandleFunc("POST /api/v3/server/connectivity/check", api.Require(security.PermissionServerControl, RunConnectivityCheck))
 	mux.HandleFunc("GET /api/v3/server/players", api.Require(security.PermissionServerView, HandleConnectedPlayersList))
 	mux.HandleFunc("POST /api/v3/backend/reload", api.Require(security.PermissionBackendReload, HandleReloadAll))
 	mux.HandleFunc("POST /api/v3/steamcmd/run", api.Require(security.PermissionSteamCMDRun, HandleRunSteamCMD))

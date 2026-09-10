@@ -54,12 +54,13 @@ type JsonConfig struct {
 	StartLocation    string `json:"StartLocation"`
 
 	// Logging and debug settings
-	Debug                   *bool    `json:"Debug"`
-	CreateSSUILogFile       *bool    `json:"CreateSSUILogFile"`
-	CreateGameServerLogFile *bool    `json:"CreateGameServerLogFile"`
-	LogLevel                int      `json:"LogLevel"`
-	SubsystemFilters        []string `json:"subsystemFilters"`
-	AdvertiserOverride      string   `json:"AdvertiserOverride"`
+	Debug                    *bool    `json:"Debug"`
+	CreateSSUILogFile        *bool    `json:"CreateSSUILogFile"`
+	CreateGameServerLogFile  *bool    `json:"CreateGameServerLogFile"`
+	LogLevel                 int      `json:"LogLevel"`
+	SubsystemFilters         []string `json:"subsystemFilters"`
+	AdvertiserOverride       string   `json:"AdvertiserOverride"`
+	ConnectivityCheckEnabled *bool    `json:"ConnectivityCheckEnabled"`
 
 	// Authentication Settings
 	Users             map[string]string `json:"users"`       // Map of username to hashed password
@@ -456,6 +457,9 @@ func applyConfig(cfg *JsonConfig) {
 	ConfiguredSafeBackupDir = filepath.Join(SSUIFolder, "savebackups", SaveName)
 
 	AdvertiserOverride = getString(cfg.AdvertiserOverride, "ADVERTISER_OVERRIDE", "")
+	connectivityCheckEnabledVal := getBool(cfg.ConnectivityCheckEnabled, "CONNECTIVITY_CHECK_ENABLED", true)
+	ConnectivityCheckEnabled = connectivityCheckEnabledVal
+	cfg.ConnectivityCheckEnabled = &connectivityCheckEnabledVal
 }
 
 // use safeSaveConfig EXCLUSIVELY though setter functions
@@ -549,6 +553,7 @@ func snapshotConfig() JsonConfig {
 		SSUIIdentifier:                           SSUIIdentifier,
 		SSUIWebPort:                              SSUIWebPort,
 		AdvertiserOverride:                       AdvertiserOverride,
+		ConnectivityCheckEnabled:                 &ConnectivityCheckEnabled,
 		ShowExpertSettings:                       &ShowExpertSettings,
 	}
 }

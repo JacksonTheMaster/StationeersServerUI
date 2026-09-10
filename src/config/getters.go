@@ -589,6 +589,12 @@ func GetAdvertiserOverride() string {
 	return AdvertiserOverride
 }
 
+func GetConnectivityCheckEnabled() bool {
+	ConfigMu.RLock()
+	defer ConfigMu.RUnlock()
+	return ConnectivityCheckEnabled
+}
+
 func GetStationeersServerPingEndpoint() string {
 	ConfigMu.RLock()
 	defer ConfigMu.RUnlock()

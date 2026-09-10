@@ -397,6 +397,15 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label for="ConnectivityCheckEnabled">{{.UIText_ConnectivityCheck}}:</label>
+                                    <select id="ConnectivityCheckEnabled" name="ConnectivityCheckEnabled" required>
+                                        <option value="true" {{.ConnectivityCheckEnabledTrueSelected}}>TRUE</option>
+                                        <option value="false" {{.ConnectivityCheckEnabledFalseSelected}}>FALSE</option>
+                                    </select>
+                                    <div class="input-info">{{.UIText_ConnectivityCheckInfo}}</div>
+                                </div>
+
+                                <div class="form-group">
                                     <label
                                         for="AllowAutoGameServerUpdates">{{.UIText_AllowAutoGameServerUpdates}}:</label>
                                     <select id="AllowAutoGameServerUpdates" name="AllowAutoGameServerUpdates" required>
