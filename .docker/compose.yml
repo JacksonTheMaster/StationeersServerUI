@@ -22,9 +22,6 @@ services:
       - "27015:27015/udp"
       - "27015:27015/tcp"
     volumes:
-      - app-data:/app
+      - ./ssui-data:/app:rw
     stop_grace_period: 30s
     restart: unless-stopped
-
-volumes:
-  app-data:
