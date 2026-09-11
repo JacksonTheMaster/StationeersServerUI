@@ -30,12 +30,10 @@ Managing a Stationeers dedicated server shouldn't require a PhD in Linux or hour
 
 ### 🌟 This is a WebUI, you don't need a graphical OS to run this 🌟
 
-[![Download page](https://img.shields.io/badge/Open-Download%20Page-orange?style=for-the-badge)](https://steamserverui.github.io/StationeersServerUI/)
+[![Download page](https://img.shields.io/badge/Open-Download%20Page-orange?style=for-the-badge)](https://ssui.dev/)
 
-[![Download latest Windows version](https://img.shields.io/badge/Direct-Windows%20Download-blue?style=for-the-badge)](https://steamserverui.github.io/StationeersServerUI/?download=windows)
-[![Download latest Linux version](https://img.shields.io/badge/Direct-Linux%20Download-%23FCC624?style=for-the-badge&logo=linux&logoColor=%23FCC624)](https://steamserverui.github.io/StationeersServerUI/?download=linux)
-
-[![Preview website](https://img.shields.io/badge/Visit-Live%20Preview-green?style=for-the-badge)](https://steamserverui.github.io/StationeersServerUI/preview/server.html)
+[![Download latest Windows version](https://img.shields.io/badge/Direct-Windows%20Download-blue?style=for-the-badge)](https://ssui.dev/Downloads/)
+[![Download latest Linux version](https://img.shields.io/badge/Direct-Linux%20Download-%23FCC624?style=for-the-badge&logo=linux&logoColor=%23FCC624)](https://ssui.dev/Downloads/)
 </div>
 
 <div align="center">
@@ -46,11 +44,11 @@ Managing a Stationeers dedicated server shouldn't require a PhD in Linux or hour
 
 ## TL;DR - Get Started Fast
 
-📚 Visit the [Quick-Start-Guide](https://github.com/SteamServerUI/StationeersServerUI/wiki/Quick-Start-Guide) in the [Wiki](https://github.com/SteamServerUI/StationeersServerUI/wiki)
+📚 Start with the [Getting started guide](https://ssui.dev/Getting-Started/) in the [SSUI documentation](https://ssui.dev/)
 
 ⛓️‍💥 Follow the chained pages (links at the bottom of each page)!
 
-📖 Full documentation is provided in the [Wiki](https://github.com/SteamServerUI/StationeersServerUI/wiki).
+📖 Full documentation is provided at [ssui.dev](https://ssui.dev/).
 
 ## What is This?
 
@@ -74,20 +72,20 @@ Stationeers will still let you destroy the base yourself. We have not patched th
 
 ## Detailed Documentation
 
-For comprehensive instructions, examples and more details, visit the [GitHub Wiki](https://github.com/SteamServerUI/StationeersServerUI/wiki).
+For comprehensive instructions, examples and more details, visit the [SSUI documentation](https://ssui.dev/).
 
 | Documentation Section | Description |
 |----------------------|-------------|
-| [Features](https://github.com/SteamServerUI/StationeersServerUI/wiki/Features) | Near-complete list of features and capabilities |
-| [Requirements](https://github.com/SteamServerUI/StationeersServerUI/wiki/Requirements) | System requirements and sizing guidance |
-| [Installation](https://github.com/SteamServerUI/StationeersServerUI/wiki/Installation) | Step-by-step installation guide |
-| [First-Time Setup](https://github.com/SteamServerUI/StationeersServerUI/wiki/First-Time-Setup) | Getting your server up and running |
-| [Discord Integration](https://github.com/SteamServerUI/StationeersServerUI/wiki/Discord-Integration) | Setting up and using the Discord bot |
-| [Web Interface](https://github.com/SteamServerUI/StationeersServerUI/wiki/Web-Interface) | Using the WebUI effectively |
-| [Docker Guide](https://github.com/SteamServerUI/StationeersServerUI/wiki/Docker-Guide) | Running in Docker containers |
-| [Security Considerations](https://github.com/SteamServerUI/StationeersServerUI/wiki/Security-Considerations) | Users, permissions and HTTPS |
+| [Features](https://ssui.dev/Features/) | Near-complete list of features and capabilities |
+| [Requirements](https://ssui.dev/Requirements/) | System requirements and sizing guidance |
+| [Installation](https://ssui.dev/Installation/) | Step-by-step installation guide |
+| [First-Time Setup](https://ssui.dev/First-Time-Setup/) | Getting your server up and running |
+| [Discord Integration](https://ssui.dev/Discord-Integration/) | Setting up and using the Discord bot |
+| [Web Interface](https://ssui.dev/Web-Interface/) | Using the WebUI effectively |
+| [Docker Guide](https://ssui.dev/Docker-Guide/) | Running in Docker containers |
+| [Security Considerations](https://ssui.dev/Security-Considerations/) | Users, permissions and HTTPS |
 
-## Web UI Preview
+## Web UI screenshots
 
 _Click the images to expand them._
 
@@ -95,7 +93,7 @@ _Click the images to expand them._
 |:-----------:|:------------:|:-----------------:|
 | ![UI Overview](media/UI-4.png) | ![Configuration](media/UI-2.png) | ![Backup Management](media/UI-3.png) |
 
-## Discord Preview
+## Discord screenshots
 
 _Click the images to expand them._
 
@@ -105,11 +103,11 @@ _Click the images to expand them._
 
 ## Contributing
 
-Love this project? I'd love your help making it better! See the [Contributing Guidelines](https://github.com/SteamServerUI/StationeersServerUI/wiki/Contributing) to get started.
+Love this project? I'd love your help making it better! See the [Contributing Guidelines](https://ssui.dev/Contributing/) to get started.
 
 - 🐛 **Found a bug?** [Open an issue](https://github.com/SteamServerUI/StationeersServerUI/issues)
 - 💡 **Have an idea?** [Suggest a feature](https://github.com/SteamServerUI/StationeersServerUI/issues/new?labels=enhancement)
-- 🤔 **Questions?** [Check the Wiki](https://github.com/SteamServerUI/StationeersServerUI/wiki) or [ask in Discord](https://discord.gg/8n3vN92MyJ).
+- 🤔 **Questions?** [Check the documentation](https://ssui.dev/) or [ask in Discord](https://discord.gg/8n3vN92MyJ).
 
 ## License
 
