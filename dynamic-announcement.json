@@ -1,9 +1,0 @@
-{
-  "headline": "SSUI v5.10.0 Released - Auto-Updater & UI Improvements",
-  "shortDescription": "SSUI is now able to poll for updates while running and will show update notifications on the Dashboard. Also includes a slight config UI & texts overhaul, an improved dynamic announcements system, and various bug fixes.",
-  "bodyHtml": "<strong>Key Updates:</strong><br>• Auto-updater now checks every 6 hours and notifies you of updates<br>• Config page redesigned with sliding tabs<br>• Fixed world saved notifications and SteamCMD exit status 8 errors<br>• Multiple announcements can now display simultaneously<br><br><a href=\"https://github.com/SteamServerUI/StationeersServerUI/releases/tag/v5.10.0\" target=\"_blank\">View full release notes</a>",
-  "author": "Jackson",
-  "authorRole": "Project Lead",
-  "validFrom": "2025-12-30T00:00:00Z",
-  "validUntil": "2026-02-15T23:59:59Z"
-}
