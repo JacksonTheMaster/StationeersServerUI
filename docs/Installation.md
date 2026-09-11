@@ -1,3 +1,7 @@
+---
+description: Install a Stationeers dedicated server on Windows, Linux or Docker with SSUI's simple setup wizard.
+---
+
 # Install SSUI
 
 Choose one platform below. Windows and Linux use one executable; Docker has its own image. The normal native path is intentionally short: put the executable in a writable folder, run it and continue in the browser. SSUI prepares SteamCMD and the Stationeers server for you.

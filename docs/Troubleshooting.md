@@ -1,3 +1,7 @@
+---
+description: Troubleshoot Stationeers dedicated server setup, ports, permissions, updates, backups and SSUI runtime problems.
+---
+
 # Troubleshooting
 
 Stuck? Start with [Get help](Support.md) and come ask in the [SSUI Discord](https://discord.gg/8n3vN92MyJ) before you spend three hours fighting the wrong layer. We genuinely do not bite, usually respond pretty quickly, and are happy to help you work through a setup problem or tell you when something is actually broken. We even have a self-service bot that can actually help you unstuck yourself.

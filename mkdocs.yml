@@ -1,5 +1,5 @@
 site_name: Stationeers Server UI
-site_description: The simple way to get a Stationeers dedicated server running and keep it under control.
+site_description: Run a Stationeers dedicated server with a simple setup wizard, web interface, backups, updates and Discord controls.
 site_url: https://ssui.dev/
 site_author: The SSUI community
 
@@ -10,6 +10,7 @@ repo_url: https://github.com/SteamServerUI/StationeersServerUI
 
 theme:
   name: material
+  custom_dir: overrides
   language: en
   logo: assets/ssui-logo.png
   favicon: assets/ssui-logo.png

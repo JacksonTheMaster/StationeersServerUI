@@ -1,3 +1,7 @@
+---
+description: Check the CPU, memory, storage, operating system and network requirements for a Stationeers dedicated server managed by SSUI.
+---
+
 # Requirements and sizing
 
 This is a sizing and platform reference, not required reading before installation. For the actual Windows/Linux dependencies and the commands to install SSUI, use [Installation](Installation.md). It is shorter and much more useful when you are currently trying to get the server running.

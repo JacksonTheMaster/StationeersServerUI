@@ -1,3 +1,7 @@
+---
+description: Download the latest SSUI release for a Stationeers dedicated server on Windows, Linux or Docker.
+---
+
 # Downloads
 
 Pick a platform and the page will query the latest stable SSUI release directly from GitHub. The filename shown below is the actual release asset you are about to download, not a filename guessed from an old install.

@@ -1,7 +1,12 @@
+---
+title: Stationeers Dedicated Server Setup
+description: A simple Stationeers dedicated server setup with a browser-based control panel, backups, updates and optional Discord controls.
+---
+
 <div class="ssui-hero">
-<p class="ssui-eyebrow">The simple way to run a Stationeers server</p>
+<p class="ssui-eyebrow">A simple Stationeers dedicated server setup</p>
 <h1>Stationeers Server UI</h1>
-<p class="ssui-hero-lede">Drop one executable into a writable folder, run it and click through the setup wizard. SSUI takes care of the boring server work so you can get back to the station.</p>
+<p class="ssui-hero-lede">Drop one executable into a writable folder, run it and click through the setup wizard. SSUI gets your Stationeers dedicated server running and takes care of the boring work after that.</p>
 <p><a class="md-button md-button--primary" href="Installation/">Install SSUI</a> <a class="md-button" href="Downloads/">Downloads</a> <a class="md-button" href="Features/">See what it does</a></p>
 </div>
 

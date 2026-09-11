@@ -1,3 +1,7 @@
+---
+description: Run a Stationeers dedicated server with SSUI in Docker using one bind-mounted application directory.
+---
+
 # Docker
 
 The official image runs SSUI and Stationeers in a Linux amd64 container, with the entire runtime installation persisted at `/app`. The image already includes SteamCMD's Linux runtime dependency.

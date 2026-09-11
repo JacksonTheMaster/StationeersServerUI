@@ -37,6 +37,11 @@ jobs:
       - name: Build documentation
         run: mkdocs build --strict --site-dir site
 
+      - name: Add security.txt
+        run: |
+          mkdir -p site/.well-known
+          cp security.txt site/.well-known/security.txt
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
