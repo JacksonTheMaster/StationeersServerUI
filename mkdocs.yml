@@ -1,0 +1,148 @@
+site_name: Stationeers Server UI
+site_description: Run a Stationeers dedicated server with a simple setup wizard, web interface, backups, updates and Discord controls.
+site_url: https://ssui.dev/
+site_author: JacksonTheMaster, The SSUI Team
+
+docs_dir: docs
+
+repo_name: SteamServerUI/StationeersServerUI
+repo_url: https://github.com/SteamServerUI/StationeersServerUI
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  language: en
+  logo: assets/ssui-logo.webp
+  favicon: assets/ssui-logo.webp
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.prune
+    - navigation.path
+    - navigation.footer
+    - navigation.top
+    - toc.follow
+    - header.autohide
+    - search.highlight
+    - search.suggest
+    - search.share
+    - content.code.copy
+    - content.tabs.link
+    - content.action.edit
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Use dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Use light mode
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
+  - javascripts/mermaid.js
+  - javascripts/downloads.js
+
+edit_uri: edit/nightly/docs/
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/SteamServerUI/StationeersServerUI
+      name: SSUI on GitHub
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/8n3vN92MyJ
+      name: SSUI Discord
+
+copyright: Stationeers Server UI is community-built software for Stationeers dedicated servers.
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed
+  - pymdownx.tasklist
+  - toc:
+      permalink: true
+
+nav:
+  - Get started:
+      - Home: index.md
+      - What is SSUI?: Features.md
+      - Getting started: Getting-Started.md
+      - Requirements: Requirements.md
+      - Installation: Installation.md
+      - Docker: Docker-Guide.md
+      - Downloads: Downloads.md
+      - First-time setup: First-Time-Setup.md
+      - Quick start: Quick-Start-Guide.md
+      - Upgrade from v5: Upgrade-Guide.md
+  - Operate:
+      - Web interface: Web-Interface.md
+      - Server operations: Server-Operations.md
+      - Backups and restores: Backup-System.md
+  - Integrate and extend:
+      - Discord integration: Discord-Integration.md
+      - LaunchPad and Workshop mods: Modding-with-StationeersLaunchPad.md
+      - Logs and detections: Log-Detection-System.md
+  - Security & Troubleshooting:
+      - Access and HTTPS: Security-Considerations.md
+      - Troubleshooting: Troubleshooting.md
+      - Get help: Support.md
+      - Support packages: Support-Packages.md
+  - Reference & About:
+      - Configuration: Configuration.md
+      - SSCLI commands: SSUICLI-Commands.md
+      - Startup flags: Command-line-flags.md
+      - Game commands / SSCM: Allowed-SSCM-commands.md
+      - HTTP API: API.md
+      - Custom detections (advanced): Custom-Detections-&-The-Custom-Detections-Manager.md
+      - Developer guide: Developer-Documentation.md
+      - Contributing: Contributing.md
+      - Acknowledgments: Acknowledgments.md
+  - Legacy:
+      - Early releases (v1-v4): legacy/index.md
+      - v5:
+          - Home: legacy/v5/Home.md
+          - Features: legacy/v5/Features.md
+          - Requirements: legacy/v5/Requirements.md
+          - Installation: legacy/v5/Installation.md
+          - First-time setup: legacy/v5/First-Time-Setup.md
+          - Quick start: legacy/v5/Quick-Start-Guide.md
+          - Docker: legacy/v5/Docker-Guide.md
+          - Web interface: legacy/v5/Web-Interface.md
+          - Backups and restores: legacy/v5/Backup-System.md
+          - Discord integration: legacy/v5/Discord-Integration.md
+          - LaunchPad and Workshop mods: legacy/v5/Modding-with-StationeersLaunchPad.md
+          - Logs and detections: legacy/v5/Log-Detection-System.md
+          - Custom detections: legacy/v5/Custom-Detections-&-The-Custom-Detections-Manager.md
+          - Access and HTTPS: legacy/v5/Security-Considerations.md
+          - Configuration: legacy/v5/Configuration.md
+          - SSCLI commands: legacy/v5/SSUICLI-Commands.md
+          - Startup flags: legacy/v5/Command-line-flags.md
+          - Game commands / SSCM: legacy/v5/Allowed-SSCM-commands.md
+          - HTTP API: legacy/v5/API.md
+          - Developer guide: legacy/v5/Developer-Documentation.md
+          - Support packages: legacy/v5/Support-Packages.md
+          - Contributing: legacy/v5/Contributing.md
+          - Acknowledgments: legacy/v5/Acknowledgments.md
+          - Debug flowchart: legacy/v5/The-semi‐internal-Debug-flowchart.md

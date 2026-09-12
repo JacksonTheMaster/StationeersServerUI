@@ -2,7 +2,7 @@
 (function () {
     // Configuration
     const CONTAINER_ID = 'dynamic-announcement-list';
-    const JSON_URL = 'https://steamserverui.github.io/StationeersServerUI/dynamic-announcement-list.json';
+    const JSON_URL = 'https://ssui.dev/dynamic-announcement-list.json';
     const FETCH_TIMEOUT = 8000; // ms
 
     const container = document.getElementById(CONTAINER_ID);

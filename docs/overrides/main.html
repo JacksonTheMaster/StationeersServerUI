@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  {% set page_title = page.meta.title if page and page.meta and page.meta.title else page.title %}
+  {% set page_description = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Stationeers Server UI">
+  <meta property="og:title" content="{{ page_title }} | Stationeers Server UI">
+  <meta property="og:description" content="{{ page_description }}">
+  <meta property="og:url" content="{{ page.canonical_url }}">
+  <meta property="og:image" content="{{ config.site_url }}assets/ssui-logo-64.webp">
+  <meta property="og:image:alt" content="Stationeers Server UI logo">
+  <meta property="og:image:width" content="64">
+  <meta property="og:image:height" content="64">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ page_title }} | Stationeers Server UI">
+  <meta name="twitter:description" content="{{ page_description }}">
+  <meta name="twitter:image" content="{{ config.site_url }}assets/ssui-logo-64.webp">
+  <meta name="twitter:image:alt" content="Stationeers Server UI logo">
+{% endblock %}

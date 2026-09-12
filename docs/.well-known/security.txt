@@ -1,0 +1,4 @@
+Expires: 2027-03-11T00:00:00.000Z
+Contact: https://github.com/SteamServerUI/StationeersServerUI/security/advisories/new
+Policy: https://ssui.dev/Security-Considerations/
+Preferred-Languages: en

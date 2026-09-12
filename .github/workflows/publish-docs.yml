@@ -1,0 +1,56 @@
+name: Publish documentation
+
+on:
+  push:
+    branches:
+      - nightly
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out documentation
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install MkDocs Material
+        run: python -m pip install mkdocs-material
+
+      - name: Build documentation
+        run: mkdocs build --strict --site-dir site
+
+      - name: Add published data files
+        run: |
+          cp docs/notifications.json site/dynamic-announcement-list.json
+          mkdir -p site/.well-known
+          cp docs/.well-known/security.txt site/.well-known/security.txt
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
