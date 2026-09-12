@@ -71,7 +71,7 @@ Already installed? Go straight to [first-time setup](First-Time-Setup.md), or us
 <a class="ssui-card" href="Configuration/"><strong>Reference</strong><span>Exact settings, API routes, CLI commands and developer notes.</span></a>
 </div>
 
-The **Legacy** tab keeps the v5 documentation available for existing installations. It is deliberately loud about being old. If a current page and a legacy page disagree, the current page wins for v6.
+The **Legacy** tab keeps the v5 documentation available for existing installations and records what changed in the early v1-v4 branches. It is deliberately loud about being old. If a current page and a legacy page disagree, the current page wins for v6.
 
 !!! info "How to use this documentation"
     Follow a guide when you are doing something for the first time. Use the sidebar or search when you already know the name of the thing you need. Use **Reference** for exact settings, API routes and commands. If the server is already misbehaving, go directly to [Troubleshooting](Troubleshooting.md) and ask in the [SSUI Discord](https://discord.gg/8n3vN92MyJ) before deleting the evidence.

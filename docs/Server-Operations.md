@@ -69,6 +69,8 @@ Set `AutoRestartServerTimer` in configuration:
 | `22:30` | Daily at 22:30 in the host's local time |
 | `10:30PM` | The same daily time in 12-hour notation |
 
+For 12-hour notation, use exactly `HH:MMAM` or `HH:MMPM`: the two-digit hour and minute are followed immediately by an uppercase `AM` or `PM` suffix. For example, `10:30PM` works; `10:30 PM` and lowercase suffixes do not match the accepted format. The host or container's local timezone is used.
+
 Restart the game after changing the schedule. The timer is created when the game starts. Check the next restart in the status view and the host/container timezone.
 
 At the scheduled time, SSUI starts the warning sequence, then stops the game, waits five seconds and starts it again. With SSCM enabled it sends announcements and `save` near the end. `AutoRestartCountdown` defaults to `65`; invalid values or values below five fall back to 60 seconds.

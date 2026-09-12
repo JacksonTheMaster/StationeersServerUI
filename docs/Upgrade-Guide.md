@@ -27,6 +27,8 @@ The old v5 pages remain available under [Legacy](legacy/v5/Home.md). They are us
 
 Do not delete `UIMod` as part of the upgrade. v6 copies managed data into `SSUI` and deliberately leaves the original available for rollback or inspection. It also leaves existing legacy safe-backup folders where they are.
 
+For a cautious native upgrade, you can smoke-test the old path before deleting anything: after v6 has started successfully and you have checked the WebUI, stop SSUI and rename the old folder to something like `UIMod.v5-backup`. Start v6 again and exercise the normal server, backup and update paths. If everything is fine, remove the renamed folder later. Renaming is optional for ordinary installations, and it must happen after the first v6 migration, not before it. Do not use this as a workaround for split Docker mounts.
+
 ## Native Windows or Linux
 
 Run the v6 executable from the existing installation directory. On the first start, SSUI migrates managed data when required and uses the new `SSUI` path afterwards. Existing saves are not moved into a different game-managed tree by this migration.

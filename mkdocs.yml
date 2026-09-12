@@ -103,7 +103,6 @@ nav:
   - Integrate and extend:
       - LaunchPad and Workshop mods: Modding-with-StationeersLaunchPad.md
       - Logs and detections: Log-Detection-System.md
-      - Custom detections: Custom-Detections-&-The-Custom-Detections-Manager.md
   - Secure and deploy:
       - Docker: Docker-Guide.md
       - Access and HTTPS: Security-Considerations.md
@@ -117,10 +116,12 @@ nav:
       - Startup flags: Command-line-flags.md
       - Game commands / SSCM: Allowed-SSCM-commands.md
       - HTTP API: API.md
+      - Custom detections (advanced): Custom-Detections-&-The-Custom-Detections-Manager.md
       - Developer guide: Developer-Documentation.md
       - Contributing: Contributing.md
       - Acknowledgments: Acknowledgments.md
   - Legacy:
+      - Early releases (v1-v4): legacy/index.md
       - v5:
           - Home: legacy/v5/Home.md
           - Features: legacy/v5/Features.md
